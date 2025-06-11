@@ -1847,7 +1847,8 @@ class ProportionalIntegralIQLoopMode0Damper:
     Igain: Integral gain
     sample_num: Number of bunches for voltage averaging (bucket units)
     every: Sampling period for feedback (bucket units)
-    delay: Loop delay (bucket units)
+    delay: Loop delay for the main PI controller (bucket units)
+    damper_delay: Loop delay for the Mode 0 damper (bucket units). If None, defaults to `delay`.
     IIR_cutoff: IIR filter cutoff frequency [Hz], 0 for no filtering
     FF: Enable feed-forward compensation
     enable_damper: Enable Mode 0 damper
@@ -1871,6 +1872,7 @@ class ProportionalIntegralIQLoopMode0Damper:
         sample_num,
         every,
         delay,
+        damper_delay=None, # New parameter
         IIR_cutoff=0,
         FF=True,
         enable_damper=False,
@@ -1900,6 +1902,11 @@ class ProportionalIntegralIQLoopMode0Damper:
             self.delay = int(delay)
         else:
             self.delay = 1
+
+        if damper_delay is not None and damper_delay > 0: # New logic
+            self.damper_delay = int(damper_delay)
+        else:
+            self.damper_delay = self.delay # Default to main delay
         if every > 0:
             self.every = int(every)
         else:
@@ -2128,7 +2135,7 @@ class ProportionalIntegralIQLoopMode0Damper:
         # Implement delay buffer
 
         self.buffer.append(mode0_signal)
-        if len(self.buffer) > self.delay:
+        if len(self.buffer) > self.damper_delay: # Changed self.delay to self.damper_delay
             delayed_signal = self.buffer.pop(0)
         else:
             delayed_signal = 0.0

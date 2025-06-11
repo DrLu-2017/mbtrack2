@@ -8,6 +8,7 @@ from mbtrack2 import (
     CavityResonator,
     DirectFeedback,
     ProportionalIntegralLoop,
+    ProportionalIntegralIQLoopMode0Damper, # Added here
     ProportionalLoop,
     RFCavity,
     TunerLoop,
@@ -497,3 +498,105 @@ class TestDirectFeedback:
         assert not np.array_equal(drf_fb.ig_phasor, initial_ig_phasor)
         assert drf_fb.DFB_gain == 2.0
         assert drf_fb.DFB_phase_shift == 0.2
+
+
+@pytest.fixture
+def pi_iq_loop_damper(demo_ring, cav_res_tracking):
+    # Basic parameters for the loop
+    gain = [0.5, 1e4]
+    sample_num = 8
+    every = 7
+    delay = 10 # Main delay
+    damper_delay = 5 # Specific damper delay
+    loop = ProportionalIntegralIQLoopMode0Damper(
+        ring=demo_ring,
+        cav_res=cav_res_tracking,
+        gain=gain,
+        sample_num=sample_num,
+        every=every,
+        delay=delay,
+        damper_delay=damper_delay,
+        enable_damper=True
+    )
+    return loop
+
+
+class TestProportionalIntegralIQLoopMode0Damper:
+    def test_damper_delay_explicit(self, pi_iq_loop_damper):
+        assert pi_iq_loop_damper.delay == 10
+        assert pi_iq_loop_damper.damper_delay == 5, "damper_delay should be set to the explicit value"
+
+    def test_damper_delay_defaults_to_main_delay(self, demo_ring, cav_res_tracking):
+        gain = [0.5, 1e4]
+        sample_num = 8
+        every = 7
+        delay = 12 # Main delay
+        # damper_delay is not provided
+        loop_no_specific_damper_delay = ProportionalIntegralIQLoopMode0Damper(
+            ring=demo_ring,
+            cav_res=cav_res_tracking,
+            gain=gain,
+            sample_num=sample_num,
+            every=every,
+            delay=delay,
+            # damper_delay=None, # Explicitly None or omitted
+            enable_damper=True
+        )
+        assert loop_no_specific_damper_delay.delay == 12
+        assert loop_no_specific_damper_delay.damper_delay == delay, \
+            "damper_delay should default to main delay when not provided"
+
+        # Test with damper_delay explicitly set to None
+        loop_damper_delay_none = ProportionalIntegralIQLoopMode0Damper(
+            ring=demo_ring,
+            cav_res=cav_res_tracking,
+            gain=gain,
+            sample_num=sample_num,
+            every=every,
+            delay=delay,
+            damper_delay=None,
+            enable_damper=True
+        )
+        assert loop_damper_delay_none.damper_delay == delay, \
+            "damper_delay should default to main delay when set to None"
+
+    def test_compute_mode0_signal_uses_damper_delay(self, pi_iq_loop_damper, demo_ring, cav_res_tracking):
+        # Set up a beam mock or a simple beam if needed for compute_mode0_signal
+        # For simplicity, we'll directly manipulate the buffer and check its size against damper_delay
+
+        loop = pi_iq_loop_damper
+        loop.damper_delay = 3 # Set a small, distinct damper_delay for testing
+        loop.delay = 10 # Ensure main delay is different
+
+        # Mock the _last_beam attribute if it's accessed and causes errors
+        # For this test, we focus on the buffer logic based on damper_delay
+        class MockBunch:
+            def __init__(self, mean_val):
+                self.mean = [0,0,0,0,mean_val] # mean_idx is 4 by default
+
+        class MockBeam:
+            def __init__(self, num_bunches):
+                self.not_empty = [MockBunch(i * 0.1) for i in range(num_bunches)]
+
+        loop.cav_res._last_beam = MockBeam(5) # Attach a mock beam
+
+        # Fill the buffer up to damper_delay
+        for i in range(loop.damper_delay):
+            loop.buffer = [] # Clear buffer for precise testing of this call
+            for j in range(i + 1):
+                 loop.buffer.append((j + 1) * 0.01) # Add NON-ZERO dummy values
+            # Call compute_mode0_signal, its internal value doesn't matter as much as buffer interaction
+            val = loop.compute_mode0_signal()
+            if i < loop.damper_delay -1 : # Before buffer is full (according to damper_delay)
+                 assert val == 0.0, f"Should return 0.0 when buffer not full (i={i}, buffer_len={len(loop.buffer)})"
+            else: # Buffer is full or overflowing according to damper_delay
+                 assert val != 0.0, f"Should return a value when buffer full (i={i}, buffer_len={len(loop.buffer)})"
+
+        # Check that buffer length does not exceed damper_delay after multiple calls
+        # (it should pop if len > damper_delay)
+        loop.buffer = []
+        for _ in range(loop.damper_delay + 2): # Call more times than damper_delay
+            loop.compute_mode0_signal()
+
+        assert len(loop.buffer) == loop.damper_delay, \
+            f"Buffer length ({len(loop.buffer)}) should be equal to damper_delay ({loop.damper_delay}) after multiple calls"
