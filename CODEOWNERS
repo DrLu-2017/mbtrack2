@@ -1,0 +1,11 @@
+[Source code]
+mbtrack2/ @gamelin
+examples/ @gamelin
+tests/ @gamelin
+mbtrack2/tracking/beam_ion_effects.py @gubaidulin
+mbtrack2/tracking/spacecharge.py @gubaidulin
+mbtrack2/tracking/particles_elecromagnetic_fields.py @gubaidulin
+
+
+[Documentation]
+docs/ @gubaidulin @gamelin

@@ -1,0 +1,978 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>mbtrack2.utilities package &#8212; mbtrack2 0.6.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.utilities package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="mbtrack2-utilities-package">
+<h1>mbtrack2.utilities package<a class="headerlink" href="#mbtrack2-utilities-package" title="Permalink to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="module-mbtrack2.utilities.beamloading">
+<span id="mbtrack2-utilities-beamloading-module"></span><h2>mbtrack2.utilities.beamloading module<a class="headerlink" href="#module-mbtrack2.utilities.beamloading" title="Permalink to this heading">¶</a></h2>
+<p>Module where the BeamLoadingEquilibrium class is defined.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.beamloading.</span></span><span class="sig-name descname"><span class="pre">BeamLoadingEquilibrium</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cavity_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">I0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">auto_set_MC_theta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">PHI</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class used to compute beam equilibrium profile for a given storage ring 
+and a list of RF cavities of any harmonic. The class assumes an uniform 
+filling of the storage ring. Based on an extension of [1].</p>
+<p>[1] Venturini, M. (2018). Passive higher-harmonic rf cavities with general
+settings and multibunch instabilities in electron storage rings.
+Physical Review Accelerators and Beams, 21(11), 114404.</p>
+<p>ring : Synchrotron object
+cavity_list : list of CavityResonator objects
+I0 : beam current in [A].
+auto_set_MC_theta : if True, allow class to change cavity phase for</p>
+<blockquote>
+<div><p>CavityResonator objetcs with m = 1 (i.e. main cavities)</p>
+</div></blockquote>
+<p>F : list of form factor amplitude
+PHI : list of form factor phase
+B1 : lower intergration boundary
+B2 : upper intergration boundary</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.PTBL_threshold">
+<span class="sig-name descname"><span class="pre">PTBL_threshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">I0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">MC_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">HC_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.PTBL_threshold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.PTBL_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the periodic transient beam loading (PTBL) instability 
+threshold based on [1].</p>
+<p>The beam_equilibrium method should be called before the PTBL_threshold 
+one.</p>
+<p>Eq. (22) and (23) have been modified for cosine voltage convention 
+for the main cavity.</p>
+<dl class="simple">
+<dt>I0<span class="classifier">float</span></dt><dd><p>Beam total current in [A].</p>
+</dd>
+<dt>m<span class="classifier">int, optional</span></dt><dd><p>Number of bunches in the beam. 
+The default is None. If None, uniform filling is assumed.</p>
+</dd>
+<dt>MC_index<span class="classifier">int, optional</span></dt><dd><p>Index of the main cavity in cavity_list. The default is 0.</p>
+</dd>
+<dt>HC_index<span class="classifier">int, optional</span></dt><dd><p>Index of the harmonic cavity in cavity_list. The default is 1.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>eta<span class="classifier">float</span></dt><dd><p>Amplification factor, if bigger than 1 then the beam is possibly 
+in the PTBL regime, Eq. (22) of [1].</p>
+</dd>
+<dt>RQth<span class="classifier">float</span></dt><dd><p>R/Q threshold, Eq. (24) of [1].</p>
+</dd>
+<dt>f<span class="classifier">float</span></dt><dd><p>f function, Eq. (23) of [1].</p>
+</dd>
+</dl>
+<p>[1] : He, T. (2022). Novel perturbation method for judging the 
+stability of the equilibrium solution in the presence of passive 
+harmonic cavities. Physical Review Accelerators and Beams, 25(9), 
+094402.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.beam_equilibrium">
+<span class="sig-name descname"><span class="pre">beam_equilibrium</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hybr'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">CM</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbiose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.beam_equilibrium"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.beam_equilibrium" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve system of non-linear equation to find the form factors F
+and PHI at equilibrum. Can be used to compute the equilibrium bunch
+profile.</p>
+<p>x0 : initial guess
+tol : tolerance for termination of the algorithm
+method : method used by scipy.optimize.root to solve the system
+options : options given to scipy.optimize.root
+plot : if True, plot the equilibrium bunch profile
+CM : if True, the system imposes zero center of mass offset,
+if False, the system imposes energy balance.
+verbiose : if True, print out informations about convergence.</p>
+<p>sol : OptimizeResult object representing the solution</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.center_of_mass">
+<span class="sig-name descname"><span class="pre">center_of_mass</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.center_of_mass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.center_of_mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return center of mass position in [s]</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.dV">
+<span class="sig-name descname"><span class="pre">dV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.dV"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.dV" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return derivative of the RF system total voltage at position z</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.ddV">
+<span class="sig-name descname"><span class="pre">ddV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.ddV"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.ddV" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the second derivative of the RF system total voltage at position z</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.deltaVRF">
+<span class="sig-name descname"><span class="pre">deltaVRF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.deltaVRF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.deltaVRF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the generator voltage minus beam loading voltage of the total RF system at position z</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.du_dz">
+<span class="sig-name descname"><span class="pre">du_dz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.du_dz"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.du_dz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Partial derivative of the scaled potential u(z) by z</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.energy_balance">
+<span class="sig-name descname"><span class="pre">energy_balance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.energy_balance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.energy_balance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return energy balance for the synchronous particle
+(z = 0 ,delta = 0).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.integrate_func">
+<span class="sig-name descname"><span class="pre">integrate_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.integrate_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.integrate_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return Integral[f*g]/Integral[f] between B1 and B2</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.plot_dV">
+<span class="sig-name descname"><span class="pre">plot_dV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.plot_dV"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.plot_dV" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the derivative of RF system total voltage between z1 and z2</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.plot_rho">
+<span class="sig-name descname"><span class="pre">plot_rho</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.plot_rho"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.plot_rho" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the bunch equilibrium profile between z1 and z2</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.plot_voltage">
+<span class="sig-name descname"><span class="pre">plot_voltage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.plot_voltage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.plot_voltage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the RF system total voltage between z1 and z2</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.rho">
+<span class="sig-name descname"><span class="pre">rho</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.rho"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.rho" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return bunch equilibrium profile at postion z</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.std_rho">
+<span class="sig-name descname"><span class="pre">std_rho</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.std_rho"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.std_rho" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the rms bunch equilibrium size in [m]</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.to_solve">
+<span class="sig-name descname"><span class="pre">to_solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">CM</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.to_solve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.to_solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>System of non-linear equation to solve to find the form factors F
+and PHI at equilibrum.
+The system is composed of Eq. (B6) and (B7) of [1] for each cavity.
+If auto_set_MC_theta == True, the system also find the main cavity 
+phase to impose energy balance or cancel center of mass offset.
+If CM is True, the system imposes zero center of mass offset,
+if False, the system imposes energy balance.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.u">
+<span class="sig-name descname"><span class="pre">u</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.u"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.u" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scaled potential u(z)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.uexp">
+<span class="sig-name descname"><span class="pre">uexp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.uexp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.uexp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.update_potentials">
+<span class="sig-name descname"><span class="pre">update_potentials</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.update_potentials"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.update_potentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update potentials with cavity and ring data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.voltage">
+<span class="sig-name descname"><span class="pre">voltage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/beamloading.html#BeamLoadingEquilibrium.voltage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.voltage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the RF system total voltage at position z</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-mbtrack2.utilities.misc">
+<span id="mbtrack2-utilities-misc-module"></span><h2>mbtrack2.utilities.misc module<a class="headerlink" href="#module-mbtrack2.utilities.misc" title="Permalink to this heading">¶</a></h2>
+<p>This module defines miscellaneous utilities functions.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.utilities.misc.beam_loss_factor">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.misc.</span></span><span class="sig-name descname"><span class="pre">beam_loss_factor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">impedance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spectrum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ring</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/misc.html#beam_loss_factor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.misc.beam_loss_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute “beam” loss factor using the beam spectrum, uses a sum instead of 
+integral compared to loss_factor [1].</p>
+<p>impedance : Impedance of type “long”
+frequency : array</p>
+<blockquote>
+<div><p>Sample points of spectrum.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>spectrum<span class="classifier">array</span></dt><dd><p>Beam spectrum to consider.</p>
+</dd>
+</dl>
+<p>ring : Synchrotron object</p>
+<dl class="simple">
+<dt>kloss_beam<span class="classifier">float</span></dt><dd><p>Beam loss factor in [V/C].</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>[1]<span class="classifier">Handbook of accelerator physics and engineering, 3rd printing. </span></dt><dd><p>Eq (3) p239.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.utilities.misc.double_sided_impedance">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.misc.</span></span><span class="sig-name descname"><span class="pre">double_sided_impedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">impedance</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/misc.html#double_sided_impedance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.misc.double_sided_impedance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add negative frequency points to single sided impedance spectrum following
+symetries depending on impedance type.</p>
+<dl class="simple">
+<dt>impedance<span class="classifier">Impedance object</span></dt><dd><p>Single sided impedance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.utilities.misc.effective_impedance">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.misc.</span></span><span class="sig-name descname"><span class="pre">effective_impedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tuneS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Hermite'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/misc.html#effective_impedance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.misc.effective_impedance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the effective (longitudinal or transverse) impedance. 
+Formulas from Eq. (1) and (2) p238 of [1].</p>
+<p>ring : Synchrotron object
+imp : Impedance object
+mu : int</p>
+<blockquote>
+<div><p>coupled bunch mode number, goes from 0 to (M-1) where M is the
+number of bunches</p>
+</div></blockquote>
+<dl class="simple">
+<dt>m<span class="classifier">int</span></dt><dd><p>head-tail (or azimutal/synchrotron) mode number</p>
+</dd>
+<dt>sigma<span class="classifier">float</span></dt><dd><p>RMS bunch length in [s]</p>
+</dd>
+<dt>M<span class="classifier">int</span></dt><dd><p>Number of bunches.</p>
+</dd>
+<dt>tuneS<span class="classifier">float</span></dt><dd><p>Synchrotron tune.</p>
+</dd>
+<dt>xi<span class="classifier">float, optional</span></dt><dd><p>(non-normalized) chromaticity</p>
+</dd>
+<dt>mode: str, optional</dt><dd><p>type of the mode taken into account for the computation:
+-“Hermite” modes for Gaussian bunches</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Zeff<span class="classifier">float </span></dt><dd><p>effective impedance in [ohm] or in [ohm/m] depanding on the impedance
+type.</p>
+</dd>
+</dl>
+<p>[1] : Handbook of accelerator physics and engineering, 3rd printing.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.utilities.misc.head_tail_form_factor">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.misc.</span></span><span class="sig-name descname"><span class="pre">head_tail_form_factor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tuneS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Hermite'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/misc.html#head_tail_form_factor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.misc.head_tail_form_factor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.utilities.misc.tune_shift_from_effective_impedance">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.misc.</span></span><span class="sig-name descname"><span class="pre">tune_shift_from_effective_impedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Zeff</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/misc.html#tune_shift_from_effective_impedance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.misc.tune_shift_from_effective_impedance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.utilities.misc.yokoya_elliptic">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.misc.</span></span><span class="sig-name descname"><span class="pre">yokoya_elliptic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_radius</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_radius</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/misc.html#yokoya_elliptic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.misc.yokoya_elliptic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute Yokoya factors for an elliptic beam pipe.
+Function adapted from N. Mounet IW2D.</p>
+<dl class="simple">
+<dt>x_radius<span class="classifier">float</span></dt><dd><p>Horizontal semi-axis of the ellipse in [m].</p>
+</dd>
+<dt>y_radius<span class="classifier">float</span></dt><dd><p>Vertical semi-axis of the ellipse in [m].</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>yoklong<span class="classifier">float</span></dt><dd><p>Yokoya factor for the longitudinal impedance.</p>
+</dd>
+<dt>yokxdip<span class="classifier">float</span></dt><dd><p>Yokoya factor for the dipolar horizontal impedance.</p>
+</dd>
+<dt>yokydip<span class="classifier">float</span></dt><dd><p>Yokoya factor for the dipolar vertical impedance.</p>
+</dd>
+<dt>yokxquad<span class="classifier">float</span></dt><dd><p>Yokoya factor for the quadrupolar horizontal impedance.</p>
+</dd>
+<dt>yokyquad<span class="classifier">float</span></dt><dd><p>Yokoya factor for the quadrupolar vertical impedance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-mbtrack2.utilities.optics">
+<span id="mbtrack2-utilities-optics-module"></span><h2>mbtrack2.utilities.optics module<a class="headerlink" href="#module-mbtrack2.utilities.optics" title="Permalink to this heading">¶</a></h2>
+<p>Module where the class to store the optic functions and the lattice physical 
+parameters are defined.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.Optics">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.optics.</span></span><span class="sig-name descname"><span class="pre">Optics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lattice_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_beta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_dispersion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/optics.html#Optics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.optics.Optics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class used to handle optic functions.</p>
+<dl class="simple">
+<dt>lattice_file<span class="classifier">str, optional if local_beta, local_alpha and </span></dt><dd><p>local_dispersion are specified.
+AT lattice file path.</p>
+</dd>
+<dt>local_beta<span class="classifier">array of shape (2,), optional if lattice_file is specified.</span></dt><dd><p>Beta function at the location of the tracking. Default is mean beta if
+lattice has been loaded.</p>
+</dd>
+<dt>local_alpha<span class="classifier">array of shape (2,), optional if lattice_file is specified.</span></dt><dd><p>Alpha function at the location of the tracking. Default is mean alpha 
+if lattice has been loaded.</p>
+</dd>
+<dt>local_dispersion<span class="classifier">array of shape (4,), optional if lattice_file is </span></dt><dd><p>specified.
+Dispersion function and derivative at the location of the tracking. 
+Default is zero if lattice has been loaded.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>use_local_values<span class="classifier">bool</span></dt><dd><p>True if no lattice has been loaded.</p>
+</dd>
+<dt>local_gamma<span class="classifier">array of shape (2,)</span></dt><dd><p>Gamma function at the location of the tracking.</p>
+</dd>
+</dl>
+<p>lattice : AT lattice</p>
+<dl class="simple">
+<dt>load_from_AT(lattice_file, <a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs)</dt><dd><p>Load a lattice from accelerator toolbox (AT).</p>
+</dd>
+<dt>setup_interpolation()</dt><dd><p>Setup interpolation of the optic functions.</p>
+</dd>
+<dt>beta(position)</dt><dd><p>Return beta functions at specific locations given by position.</p>
+</dd>
+<dt>alpha(position)</dt><dd><p>Return alpha functions at specific locations given by position.</p>
+</dd>
+<dt>gamma(position)</dt><dd><p>Return gamma functions at specific locations given by position.</p>
+</dd>
+<dt>dispersion(position)</dt><dd><p>Return dispersion functions at specific locations given by position.</p>
+</dd>
+<dt>plot(self, var, option, n_points=1000)</dt><dd><p>Plot optical variables.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.Optics.alpha">
+<span class="sig-name descname"><span class="pre">alpha</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/optics.html#Optics.alpha"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.optics.Optics.alpha" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return alpha functions at specific locations given by position. If no
+lattice has been loaded, local values are returned.</p>
+<dl class="simple">
+<dt>position<span class="classifier">array or float</span></dt><dd><p>Longitudinal position at which the alpha functions are returned.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>alpha<span class="classifier">array</span></dt><dd><p>Alpha functions.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.Optics.beta">
+<span class="sig-name descname"><span class="pre">beta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/optics.html#Optics.beta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.optics.Optics.beta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return beta functions at specific locations given by position. If no
+lattice has been loaded, local values are returned.</p>
+<dl class="simple">
+<dt>position<span class="classifier">array or float</span></dt><dd><p>Longitudinal position at which the beta functions are returned.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>beta<span class="classifier">array</span></dt><dd><p>Beta functions.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.Optics.dispersion">
+<span class="sig-name descname"><span class="pre">dispersion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/optics.html#Optics.dispersion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.optics.Optics.dispersion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return dispersion functions at specific locations given by position. 
+If no lattice has been loaded, local values are returned.</p>
+<dl class="simple">
+<dt>position<span class="classifier">array or float</span></dt><dd><p>Longitudinal position at which the dispersion functions are 
+returned.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>dispersion<span class="classifier">array</span></dt><dd><p>Dispersion functions.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.Optics.gamma">
+<span class="sig-name descname"><span class="pre">gamma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/optics.html#Optics.gamma"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.optics.Optics.gamma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return gamma functions at specific locations given by position. If no
+lattice has been loaded, local values are returned.</p>
+<dl class="simple">
+<dt>position<span class="classifier">array or float</span></dt><dd><p>Longitudinal position at which the gamma functions are returned.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>gamma<span class="classifier">array</span></dt><dd><p>Gamma functions.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.Optics.load_from_AT">
+<span class="sig-name descname"><span class="pre">load_from_AT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lattice_file</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/optics.html#Optics.load_from_AT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.optics.Optics.load_from_AT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a lattice from accelerator toolbox (AT).</p>
+<dl class="simple">
+<dt>lattice_file<span class="classifier">str</span></dt><dd><p>AT lattice file path.</p>
+</dd>
+<dt>n_points<span class="classifier">int or float, optional</span></dt><dd><p>Minimum number of points to use for the optic function arrays.</p>
+</dd>
+<dt>periodicity<span class="classifier">int, optional</span></dt><dd><p>Lattice periodicity, if not specified the AT lattice periodicity is
+used.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.Optics.local_alpha">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">local_alpha</span></span><a class="headerlink" href="#mbtrack2.utilities.optics.Optics.local_alpha" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return alpha function at the location defined by the lattice file.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.Optics.local_beta">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">local_beta</span></span><a class="headerlink" href="#mbtrack2.utilities.optics.Optics.local_beta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return beta function at the location defined by the lattice file.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.Optics.local_gamma">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">local_gamma</span></span><a class="headerlink" href="#mbtrack2.utilities.optics.Optics.local_gamma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return beta function at the location defined by the lattice file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.Optics.mu">
+<span class="sig-name descname"><span class="pre">mu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/optics.html#Optics.mu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.optics.Optics.mu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return phase advances at specific locations given by position. 
+If no lattice has been loaded, None is returned.</p>
+<dl class="simple">
+<dt>position<span class="classifier">array or float</span></dt><dd><p>Longitudinal position at which the phase advances are returned.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>mu<span class="classifier">array</span></dt><dd><p>Phase advances.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.Optics.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/optics.html#Optics.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.optics.Optics.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot optical variables.</p>
+<dl class="simple">
+<dt>var<span class="classifier">{“beta”, “alpha”, “gamma”, “dispersion”, “mu”}</span></dt><dd><p>Optical variable to be plotted.</p>
+</dd>
+<dt>option<span class="classifier">str</span></dt><dd><p>If var = “beta”, “alpha” and “gamma”, option = {“x”,”y”} specifying
+the axis of interest.
+If var = “dispersion”, option = {“x”,”px”,”y”,”py”} specifying the 
+axis of interest for the dispersion function or its derivative.</p>
+</dd>
+<dt>n_points<span class="classifier">int</span></dt><dd><p>Number of points on the plot. The default value is 1000.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.Optics.setup_interpolation">
+<span class="sig-name descname"><span class="pre">setup_interpolation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/optics.html#Optics.setup_interpolation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.optics.Optics.setup_interpolation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup interpolation of the optic functions.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.PhysicalModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.optics.</span></span><span class="sig-name descname"><span class="pre">PhysicalModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_right</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_top</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_left</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_bottom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/optics.html#PhysicalModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.optics.PhysicalModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Store the lattice physical parameters such as apperture and resistivity.</p>
+<p>ring : Synchrotron object
+x_right : float</p>
+<blockquote>
+<div><p>Default value for the right horizontal aperture in [m].</p>
+</div></blockquote>
+<dl class="simple">
+<dt>y_top<span class="classifier">float</span></dt><dd><p>Default value for the top vertical aperture in [m].</p>
+</dd>
+<dt>shape<span class="classifier">str</span></dt><dd><p>Default value for the shape of the chamber cross section 
+(elli/circ/rect).</p>
+</dd>
+<dt>rho<span class="classifier">float</span></dt><dd><p>Default value for the resistivity of the chamber material [ohm.m].</p>
+</dd>
+<dt>x_left<span class="classifier">float, optional</span></dt><dd><p>Default value for the left horizontal aperture in [m].</p>
+</dd>
+<dt>y_bottom<span class="classifier">float, optional</span></dt><dd><p>Default value for the bottom vertical aperture in [m].</p>
+</dd>
+<dt>n_points<span class="classifier">int or float, optional</span></dt><dd><p>Number of points to use in class arrays</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>position<span class="classifier">array of shape (n_points,)</span></dt><dd><p>Longitudinal position in [m].</p>
+</dd>
+<dt>x_right<span class="classifier">array of shape (n_points,)</span></dt><dd><p>Right horizontal aperture in [m].</p>
+</dd>
+<dt>y_top<span class="classifier">array of shape (n_points,)</span></dt><dd><p>Top vertical aperture in [m].</p>
+</dd>
+<dt>shape<span class="classifier">array of shape (n_points - 1,)</span></dt><dd><p>Shape of the chamber cross section (elli/circ/rect).</p>
+</dd>
+<dt>rho<span class="classifier">array of shape (n_points - 1,)</span></dt><dd><p>Resistivity of the chamber material in [ohm.m].</p>
+</dd>
+<dt>x_left<span class="classifier">array of shape (n_points,)</span></dt><dd><p>Left horizontal aperture in [m].</p>
+</dd>
+<dt>y_bottom<span class="classifier">array of shape (n_points,)</span></dt><dd><p>Bottom vertical aperture in [m].</p>
+</dd>
+<dt>length<span class="classifier">array of shape (n_points - 1,)</span></dt><dd><p>Length of each segments between two longitudinal positions in [m].</p>
+</dd>
+<dt>center<span class="classifier">array of shape (n_points - 1,)</span></dt><dd><p>Center of each segments between two longitudinal positions in [m].</p>
+</dd>
+</dl>
+<dl>
+<dt>change_values(start_position, end_position, x_right, y_top, shape, rho)</dt><dd><p>Change the physical parameters between start_position and end_position.</p>
+</dd>
+<dt>taper(start_position, end_position, x_right_start, x_right_end, </dt><dd><blockquote>
+<div><p>y_top_start, y_top_end, shape, rho)</p>
+</div></blockquote>
+<p>Change the physical parameters to have a tapered transition between 
+start_position and end_position.</p>
+</dd>
+<dt>plot_aperture()</dt><dd><p>Plot horizontal and vertical apertures.</p>
+</dd>
+<dt>resistive_wall_effective_radius(optics)</dt><dd><p>Return the effective radius of the chamber for resistive wall 
+calculations.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.PhysicalModel.change_values">
+<span class="sig-name descname"><span class="pre">change_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_right</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_top</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_left</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_bottom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sym</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/optics.html#PhysicalModel.change_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.optics.PhysicalModel.change_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change the physical parameters between start_position and end_position.</p>
+<p>start_position : float
+end_position : float
+x_right : float, optional</p>
+<blockquote>
+<div><p>Right horizontal aperture in [m].</p>
+</div></blockquote>
+<dl class="simple">
+<dt>y_top<span class="classifier">float, optional</span></dt><dd><p>Top vertical aperture in [m].</p>
+</dd>
+<dt>shape<span class="classifier">str, optional</span></dt><dd><p>Shape of the chamber cross section (elli/circ/rect).</p>
+</dd>
+<dt>rho<span class="classifier">float, optional</span></dt><dd><p>Resistivity of the chamber material [ohm.m].</p>
+</dd>
+<dt>x_left<span class="classifier">float, optional</span></dt><dd><p>Left horizontal aperture in [m].</p>
+</dd>
+<dt>y_bottom<span class="classifier">float, optional</span></dt><dd><p>Bottom vertical aperture in [m].</p>
+</dd>
+<dt>sym<span class="classifier">bool, optional</span></dt><dd><p>If True, right/left and top/bottum symmetry is applied.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.PhysicalModel.get_aperture">
+<span class="sig-name descname"><span class="pre">get_aperture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/optics.html#PhysicalModel.get_aperture"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.optics.PhysicalModel.get_aperture" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.PhysicalModel.plot_aperture">
+<span class="sig-name descname"><span class="pre">plot_aperture</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/optics.html#PhysicalModel.plot_aperture"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.optics.PhysicalModel.plot_aperture" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot horizontal and vertical apertures.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.PhysicalModel.plot_resistivity">
+<span class="sig-name descname"><span class="pre">plot_resistivity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/optics.html#PhysicalModel.plot_resistivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.optics.PhysicalModel.plot_resistivity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot resistivity along the ring.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.PhysicalModel.resistive_wall_effective_radius">
+<span class="sig-name descname"><span class="pre">resistive_wall_effective_radius</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_right</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_top</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/optics.html#PhysicalModel.resistive_wall_effective_radius"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.optics.PhysicalModel.resistive_wall_effective_radius" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the effective radius of the chamber for resistive wall 
+calculations as defined in Eq. 27 of [1].</p>
+<p>Section with rho = 0 ohm.m are not considered in this calculation.</p>
+<p>optics : Optics object
+x_right : bool, optional</p>
+<blockquote>
+<div><p>If True, x_right is used, if Fasle, x_left is used.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>y_top<span class="classifier">bool, optional</span></dt><dd><p>If True, y_top is used, if Fasle, y_bottom is used.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>L<span class="classifier">float</span></dt><dd><p>Total length considered in [m].</p>
+</dd>
+<dt>rho_star<span class="classifier">float</span></dt><dd><p>Effective resistivity of the chamber material in [ohm.m].</p>
+</dd>
+<dt>a1_L<span class="classifier">float</span></dt><dd><p>Effective longitudinal radius of the chamber of the first power in
+[m].</p>
+</dd>
+<dt>a2_L<span class="classifier">float</span></dt><dd><p>Effective longitudinal radius of the chamber of the second power 
+in [m].</p>
+</dd>
+<dt>a3_H<span class="classifier">float</span></dt><dd><p>Effective horizontal radius of the chamber of the third power in
+[m].</p>
+</dd>
+<dt>a4_H<span class="classifier">float</span></dt><dd><p>Effective horizontal radius of the chamber of the fourth power in
+[m].</p>
+</dd>
+<dt>a3_V<span class="classifier">float</span></dt><dd><p>Effective vertical radius of the chamber of the third power in [m].</p>
+</dd>
+<dt>a4_V<span class="classifier">float</span></dt><dd><p>Effective vertical radius of the chamber of the fourth power in 
+[m].</p>
+</dd>
+</dl>
+<p>[1] Skripka, Galina, et al. “Simultaneous computation of intrabunch 
+and interbunch collective beam motions in storage rings.” Nuclear 
+Instruments and Methods in Physics Research Section A: Accelerators, 
+Spectrometers, Detectors and Associated Equipment 806 (2016): 221-230.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.utilities.optics.PhysicalModel.taper">
+<span class="sig-name descname"><span class="pre">taper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_right_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_right_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_top_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_top_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_left_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_left_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_bottom_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_bottom_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sym</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/optics.html#PhysicalModel.taper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.optics.PhysicalModel.taper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change the physical parameters to have a tapered transition between 
+start_position and end_position.</p>
+<p>start_position : float
+end_position : float
+x_right_start : float</p>
+<blockquote>
+<div><p>Right horizontal aperture at the start of the taper in [m].</p>
+</div></blockquote>
+<dl class="simple">
+<dt>x_right_end<span class="classifier">float</span></dt><dd><p>Right horizontal aperture at the end of the taper in [m].</p>
+</dd>
+<dt>y_top_start<span class="classifier">float</span></dt><dd><p>Top vertical aperture at the start of the taper in [m].</p>
+</dd>
+<dt>y_top_end<span class="classifier">float</span></dt><dd><p>Top vertical aperture at the end of the taper in [m].</p>
+</dd>
+<dt>shape<span class="classifier">str</span></dt><dd><p>Shape of the chamber cross section (elli/circ/rect).</p>
+</dd>
+<dt>rho<span class="classifier">float</span></dt><dd><p>Resistivity of the chamber material [ohm.m].</p>
+</dd>
+<dt>x_left_start<span class="classifier">float, optional</span></dt><dd><p>Left horizontal aperture at the start of the taper in [m].</p>
+</dd>
+<dt>x_left_end<span class="classifier">float, optional</span></dt><dd><p>Left horizontal aperture at the end of the taper in [m].</p>
+</dd>
+<dt>y_bottom_start<span class="classifier">float, optional</span></dt><dd><p>Bottom vertical aperture at the start of the taper in [m].</p>
+</dd>
+<dt>y_bottom_end<span class="classifier">float, optional</span></dt><dd><p>Bottom vertical aperture at the end of the taper in [m].</p>
+</dd>
+<dt>sym<span class="classifier">bool, optional</span></dt><dd><p>If True, right/left and top/bottum symmetry is applied.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-mbtrack2.utilities.read_impedance">
+<span id="mbtrack2-utilities-read-impedance-module"></span><h2>mbtrack2.utilities.read_impedance module<a class="headerlink" href="#module-mbtrack2.utilities.read_impedance" title="Permalink to this heading">¶</a></h2>
+<p>Module where function used to import impedance and wakes from other codes are
+defined.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.utilities.read_impedance.read_ABCI">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.read_impedance.</span></span><span class="sig-name descname"><span class="pre">read_ABCI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuthal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/read_impedance.html#read_ABCI"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.read_impedance.read_ABCI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read ABCI output files [1].</p>
+<dl class="simple">
+<dt>file<span class="classifier">str</span></dt><dd><p>Path to ABCI .pot file.</p>
+</dd>
+<dt>azimuthal<span class="classifier">bool, optional</span></dt><dd><p>If True, the transverse wake potential and impedance is loaded from the
+“AZIMUTHAL” data.
+If False, it is loaded from the “TRANSVERSE” data. In that case, a -1
+factor is applied on the wake to agree with mbtrack2 sign convention.
+The default is False.</p>
+</dd>
+<dt>output<span class="classifier">bool, optional</span></dt><dd><p>If True, print out the loaded components header.
+Default is False.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>wake<span class="classifier">WakeField</span></dt><dd><p>Object where the ABCI computed impedance and wake are stored.</p>
+</dd>
+</dl>
+<p>[1] : ABCI - <a class="reference external" href="https://abci.kek.jp/abci.htm">https://abci.kek.jp/abci.htm</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.utilities.read_impedance.read_CST">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.read_impedance.</span></span><span class="sig-name descname"><span class="pre">read_CST</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'long'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">divide_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/read_impedance.html#read_CST"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.read_impedance.read_CST" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read CST text file format into an Impedance or WakeFunction object.</p>
+<dl class="simple">
+<dt>file<span class="classifier">str</span></dt><dd><p>Path to the text file to read.</p>
+</dd>
+<dt>component_type<span class="classifier">str, optional</span></dt><dd><p>Type of the Impedance or WakeFunction object to load.
+Default is ‘long’.</p>
+</dd>
+<dt>divide_by<span class="classifier">float, optional</span></dt><dd><p>Divide the impedance by a value. Mainly used to normalize transverse
+impedance by displacement.
+Default is None.</p>
+</dd>
+<dt>imp<span class="classifier">bool, optional.</span></dt><dd><p>If True a Impedance object is loaded, if False a WakeFunction object is
+loaded.
+Default is True.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>result<span class="classifier">Impedance or WakeFunction object.</span></dt><dd><p>Data from file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.utilities.read_impedance.read_ECHO2D">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.read_impedance.</span></span><span class="sig-name descname"><span class="pre">read_ECHO2D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'long'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/read_impedance.html#read_ECHO2D"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.read_impedance.read_ECHO2D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read ECHO2D text file format (after matlab post-processing) into a
+WakeFunction object.</p>
+<dl class="simple">
+<dt>file<span class="classifier">str</span></dt><dd><p>Path to the text file to read.</p>
+</dd>
+<dt>component_type<span class="classifier">str, optional</span></dt><dd><p>Type of the WakeFunction object to load.
+Default is ‘long’.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>result<span class="classifier">WakeFunction object.</span></dt><dd><p>Data from file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.utilities.read_impedance.read_IW2D">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.read_impedance.</span></span><span class="sig-name descname"><span class="pre">read_IW2D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Zlong'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/read_impedance.html#read_IW2D"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.read_impedance.read_IW2D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read IW2D file format into an Impedance object or a WakeField object.</p>
+<dl class="simple">
+<dt>file<span class="classifier">str</span></dt><dd><p>Path to the file to read.</p>
+</dd>
+<dt>file_type<span class="classifier">str, optional</span></dt><dd><p>Type of the Impedance or WakeField object.</p>
+</dd>
+<dt>output<span class="classifier">bool, optional</span></dt><dd><p>If True, print out the interpolated values.
+Default is False.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>result<span class="classifier">Impedance or WakeField object</span></dt><dd><p>Data from file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.utilities.read_impedance.read_IW2D_folder">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.read_impedance.</span></span><span class="sig-name descname"><span class="pre">read_IW2D_folder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'WZ'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/read_impedance.html#read_IW2D_folder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.read_impedance.read_IW2D_folder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read IW2D results into a WakeField object.</p>
+<dl class="simple">
+<dt>folder<span class="classifier">str</span></dt><dd><p>Path to the folder to read.</p>
+</dd>
+<dt>suffix<span class="classifier">str</span></dt><dd><p>End of the name of each files. For example, in “Zlong_test.dat” the
+suffix should be “_test.dat”.</p>
+</dd>
+<dt>select<span class="classifier">str, optional</span></dt><dd><p>Select which object to load. “W” for WakeFunction, “Z” for Impedance
+and “WZ” or “ZW” for both.</p>
+</dd>
+<dt>output<span class="classifier">bool, optional</span></dt><dd><p>If True, print out the interpolated values.
+Default is False.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>result<span class="classifier">WakeField object</span></dt><dd><p>WakeField object with Impedance and WakeFunction objects from the
+different files.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-mbtrack2.utilities.spectrum">
+<span id="mbtrack2-utilities-spectrum-module"></span><h2>mbtrack2.utilities.spectrum module<a class="headerlink" href="#module-mbtrack2.utilities.spectrum" title="Permalink to this heading">¶</a></h2>
+<p>Module where bunch and beam spectrums and profile are defined.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.utilities.spectrum.beam_spectrum">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.spectrum.</span></span><span class="sig-name descname"><span class="pre">beam_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bunch_spacing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bunch_spectrum</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/spectrum.html#beam_spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.spectrum.beam_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the beam spectrum assuming constant spacing between bunches [1].</p>
+<dl class="simple">
+<dt>frequency<span class="classifier">list or numpy array</span></dt><dd><p>sample points of the beam spectrum in [Hz].</p>
+</dd>
+<dt>M<span class="classifier">int</span></dt><dd><p>Number of bunches.</p>
+</dd>
+<dt>bunch_spacing<span class="classifier">float</span></dt><dd><p>Time between two bunches in [s].</p>
+</dd>
+<dt>sigma<span class="classifier">float, optional</span></dt><dd><p>If bunch_spectrum is None then a Gaussian bunch with sigma RMS bunch 
+length in [s] is assumed.</p>
+</dd>
+<dt>bunch_spectrum<span class="classifier">array, optional</span></dt><dd><p>Bunch spectrum sampled at points given in frequency.</p>
+</dd>
+</dl>
+<p>beam_spectrum : array</p>
+<dl class="simple">
+<dt>[1] Rumolo, G - Beam Instabilities - CAS - CERN Accelerator School: </dt><dd><p>Advanced Accelerator Physics Course - 2014, Eq. 9</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.utilities.spectrum.gaussian_bunch">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.spectrum.</span></span><span class="sig-name descname"><span class="pre">gaussian_bunch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/spectrum.html#gaussian_bunch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.spectrum.gaussian_bunch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a Gaussian bunch profile.</p>
+<dl class="simple">
+<dt>time<span class="classifier">array</span></dt><dd><p>sample points of the bunch profile in [s].</p>
+</dd>
+<dt>sigma<span class="classifier">float</span></dt><dd><p>RMS bunch length in [s].</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>bunch_profile<span class="classifier">array</span></dt><dd><p>Bunch profile in [s**-1] sampled at points given in time.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.utilities.spectrum.gaussian_bunch_spectrum">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.spectrum.</span></span><span class="sig-name descname"><span class="pre">gaussian_bunch_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/spectrum.html#gaussian_bunch_spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.spectrum.gaussian_bunch_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a Gaussian bunch spectrum [1].</p>
+<dl class="simple">
+<dt>frequency<span class="classifier">array</span></dt><dd><p>sample points of the beam spectrum in [Hz].</p>
+</dd>
+<dt>sigma<span class="classifier">float</span></dt><dd><p>RMS bunch length in [s].</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>bunch_spectrum<span class="classifier">array</span></dt><dd><p>Bunch spectrum sampled at points given in frequency.</p>
+</dd>
+</dl>
+<p>[1] : Gamelin, A. (2018). Collective effects in a transient microbunching 
+regime and ion cloud mitigation in ThomX. p86, Eq. 4.19</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.utilities.spectrum.spectral_density">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.utilities.spectrum.</span></span><span class="sig-name descname"><span class="pre">spectral_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Hermite'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/utilities/spectrum.html#spectral_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.utilities.spectrum.spectral_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the spectral density of different modes for various values of the
+head-tail mode number, based on Table 1 p238 of [1].</p>
+<dl class="simple">
+<dt>frequency<span class="classifier">list or numpy array</span></dt><dd><p>sample points of the spectral density in [Hz]</p>
+</dd>
+<dt>sigma<span class="classifier">float</span></dt><dd><p>RMS bunch length in [s]</p>
+</dd>
+<dt>m<span class="classifier">int, optional</span></dt><dd><p>head-tail (or azimutal/synchrotron) mode number</p>
+</dd>
+<dt>k<span class="classifier">int, optional</span></dt><dd><p>radial mode number (such that <a href="#id3"><span class="problematic" id="id4">|q|=m+2k, where |q|</span></a> is the head-tail mode number)</p>
+</dd>
+<dt>mode: str, optional</dt><dd><p>type of the mode taken into account for the computation:
+-“Hermite” modes for Gaussian bunches (typical for electrons)
+-“Chebyshev” for airbag bunches
+-“Legendre” for parabolic bunches (typical for protons)
+-“Sacherer” or “Sinusoidal” simplifying approximation of Legendre modes from [3]</p>
+</dd>
+</dl>
+<p>numpy array</p>
+<p>[1] : Handbook of accelerator physics and engineering, 3rd printing.
+[2] : Ng, K. Y. (2005). Physics of intensity dependent beam instabilities. WORLD SCIENTIFIC. <a class="reference external" href="https://doi.org/10.1142/5835">https://doi.org/10.1142/5835</a>
+[3] : Sacherer, F. J. (1972). Methods for computing bunched beam instabilities. CERN Tech. rep. CERN/SI-BR/72-5 <a class="reference external" href="https://cds.cern.ch/record/2291670?ln=en">https://cds.cern.ch/record/2291670?ln=en</a></p>
+</dd></dl>
+
+</section>
+<section id="module-mbtrack2.utilities">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mbtrack2.utilities" title="Permalink to this heading">¶</a></h2>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">mbtrack2.utilities package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.utilities.beamloading">mbtrack2.utilities.beamloading module</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.utilities.misc">mbtrack2.utilities.misc module</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.utilities.optics">mbtrack2.utilities.optics module</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.utilities.read_impedance">mbtrack2.utilities.read_impedance module</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.utilities.spectrum">mbtrack2.utilities.spectrum module</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.utilities">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/mbtrack2.utilities.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.utilities package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2024, A. Gamelin et al.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

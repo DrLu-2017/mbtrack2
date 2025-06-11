@@ -1,0 +1,806 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mbtrack2.impedance.impedance_model &#8212; mbtrack2 0.6.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/nature.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.impedance.impedance_model</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mbtrack2.impedance.impedance_model</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module where the ImpedanceModel class is defined.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">colormaps</span>
+<span class="kn">from</span> <span class="nn">mpl_toolkits.axes_grid1.inset_locator</span> <span class="kn">import</span> <span class="n">inset_axes</span>
+<span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">trapz</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">interp1d</span>
+
+<span class="kn">from</span> <span class="nn">mbtrack2.impedance.wakefield</span> <span class="kn">import</span> <span class="n">WakeField</span><span class="p">,</span> <span class="n">WakeFunction</span>
+<span class="kn">from</span> <span class="nn">mbtrack2.utilities.misc</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">beam_loss_factor</span><span class="p">,</span>
+    <span class="n">double_sided_impedance</span><span class="p">,</span>
+    <span class="n">effective_impedance</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">mbtrack2.utilities.spectrum</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">beam_spectrum</span><span class="p">,</span>
+    <span class="n">gaussian_bunch_spectrum</span><span class="p">,</span>
+    <span class="n">spectral_density</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="ImpedanceModel"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.impedance_model.ImpedanceModel">[docs]</a><span class="k">class</span> <span class="nc">ImpedanceModel</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Define the impedance model of the machine.</span>
+
+<span class="sd">    The model must be completed with successive add(...) and add_global(...)</span>
+<span class="sd">    calls, then compute_sum() must be run.</span>
+
+<span class="sd">    The transverse impedance and wake functions are beta weighted and divided</span>
+<span class="sd">    by the beta at the tracking location (ring.optics.local_beta).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ring : Synchrotron object</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    wakefields : list of WakeField objects</span>
+<span class="sd">        WakeFields in the model.</span>
+<span class="sd">    positions : list of arrays</span>
+<span class="sd">        Positions corresponding the different WakeFields.</span>
+<span class="sd">    names : list of str</span>
+<span class="sd">        Names of the WakeField objects.</span>
+<span class="sd">    sum : WakeField</span>
+<span class="sd">        Sum of every WakeField in the model weigthed by beta functions.</span>
+<span class="sd">    sum_&quot;name&quot; : WakeField</span>
+<span class="sd">        Sum of the &quot;name&quot; Wakefield weigthed by beta functions.</span>
+<span class="sd">    sum_names : array</span>
+<span class="sd">        Names of attributes where the WakeFields are summed by name.</span>
+<span class="sd">    globals : list of WakeField objects</span>
+<span class="sd">        Globals WakeFields in the model.</span>
+<span class="sd">    globals_names : list of str</span>
+<span class="sd">        Names of the global WakeFields objects.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    add(wakefield, positions, name)</span>
+<span class="sd">        Add the same WakeField object at different locations to the model.</span>
+<span class="sd">    add_global(wakefield, name)</span>
+<span class="sd">        Add a &quot;global&quot; WakeField object which will added to the sum WakeField</span>
+<span class="sd">        but not weighted by beta functions.</span>
+<span class="sd">    sum_beta(wake, beta)</span>
+<span class="sd">        Weight a WakeField object by an array of beta functions.</span>
+<span class="sd">    compute_sum_names()</span>
+<span class="sd">        Compute the weighted WakeField for each WakeField object type.</span>
+<span class="sd">    compute_sum()</span>
+<span class="sd">        Compute the sum of all weighted WakeField into self.sum.</span>
+<span class="sd">    plot_area(Z_type=&quot;Zlong&quot;, component=&quot;real&quot;, sigma=None, attr_list=None)</span>
+<span class="sd">        Plot the contributions of different kind of WakeFields.</span>
+<span class="sd">    save(file)</span>
+<span class="sd">        Save impedance model to file.</span>
+<span class="sd">    load(file)</span>
+<span class="sd">        Load impedance model from file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ring</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ring</span> <span class="o">=</span> <span class="n">ring</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">optics</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wakefields</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">globals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">globals_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_names</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="ImpedanceModel.add"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.impedance_model.ImpedanceModel.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wakefield</span><span class="p">,</span> <span class="n">positions</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add the same WakeField object at different locations to the model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        wakefield : WakeField</span>
+<span class="sd">            WakeField object to add to the model.</span>
+<span class="sd">        positions : array, float or int</span>
+<span class="sd">            Array of longitudinal positions where the elements are loacted.</span>
+<span class="sd">        name : str, optional</span>
+<span class="sd">            Name of the element type. If None, the name of the WakeField object</span>
+<span class="sd">            is used. The default is None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">wakefield</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please give a valid name.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This name is already taken.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wakefields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">wakefield</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ImpedanceModel.add_global"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.impedance_model.ImpedanceModel.add_global">[docs]</a>    <span class="k">def</span> <span class="nf">add_global</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wakefield</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a &quot;global&quot; WakeField object which will added to the sum WakeField</span>
+<span class="sd">        but not weighted by beta functions.</span>
+
+<span class="sd">        To use with &quot;distributed&quot; elements, for example a resistive wall</span>
+<span class="sd">        wakefield computed from an effective radius (so which has already been</span>
+<span class="sd">        weighted by beta functions).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        wakefield : WakeField</span>
+<span class="sd">            WakeField object to add to the model.</span>
+<span class="sd">        name : str, optional</span>
+<span class="sd">            Name of the element type. If None, the name of the WakeField object</span>
+<span class="sd">            is used. The default is None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">globals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">wakefield</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">wakefield</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please give a valid name.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">globals_names</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">globals_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This name is already taken.&quot;</span><span class="p">)</span></div>
+        <span class="c1"># setattr(self, name, wakefield)</span>
+
+<div class="viewcode-block" id="ImpedanceModel.sum_beta"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.impedance_model.ImpedanceModel.sum_beta">[docs]</a>    <span class="k">def</span> <span class="nf">sum_beta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wake</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Weight a WakeField object by an array of beta functions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        wake : WakeField</span>
+<span class="sd">            WakeField element object.</span>
+<span class="sd">        beta : array of shape (2, N)</span>
+<span class="sd">            Beta function at the locations of the elements.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        wake_sum : WakeField</span>
+<span class="sd">            WakeField object weighted by beta functions.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">wake_sum</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">wake</span><span class="p">)</span>
+        <span class="n">local_beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">optics</span><span class="o">.</span><span class="n">local_beta</span>
+        <span class="k">for</span> <span class="n">component_name</span> <span class="ow">in</span> <span class="n">wake_sum</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="n">comp</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">wake_sum</span><span class="p">,</span> <span class="n">component_name</span><span class="p">)</span>
+            <span class="n">weight</span> <span class="o">=</span> <span class="p">((</span><span class="n">beta</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span><span class="o">**</span><span class="n">comp</span><span class="o">.</span><span class="n">power_x</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">beta</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span><span class="o">**</span><span class="n">comp</span><span class="o">.</span><span class="n">power_y</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">comp</span><span class="o">.</span><span class="n">plane</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span>
+                <span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">local_beta</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">comp</span><span class="o">.</span><span class="n">plane</span> <span class="o">==</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span>
+                <span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">local_beta</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">wake_sum</span><span class="p">,</span> <span class="n">component_name</span><span class="p">,</span> <span class="n">weight</span> <span class="o">*</span> <span class="n">comp</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">wake_sum</span></div>
+
+<div class="viewcode-block" id="ImpedanceModel.compute_sum_names"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.impedance_model.ImpedanceModel.compute_sum_names">[docs]</a>    <span class="k">def</span> <span class="nf">compute_sum_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the weighted WakeField for each WakeField object type.</span>
+<span class="sd">        The new summed WakeField object are set to into self.sum_name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">wake</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wakefields</span><span class="p">):</span>
+            <span class="n">attribute_name</span> <span class="o">=</span> <span class="s2">&quot;sum_&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optics</span><span class="o">.</span><span class="n">beta</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+            <span class="n">wake_sum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum_beta</span><span class="p">(</span><span class="n">wake</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+            <span class="n">wake_sum</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">attribute_name</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute_name</span><span class="p">,</span> <span class="n">wake_sum</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sum_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attribute_name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ImpedanceModel.compute_sum"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.impedance_model.ImpedanceModel.compute_sum">[docs]</a>    <span class="k">def</span> <span class="nf">compute_sum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the sum of all weighted WakeField into self.sum.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_sum_names</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum_names</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sum</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sum</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;sum&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">wake2</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">component_name2</span> <span class="ow">in</span> <span class="n">wake2</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+                    <span class="n">comp2</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">wake2</span><span class="p">,</span> <span class="n">component_name2</span><span class="p">)</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">comp1</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum</span><span class="p">,</span> <span class="n">component_name2</span><span class="p">)</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum</span><span class="p">,</span> <span class="n">component_name2</span><span class="p">,</span> <span class="n">comp1</span> <span class="o">+</span> <span class="n">comp2</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum</span><span class="p">,</span> <span class="n">component_name2</span><span class="p">,</span> <span class="n">comp2</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">wake2</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">globals</span><span class="p">):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">globals_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">wake2</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sum_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;sum&quot;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sum</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">wake2</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sum</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;sum&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">component_name2</span> <span class="ow">in</span> <span class="n">wake2</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+                    <span class="n">comp2</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">wake2</span><span class="p">,</span> <span class="n">component_name2</span><span class="p">)</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">comp1</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum</span><span class="p">,</span> <span class="n">component_name2</span><span class="p">)</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum</span><span class="p">,</span> <span class="n">component_name2</span><span class="p">,</span> <span class="n">comp1</span> <span class="o">+</span> <span class="n">comp2</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum</span><span class="p">,</span> <span class="n">component_name2</span><span class="p">,</span> <span class="n">comp2</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ImpedanceModel.group_attributes"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.impedance_model.ImpedanceModel.group_attributes">[docs]</a>    <span class="k">def</span> <span class="nf">group_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                         <span class="n">string_in_name</span><span class="p">,</span>
+                         <span class="n">names_to_group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">property_list</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Zlong&#39;</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Groups attributes in the ImpedanceModel based on a given string pattern.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            string_in_name (str): The string pattern used to match attribute names for grouping. If names_to_group is given, this is a name of a new attribute instead.</span>
+<span class="sd">            names_to_group (list, optional): List of attribute names to be explicitly grouped.</span>
+<span class="sd">                                            If not provided, attributes matching the string pattern will be automatically grouped.</span>
+<span class="sd">                                            Defaults to None.</span>
+<span class="sd">            property_list (list, optional): List of property names to be grouped for each attribute.</span>
+<span class="sd">                                            Defaults to [&#39;Zlong&#39;].</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Returns 0 indicating the successful grouping of attributes.</span>
+<span class="sd">        Notes:</span>
+<span class="sd">            - This method groups attributes in the ImpedanceModel class based on a given string pattern.</span>
+<span class="sd">            - If names_to_group is not provided, it automatically selects attributes from the existing sum_names that match the given string pattern.</span>
+<span class="sd">            - A new WakeField instance is created and assigned to the attribute named &#39;string_in_name&#39;.</span>
+<span class="sd">            - The specified properties from the first attribute in names_to_group are appended to the new WakeField instance.</span>
+<span class="sd">            - The values of the specified properties from the remaining attributes in names_to_group are added to the corresponding properties in the new WakeField instance.</span>
+<span class="sd">            - The names_to_group attributes are removed from the ImpedanceModel class.</span>
+<span class="sd">            - The new grouped attribute is added to sum_names, and the first attribute in names_to_group is removed from sum_names.&quot;&quot;&quot;</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum_names</span>
+        <span class="k">if</span> <span class="n">names_to_group</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">names_to_group</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">string_in_name</span> <span class="ow">in</span> <span class="n">attr</span><span class="p">:</span>
+                    <span class="n">names_to_group</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string_in_name</span><span class="p">,</span> <span class="n">WakeField</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">property_list</span><span class="p">:</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string_in_name</span><span class="p">)</span><span class="o">.</span><span class="n">append_to_model</span><span class="p">(</span>
+                <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">names_to_group</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">prop</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">names_to_group</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">property_list</span><span class="p">:</span>
+                <span class="n">old_values</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string_in_name</span><span class="p">),</span> <span class="n">prop</span><span class="p">)</span>
+                <span class="n">new_values</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">),</span> <span class="n">prop</span><span class="p">)</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string_in_name</span><span class="p">),</span> <span class="n">prop</span><span class="p">,</span>
+                        <span class="n">old_values</span> <span class="o">+</span> <span class="n">new_values</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sum_names</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">string_in_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_names</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">names_to_group</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">names_to_group</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+<div class="viewcode-block" id="ImpedanceModel.rename_attribute"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.impedance_model.ImpedanceModel.rename_attribute">[docs]</a>    <span class="k">def</span> <span class="nf">rename_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_name</span><span class="p">,</span> <span class="n">new_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Renames an attribute in the ImpedanceModel.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            old_name (str): The current name of the attribute to be renamed.</span>
+<span class="sd">            new_name (str): The new name for the attribute.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            KeyError: If the old_name doesn&#39;t exist as an attribute in the ImpedanceModel.</span>
+<span class="sd">        Notes:</span>
+<span class="sd">            - This method renames an attribute in the ImpedanceModel class.</span>
+<span class="sd">            - The attribute with the old_name is removed from the class&#39;s dictionary (__dict__) using the pop() method.</span>
+<span class="sd">            - The attribute is then added back to the class&#39;s dictionary with the new_name using the __dict__ attribute.</span>
+<span class="sd">            - If the old_name doesn&#39;t exist as an attribute in the ImpedanceModel, a KeyError is raised.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">new_name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">old_name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ImpedanceModel.plot_area"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.impedance_model.ImpedanceModel.plot_area">[docs]</a>    <span class="k">def</span> <span class="nf">plot_area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                  <span class="n">Z_type</span><span class="o">=</span><span class="s2">&quot;Zlong&quot;</span><span class="p">,</span>
+                  <span class="n">component</span><span class="o">=</span><span class="s2">&quot;real&quot;</span><span class="p">,</span>
+                  <span class="n">sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">attr_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">zoom</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot the contributions of different kind of WakeFields.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        Z_type : str, optional</span>
+<span class="sd">            Type of impedance to plot.</span>
+<span class="sd">        component : str, optional</span>
+<span class="sd">            Component to plot, can be &quot;real&quot; or &quot;imag&quot;. </span>
+<span class="sd">        sigma : float, optional</span>
+<span class="sd">            RMS bunch length in [s] to use for the spectral density. If equal</span>
+<span class="sd">            to None, the spectral density is not plotted.</span>
+<span class="sd">        attr_list : list or array of str, optional</span>
+<span class="sd">            Attributes to plot.</span>
+<span class="sd">        zoom : bool</span>
+<span class="sd">            If True, add a zoomed plot on top right corner.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">attr_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">attr_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum_names</span>
+
+        <span class="c1"># manage legend</span>
+        <span class="n">Ztype_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Zlong&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;Zxdip&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;Zydip&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;Zxquad&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s2">&quot;Zyquad&quot;</span><span class="p">:</span> <span class="mi">4</span>
+        <span class="p">}</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1e-3</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">]</span>
+        <span class="n">label_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="sa">r</span><span class="s2">&quot;$Z_\mathrm</span><span class="si">{long}</span><span class="s2"> \; (\mathrm</span><span class="si">{k}</span><span class="s2">\Omega)$&quot;</span><span class="p">,</span>
+            <span class="sa">r</span><span class="s2">&quot;$\frac</span><span class="si">{1}</span><span class="s2">{\beta_0} \sum_</span><span class="si">{j}</span><span class="s2"> \beta_{x,j} Z_{x,j}^\mathrm</span><span class="si">{Dip}</span><span class="s2"> \; (\mathrm</span><span class="si">{M}</span><span class="s2">\Omega/\mathrm</span><span class="si">{m}</span><span class="s2">)$&quot;</span><span class="p">,</span>
+            <span class="sa">r</span><span class="s2">&quot;$\frac</span><span class="si">{1}</span><span class="s2">{\beta_0} \sum_</span><span class="si">{j}</span><span class="s2"> \beta_{y,j} Z_{y,j}^\mathrm</span><span class="si">{Dip}</span><span class="s2"> \; (\mathrm</span><span class="si">{M}</span><span class="s2">\Omega/\mathrm</span><span class="si">{m}</span><span class="s2">)$&quot;</span><span class="p">,</span>
+            <span class="sa">r</span><span class="s2">&quot;$\frac</span><span class="si">{1}</span><span class="s2">{\beta_0} \sum_</span><span class="si">{j}</span><span class="s2"> \beta_{x,j} Z_{x,j}^\mathrm</span><span class="si">{Quad}</span><span class="s2"> \; (\mathrm</span><span class="si">{M}</span><span class="s2">\Omega/\mathrm</span><span class="si">{m}</span><span class="s2">)$&quot;</span><span class="p">,</span>
+            <span class="sa">r</span><span class="s2">&quot;$\frac</span><span class="si">{1}</span><span class="s2">{\beta_0} \sum_</span><span class="si">{j}</span><span class="s2"> \beta_{y,j} Z_{y,j}^\mathrm</span><span class="si">{Quad}</span><span class="s2"> \; (\mathrm</span><span class="si">{M}</span><span class="s2">\Omega/\mathrm</span><span class="si">{m}</span><span class="s2">)$&quot;</span>
+        <span class="p">]</span>
+        <span class="n">leg</span> <span class="o">=</span> <span class="n">Ztype_dict</span><span class="p">[</span><span class="n">Z_type</span><span class="p">]</span>
+
+        <span class="c1"># sort plot by decresing area size</span>
+        <span class="n">area</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">attr_list</span><span class="p">),</span> <span class="p">))</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">attr_list</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">sum_imp</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">),</span> <span class="n">Z_type</span><span class="p">)</span>
+                <span class="n">area</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">trapz</span><span class="p">(</span><span class="n">sum_imp</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">component</span><span class="p">],</span>
+                                    <span class="n">sum_imp</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="n">sorted_index</span> <span class="o">=</span> <span class="n">area</span><span class="o">.</span><span class="n">argsort</span><span class="p">()[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># Init fig</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+        <span class="n">zero_impedance</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum</span><span class="p">,</span> <span class="n">Z_type</span><span class="p">)</span> <span class="o">*</span> <span class="mi">0</span>
+        <span class="n">total_imp</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">legend</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">sigma</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">legend</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Spectral density for sigma = &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; s&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Main plot</span>
+        <span class="n">colorblind</span> <span class="o">=</span> <span class="n">colormaps</span><span class="p">[</span><span class="s1">&#39;tab10&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">colors</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">sorted_index</span><span class="p">:</span>
+            <span class="n">attr</span> <span class="o">=</span> <span class="n">attr_list</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+            <span class="c1"># Set all impedances with common indexes using + zero_impedance</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">sum_imp</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">),</span> <span class="n">Z_type</span><span class="p">)</span> <span class="o">+</span> <span class="n">zero_impedance</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">sum_imp</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span> <span class="o">*</span> <span class="mf">1e-9</span><span class="p">,</span>
+                                <span class="n">total_imp</span><span class="p">,</span>
+                                <span class="n">total_imp</span> <span class="o">+</span>
+                                <span class="n">sum_imp</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">component</span><span class="p">]</span> <span class="o">*</span> <span class="n">scale</span><span class="p">[</span><span class="n">leg</span><span class="p">],</span>
+                                <span class="n">edgecolor</span><span class="o">=</span><span class="n">colorblind</span><span class="p">[</span><span class="n">index</span> <span class="o">%</span> <span class="mi">10</span><span class="p">],</span>
+                                <span class="n">color</span><span class="o">=</span><span class="n">colorblind</span><span class="p">[</span><span class="n">index</span> <span class="o">%</span> <span class="mi">10</span><span class="p">])</span>
+                <span class="n">total_imp</span> <span class="o">+=</span> <span class="n">sum_imp</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">component</span><span class="p">]</span> <span class="o">*</span> <span class="n">scale</span><span class="p">[</span><span class="n">leg</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">attr</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;sum_&quot;</span><span class="p">:</span>
+                    <span class="n">legend</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attr</span><span class="p">[</span><span class="mi">4</span><span class="p">:])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">legend</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="n">sigma</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">spect</span> <span class="o">=</span> <span class="n">spectral_density</span><span class="p">(</span><span class="n">zero_impedance</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+            <span class="n">spect</span> <span class="o">=</span> <span class="n">spect</span> <span class="o">/</span> <span class="n">spect</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="n">total_imp</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sum_imp</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span> <span class="o">*</span> <span class="mf">1e-9</span><span class="p">,</span> <span class="n">spect</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">2.5</span><span class="p">)</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">legend</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s2">&quot;upper left&quot;</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Frequency (GHz)&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">label_list</span><span class="p">[</span><span class="n">leg</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; - &quot;</span> <span class="o">+</span> <span class="n">component</span> <span class="o">+</span> <span class="s2">&quot; part&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">label_list</span><span class="p">[</span><span class="n">leg</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; - &quot;</span> <span class="o">+</span> <span class="n">component</span> <span class="o">+</span> <span class="s2">&quot; part&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">zoom</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">in_ax</span> <span class="o">=</span> <span class="n">inset_axes</span><span class="p">(</span>
+                <span class="n">ax</span><span class="p">,</span>
+                <span class="n">width</span><span class="o">=</span><span class="s2">&quot;30%&quot;</span><span class="p">,</span>  <span class="c1"># width = 30% of parent_bbox</span>
+                <span class="n">height</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span>  <span class="c1"># height : 1 inch</span>
+                <span class="n">loc</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">total_imp</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">sorted_index</span><span class="p">:</span>
+                <span class="n">attr</span> <span class="o">=</span> <span class="n">attr_list</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+                <span class="c1"># Set all impedances with common indexes using + zero_impedance</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">sum_imp</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">),</span>
+                                      <span class="n">Z_type</span><span class="p">)</span> <span class="o">+</span> <span class="n">zero_impedance</span>
+                    <span class="n">in_ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">sum_imp</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span> <span class="o">*</span> <span class="mf">1e-3</span><span class="p">,</span>
+                                       <span class="n">total_imp</span><span class="p">,</span>
+                                       <span class="n">total_imp</span> <span class="o">+</span>
+                                       <span class="n">sum_imp</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">component</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1e-9</span><span class="p">,</span>
+                                       <span class="n">edgecolor</span><span class="o">=</span><span class="n">colorblind</span><span class="p">[</span><span class="n">index</span> <span class="o">%</span> <span class="mi">10</span><span class="p">],</span>
+                                       <span class="n">color</span><span class="o">=</span><span class="n">colorblind</span><span class="p">[</span><span class="n">index</span> <span class="o">%</span> <span class="mi">10</span><span class="p">])</span>
+                    <span class="n">total_imp</span> <span class="o">+=</span> <span class="n">sum_imp</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">component</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1e-9</span>
+                <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            <span class="n">in_ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">200</span><span class="p">])</span>
+            <span class="n">in_ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Frequency (kHz)&quot;</span><span class="p">)</span>
+            <span class="n">in_ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$[\mathrm</span><span class="si">{G}</span><span class="s2">\Omega]$&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+<div class="viewcode-block" id="ImpedanceModel.effective_impedance"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.impedance_model.ImpedanceModel.effective_impedance">[docs]</a>    <span class="k">def</span> <span class="nf">effective_impedance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                            <span class="n">m</span><span class="p">,</span>
+                            <span class="n">mu</span><span class="p">,</span>
+                            <span class="n">sigma</span><span class="p">,</span>
+                            <span class="n">M</span><span class="p">,</span>
+                            <span class="n">tuneS</span><span class="p">,</span>
+                            <span class="n">xi</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;Hermite&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the longitudinal and transverse effective impedance.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mu : int</span>
+<span class="sd">            coupled bunch mode number, goes from 0 to (M-1) where M is the</span>
+<span class="sd">            number of bunches</span>
+<span class="sd">        m : int</span>
+<span class="sd">            head-tail (or azimutal/synchrotron) mode number</span>
+<span class="sd">        sigma : float</span>
+<span class="sd">            RMS bunch length in [s]</span>
+<span class="sd">        M : int</span>
+<span class="sd">            Number of bunches.</span>
+<span class="sd">        tuneS : float</span>
+<span class="sd">            Synchrotron tune.</span>
+<span class="sd">        xi : float, optional</span>
+<span class="sd">            (non-normalized) chromaticity</span>
+<span class="sd">        mode: str, optional</span>
+<span class="sd">            type of the mode taken into account for the computation:</span>
+<span class="sd">            -&quot;Hermite&quot; modes for Gaussian bunches</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        summary : DataFrame</span>
+<span class="sd">            Longitudinal and transverse effective impedance.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">attr_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum_names</span>
+
+        <span class="n">eff_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">attr_list</span><span class="p">),</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">attr_list</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">impedance</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">),</span> <span class="s2">&quot;Zlong&quot;</span><span class="p">)</span>
+                <span class="n">eff_array</span><span class="p">[</span><span class="n">i</span><span class="p">,</span>
+                          <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">effective_impedance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="p">,</span> <span class="n">impedance</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span>
+                                                   <span class="n">sigma</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">tuneS</span><span class="p">,</span> <span class="n">xi</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">impedance</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">),</span> <span class="s2">&quot;Zxdip&quot;</span><span class="p">)</span>
+                <span class="n">eff_array</span><span class="p">[</span><span class="n">i</span><span class="p">,</span>
+                          <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">effective_impedance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="p">,</span> <span class="n">impedance</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span>
+                                                   <span class="n">sigma</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">tuneS</span><span class="p">,</span> <span class="n">xi</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">impedance</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">),</span> <span class="s2">&quot;Zydip&quot;</span><span class="p">)</span>
+                <span class="n">eff_array</span><span class="p">[</span><span class="n">i</span><span class="p">,</span>
+                          <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">effective_impedance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="p">,</span> <span class="n">impedance</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span>
+                                                   <span class="n">sigma</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">tuneS</span><span class="p">,</span> <span class="n">xi</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="n">eff_array</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">eff_array</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">omega0</span> <span class="o">*</span> <span class="mf">1e3</span>
+        <span class="n">eff_array</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">eff_array</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1e-3</span>
+        <span class="n">eff_array</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">eff_array</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1e-3</span>
+
+        <span class="n">summary</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">eff_array</span><span class="p">,</span>
+                               <span class="n">index</span><span class="o">=</span><span class="n">attr_list</span><span class="p">,</span>
+                               <span class="n">columns</span><span class="o">=</span><span class="p">[</span>
+                                   <span class="s2">&quot;Z/n [mOhm]&quot;</span><span class="p">,</span> <span class="s2">&quot;sum betax x Zxeff [kOhm]&quot;</span><span class="p">,</span>
+                                   <span class="s2">&quot;sum betay x Zyeff [kOhm]&quot;</span>
+                               <span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">summary</span></div>
+
+<div class="viewcode-block" id="ImpedanceModel.energy_loss"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.impedance_model.ImpedanceModel.energy_loss">[docs]</a>    <span class="k">def</span> <span class="nf">energy_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">bunch_spacing</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">n_points</span><span class="o">=</span><span class="mf">10e6</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the beam and bunch loss factor and energy losses for each type </span>
+<span class="sd">        of element in the model assuming Gaussian bunches and constant spacing</span>
+<span class="sd">        between bunches.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sigma : float</span>
+<span class="sd">            RMS bunch length in [s].</span>
+<span class="sd">        M : int</span>
+<span class="sd">            Number of bunches in the beam.</span>
+<span class="sd">        bunch_spacing : float</span>
+<span class="sd">            Time between two bunches in [s].</span>
+<span class="sd">        I : float</span>
+<span class="sd">            Total beam current in [A].</span>
+<span class="sd">        n_points : float, optional</span>
+<span class="sd">            Number of points used in the frequency spectrums.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        summary : Dataframe</span>
+<span class="sd">            Contains the beam and bunch loss factor and energy loss for the </span>
+<span class="sd">            full model and for each type of different component.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">fmax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum</span><span class="o">.</span><span class="n">Zlong</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">fmin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum</span><span class="o">.</span><span class="n">Zlong</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+
+        <span class="n">Q</span> <span class="o">=</span> <span class="n">I</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">T0</span> <span class="o">/</span> <span class="n">M</span>
+
+        <span class="k">if</span> <span class="n">fmin</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">fmin</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">fmax</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">fmin</span><span class="p">,</span> <span class="n">fmax</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_points</span><span class="p">))</span>
+
+        <span class="n">beam_spect</span> <span class="o">=</span> <span class="n">beam_spectrum</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">bunch_spacing</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+
+        <span class="n">bunch_spect</span> <span class="o">=</span> <span class="n">gaussian_bunch_spectrum</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+
+        <span class="n">attr_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum_names</span>
+
+        <span class="n">loss_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">attr_list</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">attr_list</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">impedance</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">),</span> <span class="s2">&quot;Zlong&quot;</span><span class="p">)</span>
+                <span class="n">loss_array</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">beam_loss_factor</span><span class="p">(</span><span class="n">impedance</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">beam_spect</span><span class="p">,</span>
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="p">)</span>
+                <span class="n">loss_array</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">beam_loss_factor</span><span class="p">(</span><span class="n">impedance</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">bunch_spect</span><span class="p">,</span>
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="n">loss_array</span> <span class="o">=</span> <span class="n">loss_array</span> <span class="o">*</span> <span class="mf">1e-12</span>
+        <span class="n">summary</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">loss_array</span><span class="p">,</span>
+                               <span class="n">index</span><span class="o">=</span><span class="n">attr_list</span><span class="p">,</span>
+                               <span class="n">columns</span><span class="o">=</span><span class="p">[</span>
+                                   <span class="s2">&quot;loss factor (beam) [V/pC]&quot;</span><span class="p">,</span>
+                                   <span class="s2">&quot;loss factor (bunch) [V/pC]&quot;</span>
+                               <span class="p">])</span>
+
+        <span class="n">summary</span><span class="p">[</span><span class="s2">&quot;P (beam) [W]&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="p">[</span><span class="s2">&quot;loss factor (beam) [V/pC]&quot;</span><span class="p">]</span> <span class="o">*</span> \
+            <span class="mf">1e12</span><span class="o">*</span><span class="n">Q</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">T0</span><span class="p">)</span>
+        <span class="n">summary</span><span class="p">[</span><span class="s2">&quot;P (bunch) [W]&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="p">[</span><span class="s2">&quot;loss factor (bunch) [V/pC]&quot;</span><span class="p">]</span> <span class="o">*</span> \
+            <span class="mf">1e12</span><span class="o">*</span><span class="n">Q</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">T0</span><span class="p">)</span><span class="o">*</span><span class="n">M</span>
+
+        <span class="k">return</span> <span class="n">summary</span></div>
+
+<div class="viewcode-block" id="ImpedanceModel.power_loss_spectrum"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.impedance_model.ImpedanceModel.power_loss_spectrum">[docs]</a>    <span class="k">def</span> <span class="nf">power_loss_spectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                            <span class="n">sigma</span><span class="p">,</span>
+                            <span class="n">M</span><span class="p">,</span>
+                            <span class="n">bunch_spacing</span><span class="p">,</span>
+                            <span class="n">I</span><span class="p">,</span>
+                            <span class="n">n_points</span><span class="o">=</span><span class="mf">10e6</span><span class="p">,</span>
+                            <span class="n">max_overlap</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                            <span class="n">plot</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the power loss spectrum of the summed longitudinal impedance </span>
+<span class="sd">        as in Eq. (4) of [1].</span>
+
+<span class="sd">        Assume Gaussian bunches and constant spacing between bunches.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sigma : float</span>
+<span class="sd">            RMS bunch length in [s].</span>
+<span class="sd">        M : int</span>
+<span class="sd">            Number of bunches in the beam.</span>
+<span class="sd">        bunch_spacing : float</span>
+<span class="sd">            Time between two bunches in [s].</span>
+<span class="sd">        I : float</span>
+<span class="sd">            Total beam current in [A].</span>
+<span class="sd">        n_points : float, optional</span>
+<span class="sd">            Number of points used in the frequency spectrum.</span>
+<span class="sd">        max_overlap : bool, optional</span>
+<span class="sd">            If True, the bunch spectrum (scaled to the number of bunches) is </span>
+<span class="sd">            used instead of the beam spectrum to compute the maximum value of </span>
+<span class="sd">            the power loss spectrum at each frequency. Should only be used to </span>
+<span class="sd">            maximise the power loss at a given frequency (e.g. for HOMs) and </span>
+<span class="sd">            not for the full spectrum.</span>
+<span class="sd">        plot : bool, optional</span>
+<span class="sd">            If True, plots:</span>
+<span class="sd">                - the overlap between the real part of the longitudinal impedance </span>
+<span class="sd">                and the beam spectrum.</span>
+<span class="sd">                - the power loss spectrum.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pf0 : array</span>
+<span class="sd">            Frequency points.</span>
+<span class="sd">        power_loss : array</span>
+<span class="sd">            Power loss spectrum in [W].</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        [1] : L. Teofili, et al. &quot;A Multi-Physics Approach to Simulate the RF </span>
+<span class="sd">        Heating 3D Power Map Induced by the Proton Beam in a Beam Intercepting </span>
+<span class="sd">        Device&quot;, in IPAC&#39;18, 2018, doi:10.18429/JACoW-IPAC2018-THPAK093</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">impedance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum</span><span class="o">.</span><span class="n">Zlong</span>
+        <span class="n">fmax</span> <span class="o">=</span> <span class="n">impedance</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">fmin</span> <span class="o">=</span> <span class="n">impedance</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+
+        <span class="n">Q</span> <span class="o">=</span> <span class="n">I</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">T0</span> <span class="o">/</span> <span class="n">M</span>
+
+        <span class="k">if</span> <span class="n">fmin</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">fmin</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">fmax</span>
+            <span class="n">double_sided_impedance</span><span class="p">(</span><span class="n">impedance</span><span class="p">)</span>
+
+        <span class="n">frequency</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">fmin</span><span class="p">,</span> <span class="n">fmax</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_points</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">max_overlap</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="n">spectrum</span> <span class="o">=</span> <span class="n">beam_spectrum</span><span class="p">(</span><span class="n">frequency</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">bunch_spacing</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">spectrum</span> <span class="o">=</span> <span class="n">gaussian_bunch_spectrum</span><span class="p">(</span><span class="n">frequency</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span> <span class="o">*</span> <span class="n">M</span>
+
+        <span class="n">pmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">fmax</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">f0</span><span class="p">)</span>
+        <span class="n">pmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">fmin</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">f0</span><span class="p">)</span>
+
+        <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">pmin</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">pmax</span><span class="p">)</span>
+        <span class="n">pf0</span> <span class="o">=</span> <span class="n">p</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">f0</span>
+        <span class="n">ReZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">impedance</span><span class="p">(</span><span class="n">pf0</span><span class="p">))</span>
+        <span class="n">spectral_density</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">spectrum</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+        <span class="c1"># interpolation of the spectrum is needed to avoid problems liked to</span>
+        <span class="c1"># division by 0</span>
+        <span class="c1"># computing the spectrum directly to the frequency points gives</span>
+        <span class="c1"># wrong results</span>
+        <span class="n">spect</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">frequency</span><span class="p">,</span> <span class="n">spectral_density</span><span class="p">)</span>
+        <span class="n">power_loss</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">f0</span> <span class="o">*</span> <span class="n">Q</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">ReZ</span> <span class="o">*</span> <span class="n">spect</span><span class="p">(</span><span class="n">pf0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">plot</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+            <span class="n">twin</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">twinx</span><span class="p">()</span>
+            <span class="n">p1</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pf0</span><span class="p">,</span> <span class="n">ReZ</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Re[Z] [Ohm]&quot;</span><span class="p">)</span>
+            <span class="n">p2</span><span class="p">,</span> <span class="o">=</span> <span class="n">twin</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pf0</span><span class="p">,</span>
+                            <span class="n">spect</span><span class="p">(</span><span class="n">pf0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">f0</span> <span class="o">*</span> <span class="n">Q</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span>
+                            <span class="n">color</span><span class="o">=</span><span class="s2">&quot;b&quot;</span><span class="p">,</span>
+                            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Beam spectrum [a.u.]&quot;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Frequency [Hz]&quot;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Re[Z] [Ohm]&quot;</span><span class="p">)</span>
+            <span class="n">twin</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Beam spectrum [a.u.]&quot;</span><span class="p">)</span>
+            <span class="n">plots</span> <span class="o">=</span> <span class="p">[</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">]</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="o">=</span><span class="n">plots</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">)</span>
+
+            <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pf0</span><span class="p">,</span> <span class="n">power_loss</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Frequency [Hz]&quot;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Power loss [W]&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pf0</span><span class="p">,</span> <span class="n">power_loss</span></div>
+
+<div class="viewcode-block" id="ImpedanceModel.save"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.impedance_model.ImpedanceModel.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save impedance model to file.</span>
+
+<span class="sd">        The same pandas version is needed on both saving and loading computer</span>
+<span class="sd">        for the pickle to work.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file : str</span>
+<span class="sd">            File where the impedance model is saved.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">to_save</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;wakefields&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">wakefields</span><span class="p">,</span>
+            <span class="s2">&quot;positions&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">positions</span><span class="p">,</span>
+            <span class="s2">&quot;names&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">,</span>
+            <span class="s2">&quot;globals&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">globals</span><span class="p">,</span>
+            <span class="s2">&quot;globals_names&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">globals_names</span>
+        <span class="p">}</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">to_save</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ImpedanceModel.load"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.impedance_model.ImpedanceModel.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load impedance model from file.</span>
+
+<span class="sd">        The same pandas version is needed on both saving and loading computer</span>
+<span class="sd">        for the pickle to work.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file : str</span>
+<span class="sd">            File where the impedance model is saved.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">to_load</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">wakefields</span> <span class="o">=</span> <span class="n">to_load</span><span class="p">[</span><span class="s2">&quot;wakefields&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="n">to_load</span><span class="p">[</span><span class="s2">&quot;positions&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="n">to_load</span><span class="p">[</span><span class="s2">&quot;names&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">globals</span> <span class="o">=</span> <span class="n">to_load</span><span class="p">[</span><span class="s2">&quot;globals&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">globals_names</span> <span class="o">=</span> <span class="n">to_load</span><span class="p">[</span><span class="s2">&quot;globals_names&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_sum</span><span class="p">()</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.impedance.impedance_model</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2024, A. Gamelin et al.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

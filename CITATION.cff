@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+title: mbtrack2
+message: 'If you use this software, please cite it as below.'
+type: software
+authors:
+  - family-names: Gamelin
+    given-names: Alexis
+  - family-names: Foosang
+    given-names: Watanyu
+  - family-names: Yamomoto
+    given-names: Naoto
+  - family-names: Gubaidulin
+    given-names: Vadim
+  - family-names: Nagaoka
+    given-names: Ryutaro
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.14418989
+repository-code: >-
+  https://gitlab.synchrotron-soleil.fr/PA/collective-effects/mbtrack2
+abstract: >
+  mbtrack2 is a coherent object-oriented framework written
+  in python to work on collective effects in synchrotrons.
+license: BSD-3-Clause
+version: 0.8.0
+date-released: '2024-12-16'

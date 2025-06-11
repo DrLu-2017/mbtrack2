@@ -1,0 +1,100 @@
+stages:
+  - test
+  - build_docker
+  - build_pip
+
+.python_job:
+  image: gitlab-registry.synchrotron-soleil.fr/pa/collective-effects/python_mpi:latest
+  before_script:
+    - pip install poetry
+    - poetry install
+    - source `poetry env info --path`/bin/activate
+
+include:
+  - template: Jobs/Dependency-Scanning.gitlab-ci.yml
+unit_test:
+  extends: .python_job
+  stage: test
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "stable"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "stable"'
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"'
+  script:
+    - cd tests
+    - poetry run pytest -m 'unit' --junitxml=unit_test.xml
+  artifacts:
+    when: always
+    reports:
+      junit: /builds/PA/collective-effects/mbtrack2/tests/unit_test.xml
+
+include:
+  - template: Jobs/Dependency-Scanning.gitlab-ci.yml
+phys_test:
+  extends: .python_job
+  stage: test
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "stable"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "stable"'
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"'
+  script:
+    - cd tests
+    - poetry run pytest -m 'phys' --junitxml=phys_test.xml
+  artifacts:
+    when: always
+    reports:
+      junit: /builds/PA/collective-effects/mbtrack2/tests/phys_test.xml
+
+formatters:
+  extends: .python_job
+  stage: test
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "stable"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "stable"'
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"'
+  script:
+    - poetry run isort --check --diff mbtrack2/
+    - poetry run yapf -d -r mbtrack2/
+
+docker_develop:
+  stage: build_docker
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    CONTAINER_RELEASE_IMAGE: ${CI_REGISTRY_IMAGE}:develop
+  script:
+    - echo "${CI_REGISTRY_PASSWORD}" | docker login -u ${CI_REGISTRY_USER} --password-stdin ${CI_REGISTRY}
+    - docker build --pull -t ${CONTAINER_RELEASE_IMAGE} .
+    - docker push ${CONTAINER_RELEASE_IMAGE}
+
+docker_stable:
+  stage: build_docker
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    CONTAINER_RELEASE_IMAGE: ${CI_REGISTRY_IMAGE}:latest
+    CONTAINER_TAG_IMAGE: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}
+  script:
+    - echo "${CI_REGISTRY_PASSWORD}" | docker login -u ${CI_REGISTRY_USER} --password-stdin ${CI_REGISTRY}
+    - docker build --pull -t ${CONTAINER_RELEASE_IMAGE} .
+    - docker image tag ${CONTAINER_RELEASE_IMAGE} ${CONTAINER_TAG_IMAGE}
+    - docker push ${CONTAINER_RELEASE_IMAGE}
+    - docker push ${CONTAINER_TAG_IMAGE}
+
+pip_stable:
+  extends: .python_job
+  stage: build_pip
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  script:
+    - poetry config repositories.gitlab ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi
+    - poetry build
+    - poetry publish --repository gitlab -u gitlab-ci-token -p ${CI_JOB_TOKEN}

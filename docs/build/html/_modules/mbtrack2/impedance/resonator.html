@@ -1,0 +1,290 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mbtrack2.impedance.resonator &#8212; mbtrack2 0.6.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/nature.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.impedance.resonator</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mbtrack2.impedance.resonator</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module defines the impedances and wake functions from the resonator model </span>
+<span class="sd">based on the WakeField class.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">mbtrack2.impedance.wakefield</span> <span class="kn">import</span> <span class="n">Impedance</span><span class="p">,</span> <span class="n">WakeField</span><span class="p">,</span> <span class="n">WakeFunction</span>
+
+
+<div class="viewcode-block" id="Resonator"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.resonator.Resonator">[docs]</a><span class="k">class</span> <span class="nc">Resonator</span><span class="p">(</span><span class="n">WakeField</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">frequency</span><span class="p">,</span> <span class="n">Rs</span><span class="p">,</span> <span class="n">fr</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="n">plane</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-20</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resonator model WakeField element which computes the impedance and the </span>
+<span class="sd">        wake function in both longitudinal and transverse case.</span>
+<span class="sd">        </span>
+<span class="sd">        ! For transverse case, if Q &lt; 2, there is a kick factor mismatch </span>
+<span class="sd">        between time and frequency domain.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        time : array of float</span>
+<span class="sd">            Time points where the wake function will be evaluated in [s].</span>
+<span class="sd">        frequency : array of float</span>
+<span class="sd">            Frequency points where the impedance will be evaluated in [Hz].</span>
+<span class="sd">        Rs : float</span>
+<span class="sd">            Shunt impedance in [ohm] in longitudinal or [ohm/m] in transverse.</span>
+<span class="sd">        fr : float</span>
+<span class="sd">            Resonance frequency in [Hz].</span>
+<span class="sd">        Q : float</span>
+<span class="sd">            Quality factor.</span>
+<span class="sd">        plane : str or list</span>
+<span class="sd">            Plane on which the resonator is used: &quot;long&quot;, &quot;x&quot; or &quot;y&quot;.</span>
+<span class="sd">        atol : float, optional</span>
+<span class="sd">            Absolute tolerance used to enforce fundamental theorem of beam </span>
+<span class="sd">            loading for the exact expression of the longitudinal wake function.</span>
+<span class="sd">            Default is 1e-20.</span>
+<span class="sd">            </span>
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        [1]  B. W. Zotter and S. A. Kheifets, &quot;Impedances and Wakes in High-Energy </span>
+<span class="sd">        Particle Ac-celerators&quot;, Eq. (3.10) and (3.15), pp.51-53.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Rs</span> <span class="o">=</span> <span class="n">Rs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fr</span> <span class="o">=</span> <span class="n">fr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wr</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">fr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Q</span> <span class="o">=</span> <span class="n">Q</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">plane</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plane</span> <span class="o">=</span> <span class="p">[</span><span class="n">plane</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">plane</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plane</span> <span class="o">=</span> <span class="n">plane</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Q_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mf">0.25</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Q_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">0.25</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wr_p</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wr</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q_p</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span>
+
+        <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">plane</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="s2">&quot;long&quot;</span><span class="p">:</span>
+                <span class="n">Zlong</span> <span class="o">=</span> <span class="n">Impedance</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">frequency</span><span class="p">,</span>
+                                  <span class="n">function</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">long_impedance</span><span class="p">(</span><span class="n">frequency</span><span class="p">),</span>
+                                  <span class="n">component_type</span><span class="o">=</span><span class="s2">&quot;long&quot;</span><span class="p">)</span>
+                <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">append_to_model</span><span class="p">(</span><span class="n">Zlong</span><span class="p">)</span>
+                <span class="n">Wlong</span> <span class="o">=</span> <span class="n">WakeFunction</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">time</span><span class="p">,</span>
+                                     <span class="n">function</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">long_wake_function</span><span class="p">(</span>
+                                         <span class="n">time</span><span class="p">,</span> <span class="n">atol</span><span class="p">),</span>
+                                     <span class="n">component_type</span><span class="o">=</span><span class="s2">&quot;long&quot;</span><span class="p">)</span>
+                <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">append_to_model</span><span class="p">(</span><span class="n">Wlong</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="n">dim</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span> <span class="ow">or</span> <span class="n">dim</span> <span class="o">==</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span>
+                <span class="n">Zdip</span> <span class="o">=</span> <span class="n">Impedance</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">frequency</span><span class="p">,</span>
+                                 <span class="n">function</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">transverse_impedance</span><span class="p">(</span><span class="n">frequency</span><span class="p">),</span>
+                                 <span class="n">component_type</span><span class="o">=</span><span class="n">dim</span> <span class="o">+</span> <span class="s2">&quot;dip&quot;</span><span class="p">)</span>
+                <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">append_to_model</span><span class="p">(</span><span class="n">Zdip</span><span class="p">)</span>
+                <span class="n">Wdip</span> <span class="o">=</span> <span class="n">WakeFunction</span><span class="p">(</span>
+                    <span class="n">variable</span><span class="o">=</span><span class="n">time</span><span class="p">,</span>
+                    <span class="n">function</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">transverse_wake_function</span><span class="p">(</span><span class="n">time</span><span class="p">),</span>
+                    <span class="n">component_type</span><span class="o">=</span><span class="n">dim</span> <span class="o">+</span> <span class="s2">&quot;dip&quot;</span><span class="p">)</span>
+                <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">append_to_model</span><span class="p">(</span><span class="n">Wdip</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Plane must be: long, x or y&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Resonator.long_wake_function"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.resonator.Resonator.long_wake_function">[docs]</a>    <span class="k">def</span> <span class="nf">long_wake_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">atol</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">:</span>
+            <span class="n">wl</span> <span class="o">=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">wr</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rs</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">wr</span> <span class="o">*</span> <span class="n">t</span> <span class="o">/</span>
+                                                        <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="p">))</span> <span class="o">*</span>
+                  <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wr_p</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wr_p</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span> <span class="o">/</span>
+                   <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q_p</span><span class="p">)))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+            <span class="n">wl</span> <span class="o">=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">wr</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rs</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">wr</span> <span class="o">*</span> <span class="n">t</span> <span class="o">/</span>
+                                                        <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="p">))</span> <span class="o">*</span>
+                  <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cosh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wr_p</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sinh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wr_p</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span> <span class="o">/</span>
+                   <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q_p</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">atol</span><span class="p">):</span>
+            <span class="n">wl</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">atol</span><span class="p">]</span> <span class="o">=</span> <span class="n">wl</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">atol</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">t</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">atol</span><span class="p">):</span>
+            <span class="n">wl</span><span class="p">[</span><span class="n">t</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">atol</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">wl</span></div>
+
+<div class="viewcode-block" id="Resonator.long_impedance"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.resonator.Resonator.long_impedance">[docs]</a>    <span class="k">def</span> <span class="nf">long_impedance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rs</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span> <span class="o">*</span> <span class="p">(</span><span class="n">f</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">fr</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">fr</span> <span class="o">/</span> <span class="n">f</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Resonator.transverse_impedance"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.resonator.Resonator.transverse_impedance">[docs]</a>    <span class="k">def</span> <span class="nf">transverse_impedance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rs</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">fr</span> <span class="o">/</span> <span class="n">f</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span> <span class="o">*</span>
+                                        <span class="p">(</span><span class="n">f</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">fr</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">fr</span> <span class="o">/</span> <span class="n">f</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Resonator.transverse_wake_function"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.resonator.Resonator.transverse_wake_function">[docs]</a>    <span class="k">def</span> <span class="nf">transverse_wake_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">:</span>
+            <span class="n">wt</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wr</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rs</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q_p</span> <span class="o">*</span>
+                  <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">t</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">wr</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q_p</span><span class="p">)</span> <span class="o">*</span>
+                  <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wr_p</span> <span class="o">*</span> <span class="n">t</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wt</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wr</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rs</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q_p</span> <span class="o">*</span>
+                  <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">t</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">wr</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q_p</span><span class="p">)</span> <span class="o">*</span>
+                  <span class="n">np</span><span class="o">.</span><span class="n">sinh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wr_p</span> <span class="o">*</span> <span class="n">t</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">t</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">wt</span><span class="p">[</span><span class="n">t</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">wt</span></div></div>
+
+
+<div class="viewcode-block" id="PureInductive"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.resonator.PureInductive">[docs]</a><span class="k">class</span> <span class="nc">PureInductive</span><span class="p">(</span><span class="n">WakeField</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Pure inductive Wakefield element which computes associated longitudinal </span>
+<span class="sd">    impedance and wake function.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    L : float</span>
+<span class="sd">        Inductance value in [Ohm/Hz].</span>
+<span class="sd">    n_wake : int or float, optional</span>
+<span class="sd">        Number of points used in the wake function.</span>
+<span class="sd">    n_imp : int or float, optional</span>
+<span class="sd">        Number of points used in the impedance.</span>
+<span class="sd">    imp_freq_lim : float, optional</span>
+<span class="sd">        Maximum frequency used in the impedance. </span>
+<span class="sd">    nout, trim : see Impedance.to_wakefunction</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">L</span><span class="p">,</span>
+                 <span class="n">n_wake</span><span class="o">=</span><span class="mf">1e6</span><span class="p">,</span>
+                 <span class="n">n_imp</span><span class="o">=</span><span class="mf">1e6</span><span class="p">,</span>
+                 <span class="n">imp_freq_lim</span><span class="o">=</span><span class="mf">1e11</span><span class="p">,</span>
+                 <span class="n">nout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">trim</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="n">L</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_wake</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_wake</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_imp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_imp</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imp_freq_lim</span> <span class="o">=</span> <span class="n">imp_freq_lim</span>
+
+        <span class="n">freq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">imp_freq_lim</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_imp</span><span class="p">)</span>
+        <span class="n">imp</span> <span class="o">=</span> <span class="n">Impedance</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">freq</span><span class="p">,</span>
+                        <span class="n">function</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">long_impedance</span><span class="p">(</span><span class="n">freq</span><span class="p">),</span>
+                        <span class="n">component_type</span><span class="o">=</span><span class="s2">&quot;long&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">append_to_model</span><span class="p">(</span><span class="n">imp</span><span class="p">)</span>
+
+        <span class="n">wf</span> <span class="o">=</span> <span class="n">imp</span><span class="o">.</span><span class="n">to_wakefunction</span><span class="p">(</span><span class="n">nout</span><span class="o">=</span><span class="n">nout</span><span class="p">,</span> <span class="n">trim</span><span class="o">=</span><span class="n">trim</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">append_to_model</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PureInductive.long_impedance"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.resonator.PureInductive.long_impedance">[docs]</a>    <span class="k">def</span> <span class="nf">long_impedance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">*</span> <span class="n">f</span></div></div>
+
+
+<div class="viewcode-block" id="PureResistive"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.resonator.PureResistive">[docs]</a><span class="k">class</span> <span class="nc">PureResistive</span><span class="p">(</span><span class="n">WakeField</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Pure resistive Wakefield element which computes associated longitudinal </span>
+<span class="sd">    impedance and wake function.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    R : float</span>
+<span class="sd">        Resistance value in [Ohm].</span>
+<span class="sd">    n_wake : int or float, optional</span>
+<span class="sd">        Number of points used in the wake function.</span>
+<span class="sd">    n_imp : int or float, optional</span>
+<span class="sd">        Number of points used in the impedance.</span>
+<span class="sd">    imp_freq_lim : float, optional</span>
+<span class="sd">        Maximum frequency used in the impedance. </span>
+<span class="sd">    nout, trim : see Impedance.to_wakefunction</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">R</span><span class="p">,</span>
+                 <span class="n">n_wake</span><span class="o">=</span><span class="mf">1e6</span><span class="p">,</span>
+                 <span class="n">n_imp</span><span class="o">=</span><span class="mf">1e6</span><span class="p">,</span>
+                 <span class="n">imp_freq_lim</span><span class="o">=</span><span class="mf">1e11</span><span class="p">,</span>
+                 <span class="n">nout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">trim</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">R</span> <span class="o">=</span> <span class="n">R</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_wake</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_wake</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_imp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_imp</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imp_freq_lim</span> <span class="o">=</span> <span class="n">imp_freq_lim</span>
+
+        <span class="n">freq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">imp_freq_lim</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_imp</span><span class="p">)</span>
+        <span class="n">imp</span> <span class="o">=</span> <span class="n">Impedance</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">freq</span><span class="p">,</span>
+                        <span class="n">function</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">long_impedance</span><span class="p">(</span><span class="n">freq</span><span class="p">),</span>
+                        <span class="n">component_type</span><span class="o">=</span><span class="s2">&quot;long&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">append_to_model</span><span class="p">(</span><span class="n">imp</span><span class="p">)</span>
+
+        <span class="n">wf</span> <span class="o">=</span> <span class="n">imp</span><span class="o">.</span><span class="n">to_wakefunction</span><span class="p">(</span><span class="n">nout</span><span class="o">=</span><span class="n">nout</span><span class="p">,</span> <span class="n">trim</span><span class="o">=</span><span class="n">trim</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">append_to_model</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PureResistive.long_impedance"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.resonator.PureResistive.long_impedance">[docs]</a>    <span class="k">def</span> <span class="nf">long_impedance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">R</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.impedance.resonator</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2024, A. Gamelin et al.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

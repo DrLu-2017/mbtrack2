@@ -1,0 +1,292 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mbtrack2.impedance.csr &#8212; mbtrack2 0.6.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/nature.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.impedance.csr</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mbtrack2.impedance.csr</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Define coherent synchrotron radiation (CSR) wakefields in various models.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">mpmath</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.constants</span> <span class="kn">import</span> <span class="n">c</span><span class="p">,</span> <span class="n">mu_0</span>
+<span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">gamma</span>
+
+<span class="kn">from</span> <span class="nn">mbtrack2.impedance.wakefield</span> <span class="kn">import</span> <span class="n">Impedance</span><span class="p">,</span> <span class="n">WakeField</span><span class="p">,</span> <span class="n">WakeFunction</span>
+
+
+<div class="viewcode-block" id="FreeSpaceCSR"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.csr.FreeSpaceCSR">[docs]</a><span class="k">class</span> <span class="nc">FreeSpaceCSR</span><span class="p">(</span><span class="n">WakeField</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Free space steady-state coherent synchrotron radiation Wakefield element,</span>
+<span class="sd">    based on [1]. </span>
+<span class="sd">    </span>
+<span class="sd">    Impedance is computed using Eq. (A10) of [2].</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    time : array of float</span>
+<span class="sd">        Time points where the wake function will be evaluated in [s].</span>
+<span class="sd">    frequency : array of float</span>
+<span class="sd">        Frequency points where the impedance will be evaluated in [Hz].</span>
+<span class="sd">    length : float </span>
+<span class="sd">        Length of the impedacen to consider in [m].</span>
+<span class="sd">    radius : float </span>
+<span class="sd">        Dipole radius of curvature in [m].</span>
+<span class="sd">        </span>
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] : Faltens, A. N. D. R. I. S., &amp; Laslett, L. J. (1973). Longitudinal </span>
+<span class="sd">    coupling impedance of a stationary electron ring in a cylindrical </span>
+<span class="sd">    geometry. part. Accel., 4, 151-157.</span>
+<span class="sd">    [2] : Agoh, T., and K. Yokoya. &quot;Calculation of coherent synchrotron </span>
+<span class="sd">    radiation using mesh.&quot; Physical Review Special Topics-Accelerators and </span>
+<span class="sd">    Beams 7.5 (2004): 054403.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">frequency</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">radius</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="n">radius</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Z0</span> <span class="o">=</span> <span class="n">mu_0</span> <span class="o">*</span> <span class="n">c</span>
+
+        <span class="n">Zl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">LongitudinalImpedance</span><span class="p">(</span><span class="n">frequency</span><span class="p">)</span>
+        <span class="c1"># Wl = self.LongitudinalWakeFunction(time)</span>
+
+        <span class="n">Zlong</span> <span class="o">=</span> <span class="n">Impedance</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">frequency</span><span class="p">,</span>
+                          <span class="n">function</span><span class="o">=</span><span class="n">Zl</span><span class="p">,</span>
+                          <span class="n">component_type</span><span class="o">=</span><span class="s1">&#39;long&#39;</span><span class="p">)</span>
+        <span class="c1"># Wlong = WakeFunction(variable = time, function = Wl, component_type=&quot;long&quot;)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">append_to_model</span><span class="p">(</span><span class="n">Zlong</span><span class="p">)</span>
+        <span class="c1"># super().append_to_model(Wlong)</span>
+
+<div class="viewcode-block" id="FreeSpaceCSR.LongitudinalImpedance"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.csr.FreeSpaceCSR.LongitudinalImpedance">[docs]</a>    <span class="k">def</span> <span class="nf">LongitudinalImpedance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frequency</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the free space steady-state CSR impedance.</span>
+<span class="sd">        Based on Eq. (A10) of [1].</span>
+<span class="sd">        </span>
+<span class="sd">        This formula is valid only if omega &lt;&lt; (3 * gamma^3 * c) / (2 * R).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        frequency : float array</span>
+<span class="sd">            Frequency in [Hz].</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Zl : complex array</span>
+<span class="sd">            Longitudinal impedance in [ohm].</span>
+<span class="sd">            </span>
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        [1] : Agoh, T., and K. Yokoya. &quot;Calculation of coherent synchrotron </span>
+<span class="sd">        radiation using mesh.&quot; Physical Review Special Topics-Accelerators and </span>
+<span class="sd">        Beams 7.5 (2004): 054403.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">Zl</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Z0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">gamma</span><span class="p">(</span><span class="mi">2</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span>
+              <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">frequency</span> <span class="o">/</span>
+               <span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">c</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Zl</span></div>
+
+<div class="viewcode-block" id="FreeSpaceCSR.LongitudinalWakeFunction"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.csr.FreeSpaceCSR.LongitudinalWakeFunction">[docs]</a>    <span class="k">def</span> <span class="nf">LongitudinalWakeFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+
+
+<div class="viewcode-block" id="ParallelPlatesCSR"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.csr.ParallelPlatesCSR">[docs]</a><span class="k">class</span> <span class="nc">ParallelPlatesCSR</span><span class="p">(</span><span class="n">WakeField</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perfectly conducting parallel plates steady-state coherent synchrotron </span>
+<span class="sd">    radiation Wakefield element, based on [1]. </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    time : array of float</span>
+<span class="sd">        Time points where the wake function will be evaluated in [s].</span>
+<span class="sd">    frequency : array of float</span>
+<span class="sd">        Frequency points where the impedance will be evaluated in [Hz].</span>
+<span class="sd">    length : float </span>
+<span class="sd">        Length of the impedacen to consider in [m].</span>
+<span class="sd">    radius : float </span>
+<span class="sd">        Dipole radius of curvature in [m].</span>
+<span class="sd">    distance : float</span>
+<span class="sd">        Vertical distance between the parallel plates in [m].</span>
+<span class="sd">        </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    threshold : float</span>
+<span class="sd">        Shielding threshold in the parallel plates model in [Hz].</span>
+<span class="sd">        </span>
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] : Agoh, T., and K. Yokoya. &quot;Calculation of coherent synchrotron </span>
+<span class="sd">    radiation using mesh.&quot; Physical Review Special Topics-Accelerators and </span>
+<span class="sd">    Beams 7.5 (2004): 054403.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">frequency</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">radius</span><span class="p">,</span> <span class="n">distance</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="n">radius</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distance</span> <span class="o">=</span> <span class="n">distance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Z0</span> <span class="o">=</span> <span class="n">mu_0</span> <span class="o">*</span> <span class="n">c</span>
+
+        <span class="n">Zl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">LongitudinalImpedance</span><span class="p">(</span><span class="n">frequency</span><span class="p">)</span>
+        <span class="c1"># Wl = self.LongitudinalWakeFunction(time)</span>
+
+        <span class="n">Zlong</span> <span class="o">=</span> <span class="n">Impedance</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">frequency</span><span class="p">,</span>
+                          <span class="n">function</span><span class="o">=</span><span class="n">Zl</span><span class="p">,</span>
+                          <span class="n">component_type</span><span class="o">=</span><span class="s1">&#39;long&#39;</span><span class="p">)</span>
+        <span class="c1"># Wlong = WakeFunction(variable = time, function = Wl, component_type=&quot;long&quot;)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">append_to_model</span><span class="p">(</span><span class="n">Zlong</span><span class="p">)</span>
+        <span class="c1"># super().append_to_model(Wlong)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Shielding threshold in the parallel plates model in [Hz].&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">c</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">distance</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>
+
+<div class="viewcode-block" id="ParallelPlatesCSR.LongitudinalImpedance"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.csr.ParallelPlatesCSR.LongitudinalImpedance">[docs]</a>    <span class="k">def</span> <span class="nf">LongitudinalImpedance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frequency</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the CSR impedance using the perfectly conducting parallel </span>
+<span class="sd">        plates steady-state model.</span>
+<span class="sd">        </span>
+<span class="sd">        Impedance is computed using Eq. (A1) of [1].</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        frequency : float array</span>
+<span class="sd">            Frequency in [Hz].</span>
+<span class="sd">        tol : float, optinal</span>
+<span class="sd">            Desired maximum final error on sum_func. </span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Zl : complex array</span>
+<span class="sd">            Longitudinal impedance in [ohm].</span>
+<span class="sd">            </span>
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        [1] : Agoh, T., and K. Yokoya. &quot;Calculation of coherent synchrotron </span>
+<span class="sd">        radiation using mesh.&quot; Physical Review Special Topics-Accelerators and </span>
+<span class="sd">        Beams 7.5 (2004): 054403.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">Zl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">frequency</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>
+        <span class="n">constant</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">Z0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">distance</span> <span class="o">*</span>
+                    <span class="p">(</span><span class="mi">2</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">frequency</span><span class="p">):</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">mp</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">f</span> <span class="o">/</span> <span class="n">c</span>
+
+            <span class="n">sum_value</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">nsum</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum_func</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">k</span><span class="p">),</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">mp</span><span class="o">.</span><span class="n">inf</span><span class="p">],</span>
+                                <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span>
+                                <span class="n">method</span><span class="o">=</span><span class="s1">&#39;r+s&#39;</span><span class="p">)</span>
+
+            <span class="n">Zl</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">constant</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">k</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="nb">complex</span><span class="p">(</span><span class="n">sum_value</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Zl</span></div>
+
+<div class="viewcode-block" id="ParallelPlatesCSR.sum_func"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.csr.ParallelPlatesCSR.sum_func">[docs]</a>    <span class="k">def</span> <span class="nf">sum_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Utility function for LongitudinalImpedance.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p : int</span>
+<span class="sd">        k : float</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        sum_value : mpc</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">xp</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">p</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">mp</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">distance</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">k</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span>
+                                                                            <span class="mi">3</span><span class="p">)</span>
+        <span class="n">Ai</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">airyai</span><span class="p">(</span><span class="n">xp</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">Bi</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">airybi</span><span class="p">(</span><span class="n">xp</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">Aip</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">airyai</span><span class="p">(</span><span class="n">xp</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">Bip</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">airybi</span><span class="p">(</span><span class="n">xp</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Aip</span> <span class="o">*</span> <span class="p">(</span><span class="n">Aip</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="n">Bip</span><span class="p">)</span> <span class="o">+</span> <span class="n">xp</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">Ai</span> <span class="o">*</span> <span class="p">(</span><span class="n">Ai</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="n">Bi</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ParallelPlatesCSR.LongitudinalWakeFunction"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.csr.ParallelPlatesCSR.LongitudinalWakeFunction">[docs]</a>    <span class="k">def</span> <span class="nf">LongitudinalWakeFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.impedance.csr</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2024, A. Gamelin et al.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

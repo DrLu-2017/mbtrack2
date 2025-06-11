@@ -1,0 +1,336 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mbtrack2.tracking.parallel &#8212; mbtrack2 0.6.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/nature.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.tracking.parallel</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mbtrack2.tracking.parallel</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module to handle parallel computation</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="Mpi"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.parallel.Mpi">[docs]</a><span class="k">class</span> <span class="nc">Mpi</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class which handle parallel computation via the mpi4py module [1].</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filling_pattern : bool array of shape (h,)</span>
+<span class="sd">        Filling pattern of the beam, like Beam.filling_pattern</span>
+<span class="sd">        </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    comm : MPI.Intracomm object</span>
+<span class="sd">        MPI intra-comminicator of the processor group, used to manage </span>
+<span class="sd">        communication between processors. </span>
+<span class="sd">    rank : int</span>
+<span class="sd">        Rank of the processor which run the program</span>
+<span class="sd">    size : int</span>
+<span class="sd">        Number of processor within the processor group (in fact in the </span>
+<span class="sd">        intra-comminicator group)</span>
+<span class="sd">    table : int array of shape (size, 2)</span>
+<span class="sd">        Table of correspondance between the rank of the processor and its </span>
+<span class="sd">        associated bunch number</span>
+<span class="sd">    bunch_num : int</span>
+<span class="sd">        Return the bunch number corresponding to the current processor</span>
+<span class="sd">    next_bunch : int</span>
+<span class="sd">        Return the rank of the next tracked bunch</span>
+<span class="sd">    previous_bunch : int</span>
+<span class="sd">        Return the rank of the previous tracked bunch</span>
+<span class="sd">        </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    write_table(filling_pattern)</span>
+<span class="sd">        Write a table with the rank and the corresponding bunch number for each</span>
+<span class="sd">        bunch of the filling pattern</span>
+<span class="sd">    rank_to_bunch(rank)</span>
+<span class="sd">        Return the bunch number corresponding to rank</span>
+<span class="sd">    bunch_to_rank(bunch_num)</span>
+<span class="sd">        Return the rank corresponding to the bunch number bunch_num</span>
+<span class="sd">    share_distributions(beam)</span>
+<span class="sd">        Compute the bunch profiles and share it between the different bunches.</span>
+<span class="sd">    share_means(beam)</span>
+<span class="sd">        Compute the bunch means and share it between the different bunches.</span>
+<span class="sd">    share_stds(beam)</span>
+<span class="sd">        Compute the bunch standard deviations and share it between the </span>
+<span class="sd">        different bunches.</span>
+<span class="sd">        </span>
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] L. Dalcin, P. Kler, R. Paz, and A. Cosimo, Parallel Distributed </span>
+<span class="sd">    Computing using Python, Advances in Water Resources, 34(9):1124-1139, 2011.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filling_pattern</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MPI</span> <span class="o">=</span> <span class="n">MPI</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Get_size</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_table</span><span class="p">(</span><span class="n">filling_pattern</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Mpi.write_table"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.parallel.Mpi.write_table">[docs]</a>    <span class="k">def</span> <span class="nf">write_table</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filling_pattern</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write a table with the rank and the corresponding bunch number for each</span>
+<span class="sd">        bunch of the filling pattern</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filling_pattern : bool array of shape (h,)</span>
+<span class="sd">            Filling pattern of the beam, like Beam.filling_pattern</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">filling_pattern</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The number of processors must be equal to the&quot;</span>
+                             <span class="s2">&quot;number of (non-empty) bunches.&quot;</span><span class="p">)</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">table</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">table</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">filling_pattern</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">table</span> <span class="o">=</span> <span class="n">table</span></div>
+
+<div class="viewcode-block" id="Mpi.rank_to_bunch"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.parallel.Mpi.rank_to_bunch">[docs]</a>    <span class="k">def</span> <span class="nf">rank_to_bunch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rank</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the bunch number corresponding to rank</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        rank : int</span>
+<span class="sd">            Rank of a processor</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bunch_num : int</span>
+<span class="sd">            Bunch number corresponding to the input rank</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">[</span><span class="n">rank</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Mpi.bunch_to_rank"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.parallel.Mpi.bunch_to_rank">[docs]</a>    <span class="k">def</span> <span class="nf">bunch_to_rank</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bunch_num</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the rank corresponding to the bunch number bunch_num</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        bunch_num : int</span>
+<span class="sd">            Bunch number</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        rank : int</span>
+<span class="sd">            Rank of the processor which tracks the input bunch number</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">bunch_num</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The bunch &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">bunch_num</span><span class="p">)</span> <span class="o">+</span>
+                  <span class="s2">&quot; is not tracked on any processor.&quot;</span><span class="p">)</span>
+            <span class="n">rank</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">rank</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bunch_num</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the bunch number corresponding to the current processor&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank_to_bunch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rank</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">next_bunch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the rank of the next tracked bunch&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">+</span> <span class="mi">1</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">previous_bunch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the rank of the previous tracked bunch&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">-</span> <span class="mi">1</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+
+<div class="viewcode-block" id="Mpi.share_distributions"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.parallel.Mpi.share_distributions">[docs]</a>    <span class="k">def</span> <span class="nf">share_distributions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beam</span><span class="p">,</span> <span class="n">dimensions</span><span class="o">=</span><span class="s2">&quot;tau&quot;</span><span class="p">,</span> <span class="n">n_bin</span><span class="o">=</span><span class="mi">75</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the bunch profiles and share it between the different bunches.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        beam : Beam object</span>
+<span class="sd">        dimension : str or list of str, optional</span>
+<span class="sd">            Dimensions in which the binning is done. The default is &quot;tau&quot;.</span>
+<span class="sd">        n_bin : int or list of int, optional</span>
+<span class="sd">            Number of bins. The default is 75.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">beam</span><span class="o">.</span><span class="n">mpi_switch</span> <span class="o">==</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error, mpi is not initialised.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dimensions</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">dimensions</span> <span class="o">=</span> <span class="p">[</span><span class="n">dimensions</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_bin</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">n_bin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">dimensions</span><span class="p">),</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span> <span class="o">*</span> <span class="n">n_bin</span>
+
+        <span class="n">bunch</span> <span class="o">=</span> <span class="n">beam</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bunch_num</span><span class="p">]</span>
+
+        <span class="n">charge_per_mp_all</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">bunch</span><span class="o">.</span><span class="n">charge_per_mp</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge_per_mp_all</span> <span class="o">=</span> <span class="n">charge_per_mp_all</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dimensions</span><span class="p">)):</span>
+
+            <span class="n">dim</span> <span class="o">=</span> <span class="n">dimensions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="n">n_bin</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bunch</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">bins</span><span class="p">,</span> <span class="n">sorted_index</span><span class="p">,</span> <span class="n">profile</span><span class="p">,</span> <span class="n">center</span> <span class="o">=</span> <span class="n">bunch</span><span class="o">.</span><span class="n">binning</span><span class="p">(</span>
+                    <span class="n">dimension</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">n_bin</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sorted_index</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">profile</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+                <span class="n">center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">beam</span><span class="o">.</span><span class="n">filling_pattern</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bunch_num</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="n">beam</span><span class="o">.</span><span class="n">update_filling_pattern</span><span class="p">()</span>
+                    <span class="n">beam</span><span class="o">.</span><span class="n">update_distance_between_bunches</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">dim</span> <span class="o">+</span> <span class="s2">&quot;_center&quot;</span><span class="p">,</span>
+                             <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Allgather</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">center</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MPI</span><span class="o">.</span><span class="n">DOUBLE</span><span class="p">],</span>
+                <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">dim</span> <span class="o">+</span> <span class="s2">&quot;_center&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">MPI</span><span class="o">.</span><span class="n">DOUBLE</span><span class="p">])</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">dim</span> <span class="o">+</span> <span class="s2">&quot;_profile&quot;</span><span class="p">,</span>
+                             <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Allgather</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">profile</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MPI</span><span class="o">.</span><span class="n">INT64_T</span><span class="p">],</span>
+                <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">dim</span> <span class="o">+</span> <span class="s2">&quot;_profile&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">MPI</span><span class="o">.</span><span class="n">INT64_T</span><span class="p">])</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">dim</span> <span class="o">+</span> <span class="s2">&quot;_sorted_index&quot;</span><span class="p">,</span> <span class="n">sorted_index</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Mpi.share_means"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.parallel.Mpi.share_means">[docs]</a>    <span class="k">def</span> <span class="nf">share_means</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beam</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the bunch means and share it between the different bunches.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        beam : Beam object</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">beam</span><span class="o">.</span><span class="n">mpi_switch</span> <span class="o">==</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error, mpi is not initialised.&quot;</span><span class="p">)</span>
+
+        <span class="n">bunch</span> <span class="o">=</span> <span class="n">beam</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bunch_num</span><span class="p">]</span>
+
+        <span class="n">charge_all</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">bunch</span><span class="o">.</span><span class="n">charge</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge_all</span> <span class="o">=</span> <span class="n">charge_all</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_all</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bunch</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">mean</span> <span class="o">=</span> <span class="n">bunch</span><span class="o">.</span><span class="n">mean</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">6</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Allgather</span><span class="p">([</span><span class="n">mean</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MPI</span><span class="o">.</span><span class="n">DOUBLE</span><span class="p">],</span>
+                            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_all</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MPI</span><span class="o">.</span><span class="n">DOUBLE</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="Mpi.share_stds"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.parallel.Mpi.share_stds">[docs]</a>    <span class="k">def</span> <span class="nf">share_stds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beam</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the bunch standard deviations and share it between the </span>
+<span class="sd">        different bunches.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        beam : Beam object</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">beam</span><span class="o">.</span><span class="n">mpi_switch</span> <span class="o">==</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error, mpi is not initialised.&quot;</span><span class="p">)</span>
+
+        <span class="n">bunch</span> <span class="o">=</span> <span class="n">beam</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bunch_num</span><span class="p">]</span>
+
+        <span class="n">charge_all</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">bunch</span><span class="o">.</span><span class="n">charge</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge_all</span> <span class="o">=</span> <span class="n">charge_all</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">std_all</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bunch</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">std</span> <span class="o">=</span> <span class="n">bunch</span><span class="o">.</span><span class="n">std</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">6</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Allgather</span><span class="p">([</span><span class="n">std</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MPI</span><span class="o">.</span><span class="n">DOUBLE</span><span class="p">],</span>
+                            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">std_all</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MPI</span><span class="o">.</span><span class="n">DOUBLE</span><span class="p">])</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.tracking.parallel</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2024, A. Gamelin et al.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,1142 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mbtrack2.impedance.wakefield &#8212; mbtrack2 0.6.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/nature.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.impedance.wakefield</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mbtrack2.impedance.wakefield</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module defines general classes to describes wakefields, impedances and </span>
+<span class="sd">wake functions.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">scipy</span> <span class="k">as</span> <span class="nn">sc</span>
+<span class="kn">from</span> <span class="nn">scipy.constants</span> <span class="kn">import</span> <span class="n">c</span>
+<span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">trapz</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">interp1d</span>
+
+
+<div class="viewcode-block" id="ComplexData"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.ComplexData">[docs]</a><span class="k">class</span> <span class="nc">ComplexData</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Define a general data structure for a complex function based on a pandas </span>
+<span class="sd">    DataFrame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    variable : list, numpy array</span>
+<span class="sd">       contains the function variable values</span>
+
+<span class="sd">    function : list or numpy array of comp lex numbers</span>
+<span class="sd">        contains the values taken by the complex function</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">variable</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">1e15</span><span class="p">,</span> <span class="mf">1e15</span><span class="p">]),</span>
+                 <span class="n">function</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s1">&#39;real&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">function</span><span class="p">),</span>
+                <span class="s1">&#39;imag&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">imag</span><span class="p">(</span><span class="n">function</span><span class="p">)</span>
+            <span class="p">},</span>
+            <span class="n">index</span><span class="o">=</span><span class="n">variable</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;variable&#39;</span>
+
+<div class="viewcode-block" id="ComplexData.add"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.ComplexData.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">structure_to_add</span><span class="p">,</span>
+            <span class="n">method</span><span class="o">=</span><span class="s1">&#39;zero&#39;</span><span class="p">,</span>
+            <span class="n">interp_kind</span><span class="o">=</span><span class="s1">&#39;cubic&#39;</span><span class="p">,</span>
+            <span class="n">index_name</span><span class="o">=</span><span class="s2">&quot;variable&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method to add two structures. If the data don&#39;t have the same length,</span>
+<span class="sd">        different cases are handled.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        structure_to_add : ComplexData object, int, float or complex.</span>
+<span class="sd">            structure to be added.</span>
+<span class="sd">        method : str, optional</span>
+<span class="sd">            manage how the addition is done, possibilties are: </span>
+<span class="sd">            -common: the common range of the index (variable) from the two</span>
+<span class="sd">                structures is used. The input data are cross-interpolated</span>
+<span class="sd">                so that the result data contains the points at all initial</span>
+<span class="sd">                points in the common domain.</span>
+<span class="sd">            -extrapolate: extrapolate the value of both ComplexData.</span>
+<span class="sd">            -zero: outside of the common range, the missing values are zero. In </span>
+<span class="sd">                the common range, behave as &quot;common&quot; method.</span>
+<span class="sd">        interp_kind : str, optional</span>
+<span class="sd">            interpolation method which is passed to pandas and to</span>
+<span class="sd">            scipy.interpolate.interp1d.</span>
+<span class="sd">        index_name : str, optional</span>
+<span class="sd">            name of the dataframe index passed to the method</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ComplexData </span>
+<span class="sd">            Contains the sum of the two inputs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Create first two new DataFrames merging the variable</span>
+        <span class="c1"># from the two input data</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)):</span>
+            <span class="n">structure_to_add</span> <span class="o">=</span> <span class="n">ComplexData</span><span class="p">(</span>
+                <span class="n">variable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                <span class="n">function</span><span class="o">=</span><span class="p">(</span><span class="n">structure_to_add</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">))))</span>
+
+        <span class="n">data_to_concat</span> <span class="o">=</span> <span class="n">structure_to_add</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span>
+            <span class="n">index_name</span><span class="p">)</span>
+
+        <span class="n">initial_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">data_to_concat</span><span class="p">],</span> <span class="n">sort</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">initial_data</span> <span class="o">=</span> <span class="n">initial_data</span><span class="p">[</span><span class="o">~</span><span class="n">initial_data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">duplicated</span><span class="p">(</span>
+            <span class="n">keep</span><span class="o">=</span><span class="s1">&#39;first&#39;</span><span class="p">)]</span>
+        <span class="n">initial_data</span> <span class="o">=</span> <span class="n">initial_data</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+
+        <span class="n">data_to_add</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span>
+            <span class="n">structure_to_add</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">index_name</span><span class="p">)</span>
+        <span class="p">],</span>
+                                <span class="n">sort</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">data_to_add</span> <span class="o">=</span> <span class="n">data_to_add</span><span class="p">[</span><span class="o">~</span><span class="n">data_to_add</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">duplicated</span><span class="p">(</span><span class="n">keep</span><span class="o">=</span><span class="s1">&#39;first&#39;</span><span class="p">)]</span>
+        <span class="n">data_to_add</span> <span class="o">=</span> <span class="n">data_to_add</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;common&#39;</span><span class="p">:</span>
+            <span class="n">max_variable</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">structure_to_add</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+
+            <span class="n">min_variable</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">structure_to_add</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+
+            <span class="n">initial_data</span> <span class="o">=</span> <span class="n">initial_data</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="n">interp_kind</span><span class="p">)</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="p">((</span><span class="n">initial_data</span><span class="o">.</span><span class="n">index</span> <span class="o">&lt;=</span> <span class="n">max_variable</span><span class="p">)</span>
+                    <span class="o">&amp;</span> <span class="p">(</span><span class="n">initial_data</span><span class="o">.</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">min_variable</span><span class="p">))</span>
+            <span class="n">initial_data</span> <span class="o">=</span> <span class="n">initial_data</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+
+            <span class="n">data_to_add</span> <span class="o">=</span> <span class="n">data_to_add</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="n">interp_kind</span><span class="p">)</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="p">((</span><span class="n">data_to_add</span><span class="o">.</span><span class="n">index</span> <span class="o">&lt;=</span> <span class="n">max_variable</span><span class="p">)</span>
+                    <span class="o">&amp;</span> <span class="p">(</span><span class="n">data_to_add</span><span class="o">.</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">min_variable</span><span class="p">))</span>
+            <span class="n">data_to_add</span> <span class="o">=</span> <span class="n">data_to_add</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+
+            <span class="n">result_structure</span> <span class="o">=</span> <span class="n">ComplexData</span><span class="p">()</span>
+            <span class="n">result_structure</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">initial_data</span> <span class="o">+</span> <span class="n">data_to_add</span>
+            <span class="k">return</span> <span class="n">result_structure</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;extrapolate&#39;</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Not there yet&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;zero&#39;</span><span class="p">:</span>
+            <span class="n">max_variable</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">structure_to_add</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+
+            <span class="n">min_variable</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">structure_to_add</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+
+            <span class="n">mask</span> <span class="o">=</span> <span class="p">((</span><span class="n">initial_data</span><span class="o">.</span><span class="n">index</span> <span class="o">&lt;=</span> <span class="n">max_variable</span><span class="p">)</span>
+                    <span class="o">&amp;</span> <span class="p">(</span><span class="n">initial_data</span><span class="o">.</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">min_variable</span><span class="p">))</span>
+            <span class="n">initial_data</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">initial_data</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span>
+                <span class="n">method</span><span class="o">=</span><span class="n">interp_kind</span><span class="p">)</span>
+
+            <span class="n">mask</span> <span class="o">=</span> <span class="p">((</span><span class="n">data_to_add</span><span class="o">.</span><span class="n">index</span> <span class="o">&lt;=</span> <span class="n">max_variable</span><span class="p">)</span>
+                    <span class="o">&amp;</span> <span class="p">(</span><span class="n">data_to_add</span><span class="o">.</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">min_variable</span><span class="p">))</span>
+            <span class="n">data_to_add</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_to_add</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span>
+                <span class="n">method</span><span class="o">=</span><span class="n">interp_kind</span><span class="p">)</span>
+
+            <span class="n">initial_data</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">to_replace</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">data_to_add</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">to_replace</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="n">result_structure</span> <span class="o">=</span> <span class="n">ComplexData</span><span class="p">()</span>
+            <span class="n">result_structure</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">initial_data</span> <span class="o">+</span> <span class="n">data_to_add</span>
+            <span class="k">return</span> <span class="n">result_structure</span></div>
+
+    <span class="k">def</span> <span class="fm">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure_to_add</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;zero&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure_to_add</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;zero&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ComplexData.multiply"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.ComplexData.multiply">[docs]</a>    <span class="k">def</span> <span class="nf">multiply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Multiply a data strucure with a float or an int.</span>
+<span class="sd">        If the multiplication is done with something else, throw a warning.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="n">result_structure</span> <span class="o">=</span> <span class="n">ComplexData</span><span class="p">()</span>
+            <span class="n">result_structure</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">*</span> <span class="n">factor</span>
+            <span class="k">return</span> <span class="n">result_structure</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">((</span><span class="s1">&#39;The multiplication factor is not a float &#39;</span>
+                           <span class="s1">&#39;or an int.&#39;</span><span class="p">),</span> <span class="ne">UserWarning</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span></div>
+
+    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">interp_kind</span><span class="o">=</span><span class="s2">&quot;cubic&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Interpolation of the data by calling the class to have a function-like</span>
+<span class="sd">        behaviour.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        values : list or numpy array of complex, int or float</span>
+<span class="sd">            values to be interpolated.</span>
+<span class="sd">        interp_kind : str, optional</span>
+<span class="sd">            interpolation method which is passed to scipy.interpolate.interp1d.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy array </span>
+<span class="sd">            Contains the interpolated data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">real_func</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                             <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;real&quot;</span><span class="p">],</span>
+                             <span class="n">kind</span><span class="o">=</span><span class="n">interp_kind</span><span class="p">)</span>
+        <span class="n">imag_func</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                             <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;imag&quot;</span><span class="p">],</span>
+                             <span class="n">kind</span><span class="o">=</span><span class="n">interp_kind</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">real_func</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">imag_func</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return representation of data&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="si">!r}</span><span class="s1">&#39;</span>
+
+<div class="viewcode-block" id="ComplexData.initialize_coefficient"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.ComplexData.initialize_coefficient">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_coefficient</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Define the impedance coefficients and the plane of the impedance that</span>
+<span class="sd">        are presents in attributes of the class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name_and_coefficients_table</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">component_coefficients</span> <span class="o">=</span> <span class="n">table</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">component_type</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Component type </span><span class="si">{}</span><span class="s1"> does not exist&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">component_type</span><span class="p">))</span>
+            <span class="k">raise</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">component_coefficients</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">component_coefficients</span><span class="p">[</span><span class="s2">&quot;b&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="n">component_coefficients</span><span class="p">[</span><span class="s2">&quot;c&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">=</span> <span class="n">component_coefficients</span><span class="p">[</span><span class="s2">&quot;d&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plane</span> <span class="o">=</span> <span class="n">component_coefficients</span><span class="p">[</span><span class="s2">&quot;plane&quot;</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="ComplexData.name_and_coefficients_table"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.ComplexData.name_and_coefficients_table">[docs]</a>    <span class="k">def</span> <span class="nf">name_and_coefficients_table</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a table associating the human readbale names of an impedance</span>
+<span class="sd">        component and its associated coefficients and plane.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">component_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;long&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;plane&#39;</span><span class="p">:</span> <span class="s1">&#39;z&#39;</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;xcst&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;plane&#39;</span><span class="p">:</span> <span class="s1">&#39;x&#39;</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;ycst&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;plane&#39;</span><span class="p">:</span> <span class="s1">&#39;y&#39;</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;xdip&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;plane&#39;</span><span class="p">:</span> <span class="s1">&#39;x&#39;</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;ydip&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;plane&#39;</span><span class="p">:</span> <span class="s1">&#39;y&#39;</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;xydip&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;plane&#39;</span><span class="p">:</span> <span class="s1">&#39;x&#39;</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;yxdip&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;plane&#39;</span><span class="p">:</span> <span class="s1">&#39;y&#39;</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;xquad&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;plane&#39;</span><span class="p">:</span> <span class="s1">&#39;x&#39;</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;yquad&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s1">&#39;plane&#39;</span><span class="p">:</span> <span class="s1">&#39;y&#39;</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;xyquad&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s1">&#39;plane&#39;</span><span class="p">:</span> <span class="s1">&#39;x&#39;</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;yxquad&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;plane&#39;</span><span class="p">:</span> <span class="s1">&#39;y&#39;</span>
+            <span class="p">},</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">component_dict</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">power_x</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">power_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span> <span class="o">/</span> <span class="mf">2.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">plane</span> <span class="o">==</span> <span class="s1">&#39;x&#39;</span><span class="p">:</span>
+            <span class="n">power_x</span> <span class="o">+=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="mf">2.</span>
+        <span class="k">return</span> <span class="n">power_x</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">power_y</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">power_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">/</span> <span class="mf">2.</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">/</span> <span class="mf">2.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">plane</span> <span class="o">==</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span>
+            <span class="n">power_y</span> <span class="o">+=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="mf">2.</span>
+        <span class="k">return</span> <span class="n">power_y</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">component_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_component_type</span>
+
+    <span class="nd">@component_type</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">component_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_component_type</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_coefficient</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="WakeFunction"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.WakeFunction">[docs]</a><span class="k">class</span> <span class="nc">WakeFunction</span><span class="p">(</span><span class="n">ComplexData</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Define a WakeFunction object based on a ComplexData object.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    variable : array-like</span>
+<span class="sd">        Time domain structure of the wake function in [s].</span>
+<span class="sd">    function : array-like</span>
+<span class="sd">        Wake function values in [V/C] for &quot;long&quot; and in [V/C/m] for others.</span>
+<span class="sd">    component_type : str, optinal</span>
+<span class="sd">        Type of the wake function: &quot;long&quot;, &quot;xdip&quot;, &quot;xquad&quot;, ...</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : DataFrame</span>
+<span class="sd">    wake_type : str</span>
+<span class="sd">    </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    to_impedance()</span>
+<span class="sd">        Return an Impedance object from the WakeFunction data.</span>
+<span class="sd">    deconvolution(freq_lim, sigma, mu)</span>
+<span class="sd">        Compute a wake function from wake potential data.</span>
+<span class="sd">    plot()</span>
+<span class="sd">        Plot the wake function data.</span>
+<span class="sd">    loss_factor(sigma)</span>
+<span class="sd">        Compute the loss factor or the kick factor for a Gaussian bunch.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">variable</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">1e15</span><span class="p">,</span> <span class="mf">1e15</span><span class="p">]),</span>
+                 <span class="n">function</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+                 <span class="n">component_type</span><span class="o">=</span><span class="s1">&#39;long&#39;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">function</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_component_type</span> <span class="o">=</span> <span class="n">component_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;time [s]&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_coefficient</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return representation of data&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;WakeFunction of component_type </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">component_type</span><span class="si">}</span><span class="s1">:</span><span class="se">\n</span><span class="s1"> </span><span class="si">{</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="si">!r}</span><span class="s1">&#39;</span>
+
+<div class="viewcode-block" id="WakeFunction.add"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.WakeFunction.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure_to_add</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;zero&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method to add two WakeFunction objects. The two structures are</span>
+<span class="sd">        compared so that the addition is self-consistent.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">,</span>
+                                 <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
+                                 <span class="n">index_name</span><span class="o">=</span><span class="s2">&quot;time [s]&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">,</span> <span class="n">WakeFunction</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">component_type</span> <span class="o">==</span> <span class="n">structure_to_add</span><span class="o">.</span><span class="n">component_type</span><span class="p">):</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">,</span>
+                                     <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
+                                     <span class="n">index_name</span><span class="o">=</span><span class="s2">&quot;time [s]&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">((</span><span class="s1">&#39;The two WakeFunction objects do not have the &#39;</span>
+                               <span class="s1">&#39;same coordinates or plane or type. &#39;</span>
+                               <span class="s1">&#39;Returning initial WakeFunction object.&#39;</span><span class="p">),</span>
+                              <span class="ne">UserWarning</span><span class="p">)</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="n">wake_to_return</span> <span class="o">=</span> <span class="n">WakeFunction</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                                      <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">real</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">component_type</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">wake_to_return</span></div>
+
+    <span class="k">def</span> <span class="fm">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure_to_add</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure_to_add</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">)</span>
+
+<div class="viewcode-block" id="WakeFunction.multiply"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.WakeFunction.multiply">[docs]</a>    <span class="k">def</span> <span class="nf">multiply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Multiply a WakeFunction object with a float or an int.</span>
+<span class="sd">        If the multiplication is done with something else, throw a warning.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>
+        <span class="n">wake_to_return</span> <span class="o">=</span> <span class="n">WakeFunction</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                                      <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">real</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">component_type</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">wake_to_return</span></div>
+
+    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>
+
+<div class="viewcode-block" id="WakeFunction.to_impedance"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.WakeFunction.to_impedance">[docs]</a>    <span class="k">def</span> <span class="nf">to_impedance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq_lim</span><span class="p">,</span> <span class="n">nout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return an Impedance object from the WakeFunction data.</span>
+<span class="sd">        The WakeFunction data is assumed to be sampled equally.</span>
+<span class="sd">        </span>
+<span class="sd">        If both sigma and mu are given, the impedance data is divided by the</span>
+<span class="sd">        Fourier transform of a Gaussian distribution. It then can be used to go </span>
+<span class="sd">        from wake potential data to impedance.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        freq_lim : float</span>
+<span class="sd">            The maximum frequency for calculating the impedance [Hz].</span>
+<span class="sd">        nout : int or float, optional</span>
+<span class="sd">            Length of the transformed axis of the output. If None, it is taken</span>
+<span class="sd">            to be 2*(n-1) where n is the length of the input. If nout &gt; n, the</span>
+<span class="sd">            input is padded with zeros. If nout &lt; n, the input it cropped.</span>
+<span class="sd">            Note that, for any nout value, nout//2+1 input points are required.</span>
+<span class="sd">            The default is None.</span>
+<span class="sd">        sigma : float</span>
+<span class="sd">            RMS of the Gaussian distribution in [s].</span>
+<span class="sd">            The default is None.</span>
+<span class="sd">        mu : float</span>
+<span class="sd">            Offset of the Gaussian distribution in [s].</span>
+<span class="sd">            The default is None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">wp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;real&quot;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">nout</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">nout</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tau</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nout</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nout</span><span class="p">)</span>
+
+        <span class="c1"># FT of wake potential</span>
+        <span class="n">sampling</span> <span class="o">=</span> <span class="n">tau</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">tau</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">freq</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">rfftfreq</span><span class="p">(</span><span class="n">nout</span><span class="p">,</span> <span class="n">sampling</span><span class="p">)</span>
+        <span class="n">dtau</span> <span class="o">=</span> <span class="p">(</span><span class="n">tau</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">tau</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">tau</span><span class="p">)</span>
+        <span class="n">dft_wake</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">rfft</span><span class="p">(</span><span class="n">wp</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">nout</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">dtau</span>
+
+        <span class="n">i_limit</span> <span class="o">=</span> <span class="n">freq</span> <span class="o">&lt;</span> <span class="n">freq_lim</span>
+        <span class="n">freq_trun</span> <span class="o">=</span> <span class="n">freq</span><span class="p">[</span><span class="n">i_limit</span><span class="p">]</span>
+        <span class="n">dft_wake_trun</span> <span class="o">=</span> <span class="n">dft_wake</span><span class="p">[</span><span class="n">i_limit</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">sigma</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">mu</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">dft_rho_trun</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">sigma</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">freq_trun</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> \
+                                      <span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="n">mu</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">freq_trun</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dft_rho_trun</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">component_type</span> <span class="o">==</span> <span class="s2">&quot;long&quot;</span><span class="p">:</span>
+            <span class="n">imp</span> <span class="o">=</span> <span class="n">dft_wake_trun</span> <span class="o">/</span> <span class="n">dft_rho_trun</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">component_type</span> <span class="o">==</span> <span class="s2">&quot;xdip&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">component_type</span>
+                                                 <span class="o">==</span> <span class="s2">&quot;ydip&quot;</span><span class="p">):</span>
+            <span class="n">imp</span> <span class="o">=</span> <span class="n">dft_wake_trun</span> <span class="o">/</span> <span class="n">dft_rho_trun</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span><span class="n">j</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">component_type</span> <span class="o">+</span> <span class="s2">&quot; is not correct.&quot;</span><span class="p">)</span>
+
+        <span class="n">imp</span> <span class="o">=</span> <span class="n">Impedance</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">freq_trun</span><span class="p">,</span>
+                        <span class="n">function</span><span class="o">=</span><span class="n">imp</span><span class="p">,</span>
+                        <span class="n">component_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">component_type</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">imp</span></div>
+
+<div class="viewcode-block" id="WakeFunction.deconvolution"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.WakeFunction.deconvolution">[docs]</a>    <span class="k">def</span> <span class="nf">deconvolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq_lim</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">nout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute a wake function from wake potential data.</span>
+<span class="sd">                </span>
+<span class="sd">        The present data loaded into the WakeFunction object is assumed to be </span>
+<span class="sd">        an uniformly sampled wake potential from a Gaussian bunch distribution </span>
+<span class="sd">        with RMS bunch length sigma and offset mu.</span>
+<span class="sd">        </span>
+<span class="sd">        The offset mu depends on the code used to compute the wake potential:</span>
+<span class="sd">            - for CST, it is the first time sample, so self.data.index[0].</span>
+<span class="sd">            - for ABCI, it is &quot;-1 * ISIG * SIG / c&quot;.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        freq_lim : float</span>
+<span class="sd">            The maximum frequency for calculating the impedance [Hz].</span>
+<span class="sd">        sigma : float</span>
+<span class="sd">            RMS of the Gaussian distribution in [s].</span>
+<span class="sd">        mu : float</span>
+<span class="sd">            Offset of the Gaussian distribution in [s].</span>
+<span class="sd">        nout : int or float, optional</span>
+<span class="sd">            Length of the transformed axis of the output. If None, it is taken</span>
+<span class="sd">            to be 2*(n-1) where n is the length of the input. If nout &gt; n, the</span>
+<span class="sd">            input is padded with zeros. If nout &lt; n, the input it cropped.</span>
+<span class="sd">            Note that, for any nout value, nout//2+1 input points are required.</span>
+<span class="sd">            The default is None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">imp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_impedance</span><span class="p">(</span><span class="n">freq_lim</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mu</span><span class="p">)</span>
+        <span class="n">wf</span> <span class="o">=</span> <span class="n">imp</span><span class="o">.</span><span class="n">to_wakefunction</span><span class="p">(</span><span class="n">nout</span><span class="o">=</span><span class="n">nout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">wf</span></div>
+
+<div class="viewcode-block" id="WakeFunction.plot"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.WakeFunction.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot the wake function data.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ax : class:`matplotlib.axes.Axes`</span>
+<span class="sd">            Wake function data.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;real&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">component_type</span> <span class="o">==</span> <span class="s2">&quot;long&quot;</span><span class="p">:</span>
+            <span class="n">unit</span> <span class="o">=</span> <span class="s2">&quot; [V/C]&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">unit</span> <span class="o">=</span> <span class="s2">&quot; [V/C/m]&quot;</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;$W_{&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">component_type</span> <span class="o">+</span> <span class="sa">r</span><span class="s2">&quot;}$&quot;</span> <span class="o">+</span> <span class="n">unit</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ax</span></div>
+
+<div class="viewcode-block" id="WakeFunction.loss_factor"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.WakeFunction.loss_factor">[docs]</a>    <span class="k">def</span> <span class="nf">loss_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the loss factor or the kick factor for a Gaussian bunch. </span>
+<span class="sd">        Formulas from Eq. (5.6), Eq. (5.12) and Eq. (5.17) of [1].</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sigma : float</span>
+<span class="sd">            RMS bunch length in [s]</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        kloss: float</span>
+<span class="sd">            Loss factor in [V/C] or kick factor in [V/C/m] depanding on the </span>
+<span class="sd">            impedance type.</span>
+<span class="sd">            </span>
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        [1] : Zotter, Bruno W., and Semyon A. Kheifets. Impedances and wakes </span>
+<span class="sd">        in high-energy particle accelerators. World Scientific, 1998.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">time</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span>
+                                                      <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">kloss</span> <span class="o">=</span> <span class="n">trapz</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;real&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">S</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">kloss</span></div></div>
+
+
+<div class="viewcode-block" id="Impedance"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.Impedance">[docs]</a><span class="k">class</span> <span class="nc">Impedance</span><span class="p">(</span><span class="n">ComplexData</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Define an Impedance object based on a ComplexData object.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    variable : array-like</span>
+<span class="sd">        Frequency domain structure of the impedance in [Hz].</span>
+<span class="sd">    function : array-like</span>
+<span class="sd">        Impedance values in [Ohm].</span>
+<span class="sd">    component_type : str, optinal</span>
+<span class="sd">        Type of the impedance: &quot;long&quot;, &quot;xdip&quot;, &quot;xquad&quot;, ...</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : DataFrame</span>
+<span class="sd">    impedance_type : str</span>
+<span class="sd">    </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    loss_factor(sigma)</span>
+<span class="sd">        Compute the loss factor or the kick factor for a Gaussian bunch.</span>
+<span class="sd">    to_wakefunction()</span>
+<span class="sd">        Return a WakeFunction object from the impedance data.</span>
+<span class="sd">    plot()</span>
+<span class="sd">        Plot the impedance data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">variable</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">1e15</span><span class="p">,</span> <span class="mf">1e15</span><span class="p">]),</span>
+                 <span class="n">function</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+                 <span class="n">component_type</span><span class="o">=</span><span class="s1">&#39;long&#39;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">function</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_component_type</span> <span class="o">=</span> <span class="n">component_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;frequency [Hz]&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_coefficient</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return representation of data&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;Impedance of component_type </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">component_type</span><span class="si">}</span><span class="s1">:</span><span class="se">\n</span><span class="s1"> </span><span class="si">{</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="si">!r}</span><span class="s1">&#39;</span>
+
+<div class="viewcode-block" id="Impedance.add"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.Impedance.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure_to_add</span><span class="p">,</span> <span class="n">beta_x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">beta_y</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;zero&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method to add two Impedance objects. The two structures are</span>
+<span class="sd">        compared so that the addition is self-consistent.</span>
+<span class="sd">        Beta functions can be precised as well.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">,</span>
+                                 <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
+                                 <span class="n">index_name</span><span class="o">=</span><span class="s2">&quot;frequency [Hz]&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">,</span> <span class="n">Impedance</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">component_type</span> <span class="o">==</span> <span class="n">structure_to_add</span><span class="o">.</span><span class="n">component_type</span><span class="p">):</span>
+                <span class="n">weight</span> <span class="o">=</span> <span class="p">(</span><span class="n">beta_x</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">power_x</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">beta_y</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">power_y</span><span class="p">)</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">structure_to_add</span> <span class="o">*</span> <span class="n">weight</span><span class="p">,</span>
+                                     <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
+                                     <span class="n">index_name</span><span class="o">=</span><span class="s2">&quot;frequency [Hz]&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">((</span><span class="s1">&#39;The two Impedance objects do not have the &#39;</span>
+                               <span class="s1">&#39;same coordinates or plane or type. &#39;</span>
+                               <span class="s1">&#39;Returning initial Impedance object.&#39;</span><span class="p">),</span>
+                              <span class="ne">UserWarning</span><span class="p">)</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="n">impedance_to_return</span> <span class="o">=</span> <span class="n">Impedance</span><span class="p">(</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">real</span><span class="o">.</span><span class="n">values</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">imag</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">component_type</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">impedance_to_return</span></div>
+
+    <span class="k">def</span> <span class="fm">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure_to_add</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure_to_add</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Impedance.multiply"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.Impedance.multiply">[docs]</a>    <span class="k">def</span> <span class="nf">multiply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Multiply a Impedance object with a float or an int.</span>
+<span class="sd">        If the multiplication is done with something else, throw a warning.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>
+        <span class="n">impedance_to_return</span> <span class="o">=</span> <span class="n">Impedance</span><span class="p">(</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">real</span><span class="o">.</span><span class="n">values</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">imag</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">component_type</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">impedance_to_return</span></div>
+
+    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Impedance.loss_factor"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.Impedance.loss_factor">[docs]</a>    <span class="k">def</span> <span class="nf">loss_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the loss factor or the kick factor for a Gaussian bunch. </span>
+<span class="sd">        Formulas from Eq. (2) p239 and Eq.(7) p240 of [1].</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sigma : float</span>
+<span class="sd">            RMS bunch length in [s]</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        kloss: float</span>
+<span class="sd">            Loss factor in [V/C] or kick factor in [V/C/m] depanding on the </span>
+<span class="sd">            impedance type.</span>
+<span class="sd">            </span>
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        [1] : Handbook of accelerator physics and engineering, 3rd printing.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">positive_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="n">frequency</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">positive_index</span><span class="p">]</span>
+
+        <span class="c1"># Import here to avoid circular import</span>
+        <span class="kn">from</span> <span class="nn">mbtrack2.utilities</span> <span class="kn">import</span> <span class="n">spectral_density</span>
+        <span class="n">sd</span> <span class="o">=</span> <span class="n">spectral_density</span><span class="p">(</span><span class="n">frequency</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">component_type</span> <span class="o">==</span> <span class="s2">&quot;long&quot;</span><span class="p">):</span>
+            <span class="n">kloss</span> <span class="o">=</span> <span class="n">trapz</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">frequency</span><span class="p">,</span>
+                          <span class="n">y</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;real&quot;</span><span class="p">][</span><span class="n">positive_index</span><span class="p">]</span> <span class="o">*</span> <span class="n">sd</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">component_type</span> <span class="o">==</span> <span class="s2">&quot;xdip&quot;</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">component_type</span> <span class="o">==</span> <span class="s2">&quot;ydip&quot;</span><span class="p">):</span>
+            <span class="n">kloss</span> <span class="o">=</span> <span class="n">trapz</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">frequency</span><span class="p">,</span>
+                          <span class="n">y</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;imag&quot;</span><span class="p">][</span><span class="n">positive_index</span><span class="p">]</span> <span class="o">*</span> <span class="n">sd</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">component_type</span> <span class="o">==</span> <span class="s2">&quot;xquad&quot;</span>
+              <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">component_type</span> <span class="o">==</span> <span class="s2">&quot;yquad&quot;</span><span class="p">):</span>
+            <span class="n">kloss</span> <span class="o">=</span> <span class="n">trapz</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">frequency</span><span class="p">,</span>
+                          <span class="n">y</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;imag&quot;</span><span class="p">][</span><span class="n">positive_index</span><span class="p">]</span> <span class="o">*</span> <span class="n">sd</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Impedance type not recognized.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">kloss</span></div>
+
+<div class="viewcode-block" id="Impedance.to_wakefunction"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.Impedance.to_wakefunction">[docs]</a>    <span class="k">def</span> <span class="nf">to_wakefunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">trim</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a WakeFunction object from the impedance data.</span>
+<span class="sd">        The impedance data is assumed to be sampled equally.</span>
+<span class="sd">    </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nout : int or float, optional</span>
+<span class="sd">            Length of the transformed axis of the output. If None, it is taken</span>
+<span class="sd">            to be 2*(n-1) where n is the length of the input. If nout &gt; n, the</span>
+<span class="sd">            input is padded with zeros. If nout &lt; n, the input it cropped.</span>
+<span class="sd">            Note that, for any nout value, nout//2+1 input points are required.</span>
+<span class="sd">        trim : bool or float, optional</span>
+<span class="sd">            If True, the pseudo wake function is trimmed at time=0 and is forced </span>
+<span class="sd">            to zero where time&lt;0. </span>
+<span class="sd">            If False, the original result is preserved.</span>
+<span class="sd">            If a float is given, the pseudo wake function is trimmed from </span>
+<span class="sd">            time &lt;= trim to 0. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">Z0</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;real&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;imag&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">1</span><span class="n">j</span><span class="p">)</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="n">Z0</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">Z0</span><span class="p">)]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">component_type</span> <span class="o">!=</span> <span class="s2">&quot;long&quot;</span><span class="p">:</span>
+            <span class="n">Z</span> <span class="o">=</span> <span class="n">Z</span> <span class="o">/</span> <span class="mi">1</span><span class="n">j</span>
+
+        <span class="n">freq</span> <span class="o">=</span> <span class="n">Z</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">fs</span> <span class="o">=</span> <span class="p">(</span><span class="n">freq</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">freq</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+        <span class="n">sampling</span> <span class="o">=</span> <span class="n">freq</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">freq</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">nout</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">nout</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nout</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nout</span><span class="p">)</span>
+
+        <span class="n">time_array</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftfreq</span><span class="p">(</span><span class="n">nout</span><span class="p">,</span> <span class="n">sampling</span><span class="p">)</span>
+        <span class="n">Wlong_raw</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">irfft</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Z</span><span class="p">),</span> <span class="n">n</span><span class="o">=</span><span class="n">nout</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">nout</span> <span class="o">*</span> <span class="n">fs</span>
+
+        <span class="n">time</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">time_array</span><span class="p">)</span>
+        <span class="n">Wlong</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">Wlong_raw</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">trim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="n">i_neg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">time</span> <span class="o">&lt;</span> <span class="n">trim</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">Wlong</span><span class="p">[</span><span class="n">i_neg</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">wf</span> <span class="o">=</span> <span class="n">WakeFunction</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">time</span><span class="p">,</span>
+                          <span class="n">function</span><span class="o">=</span><span class="n">Wlong</span><span class="p">,</span>
+                          <span class="n">component_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">component_type</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">wf</span></div>
+
+<div class="viewcode-block" id="Impedance.plot"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.Impedance.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot the impedance data.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ax : class:`matplotlib.axes.Axes`</span>
+<span class="sd">            Impedance data.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">component_type</span> <span class="o">==</span> <span class="s2">&quot;long&quot;</span><span class="p">:</span>
+            <span class="n">unit</span> <span class="o">=</span> <span class="s2">&quot; [ohm]&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">unit</span> <span class="o">=</span> <span class="s2">&quot; [ohm/m]&quot;</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;$Z_{&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">component_type</span> <span class="o">+</span> <span class="sa">r</span><span class="s2">&quot;}$&quot;</span> <span class="o">+</span> <span class="n">unit</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ax</span></div></div>
+
+
+<div class="viewcode-block" id="WakeField"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.WakeField">[docs]</a><span class="k">class</span> <span class="nc">WakeField</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Defines a WakeField which corresponds to a single physical element which </span>
+<span class="sd">    produces different types of wakes, represented by their Impedance or </span>
+<span class="sd">    WakeFunction objects.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    structure_list : list, optional</span>
+<span class="sd">        list of Impedance/WakeFunction objects to add to the WakeField.</span>
+<span class="sd">    name : str, optional</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    impedance_components : array of str</span>
+<span class="sd">        Impedance components present for this element.</span>
+<span class="sd">    wake_components : array of str</span>
+<span class="sd">        WakeFunction components present for this element.</span>
+<span class="sd">    components : array of str</span>
+<span class="sd">        Impedance or WakeFunction components present for this element.</span>
+<span class="sd">        </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    append_to_model(structure_to_add)</span>
+<span class="sd">        Add Impedance/WakeFunction to WakeField.</span>
+<span class="sd">    list_to_attr(structure_list)</span>
+<span class="sd">        Add list of Impedance/WakeFunction to WakeField.</span>
+<span class="sd">    add_wakefields(wake1, beta1, wake2, beta2)</span>
+<span class="sd">        Add two WakeFields taking into account beta functions.</span>
+<span class="sd">    add_several_wakefields(wakefields, beta)</span>
+<span class="sd">        Add a list of WakeFields taking into account beta functions.</span>
+<span class="sd">    drop(component)</span>
+<span class="sd">        Delete a component or a list of component from the WakeField.</span>
+<span class="sd">    save(file)</span>
+<span class="sd">        Save WakeField element to file.</span>
+<span class="sd">    load(file)</span>
+<span class="sd">        Load WakeField element from file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list_to_attr</span><span class="p">(</span><span class="n">structure_list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return representation of WakeField components.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;WakeField </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> with components:</span><span class="se">\n</span><span class="s1"> </span><span class="si">{</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">))</span><span class="si">!r}</span><span class="s1">&#39;</span>
+
+    <span class="k">def</span> <span class="fm">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure_to_add</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure_to_add</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterate over components&quot;&quot;&quot;</span>
+        <span class="n">comp</span> <span class="o">=</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comp</span><span class="p">)</span> <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">comp</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure_to_add</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Allow to add two WakeField element with different components.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">structure_to_add</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">append_to_model</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">,</span> <span class="n">comp</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+<div class="viewcode-block" id="WakeField.append_to_model"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.WakeField.append_to_model">[docs]</a>    <span class="k">def</span> <span class="nf">append_to_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure_to_add</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add Impedance/WakeFunction component to WakeField.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        structure_to_add : Impedance or WakeFunction object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">list_of_attributes</span> <span class="o">=</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">,</span> <span class="n">Impedance</span><span class="p">):</span>
+            <span class="n">attribute_name</span> <span class="o">=</span> <span class="s2">&quot;Z&quot;</span> <span class="o">+</span> <span class="n">structure_to_add</span><span class="o">.</span><span class="n">component_type</span>
+            <span class="k">if</span> <span class="n">attribute_name</span> <span class="ow">in</span> <span class="n">list_of_attributes</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;There is already a component of the type &quot;</span>
+                                 <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> in this element.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">attribute_name</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">attribute_name</span><span class="p">,</span> <span class="n">structure_to_add</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">structure_to_add</span><span class="p">,</span> <span class="n">WakeFunction</span><span class="p">):</span>
+            <span class="n">attribute_name</span> <span class="o">=</span> <span class="s2">&quot;W&quot;</span> <span class="o">+</span> <span class="n">structure_to_add</span><span class="o">.</span><span class="n">component_type</span>
+            <span class="k">if</span> <span class="n">attribute_name</span> <span class="ow">in</span> <span class="n">list_of_attributes</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;There is already a component of the type &quot;</span>
+                                 <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> in this element.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">attribute_name</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">attribute_name</span><span class="p">,</span> <span class="n">structure_to_add</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> is not an Impedance nor a WakeFunction.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">structure_to_add</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="WakeField.list_to_attr"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.WakeField.list_to_attr">[docs]</a>    <span class="k">def</span> <span class="nf">list_to_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure_list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add list of Impedance/WakeFunction components to WakeField.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        structure_list : list of Impedance or WakeFunction objects.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">structure_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="n">structure_list</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">append_to_model</span><span class="p">(</span><span class="n">component</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">impedance_components</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return an array of the impedance component names for the element.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;Zlong&quot;</span><span class="p">,</span> <span class="s2">&quot;Zxdip&quot;</span><span class="p">,</span> <span class="s2">&quot;Zydip&quot;</span><span class="p">,</span> <span class="s2">&quot;Zxquad&quot;</span><span class="p">,</span> <span class="s2">&quot;Zyquad&quot;</span><span class="p">,</span> <span class="s2">&quot;Zxcst&quot;</span><span class="p">,</span> <span class="s2">&quot;Zycst&quot;</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">comp</span> <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="k">if</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">valid</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">wake_components</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return an array of the wake function component names for the element.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;Wlong&quot;</span><span class="p">,</span> <span class="s2">&quot;Wxdip&quot;</span><span class="p">,</span> <span class="s2">&quot;Wydip&quot;</span><span class="p">,</span> <span class="s2">&quot;Wxquad&quot;</span><span class="p">,</span> <span class="s2">&quot;Wyquad&quot;</span><span class="p">,</span> <span class="s2">&quot;Wxcst&quot;</span><span class="p">,</span> <span class="s2">&quot;Wycst&quot;</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">comp</span> <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="k">if</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">valid</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">components</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return an array of the component names for the element.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;Wlong&quot;</span><span class="p">,</span> <span class="s2">&quot;Wxdip&quot;</span><span class="p">,</span> <span class="s2">&quot;Wydip&quot;</span><span class="p">,</span> <span class="s2">&quot;Wxquad&quot;</span><span class="p">,</span> <span class="s2">&quot;Wyquad&quot;</span><span class="p">,</span> <span class="s2">&quot;Wxcst&quot;</span><span class="p">,</span> <span class="s2">&quot;Wycst&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Zlong&quot;</span><span class="p">,</span> <span class="s2">&quot;Zxdip&quot;</span><span class="p">,</span> <span class="s2">&quot;Zydip&quot;</span><span class="p">,</span> <span class="s2">&quot;Zxquad&quot;</span><span class="p">,</span> <span class="s2">&quot;Zyquad&quot;</span><span class="p">,</span> <span class="s2">&quot;Zxcst&quot;</span><span class="p">,</span> <span class="s2">&quot;Zycst&quot;</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">comp</span> <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="k">if</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">valid</span><span class="p">])</span>
+
+<div class="viewcode-block" id="WakeField.drop"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.WakeField.drop">[docs]</a>    <span class="k">def</span> <span class="nf">drop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">component</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a component or a list of component from the WakeField.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        component : str or list of str</span>
+<span class="sd">            Component or list of components to drop.</span>
+<span class="sd">            If &quot;Z&quot;, drop all impedance components.</span>
+<span class="sd">            If &quot;W&quot;&quot;, drop all wake function components.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">component</span> <span class="o">==</span> <span class="s2">&quot;Z&quot;</span><span class="p">:</span>
+            <span class="n">component</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">impedance_components</span>
+        <span class="k">elif</span> <span class="n">component</span> <span class="o">==</span> <span class="s2">&quot;W&quot;</span><span class="p">:</span>
+            <span class="n">component</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wake_components</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">component</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">component</span><span class="p">:</span>
+                <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comp</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;component should be a str or list of str.&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WakeField.save"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.WakeField.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save WakeField element to file.</span>
+<span class="sd">        </span>
+<span class="sd">        The same pandas version is needed on both saving and loading computer</span>
+<span class="sd">        for the pickle to work.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file : str</span>
+<span class="sd">            File where the WakeField element is saved.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WakeField.load"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.WakeField.load">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load WakeField element from file.</span>
+<span class="sd">        </span>
+<span class="sd">        The same pandas version is needed on both saving and loading computer</span>
+<span class="sd">        for the pickle to work.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file : str</span>
+<span class="sd">            File where the WakeField element is saved.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        wakefield : WakeField</span>
+<span class="sd">            Loaded wakefield.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">wakefield</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">wakefield</span></div>
+
+<div class="viewcode-block" id="WakeField.add_wakefields"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.WakeField.add_wakefields">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">add_wakefields</span><span class="p">(</span><span class="n">wake1</span><span class="p">,</span> <span class="n">beta1</span><span class="p">,</span> <span class="n">wake2</span><span class="p">,</span> <span class="n">beta2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add two WakeFields taking into account beta functions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        wake1 : WakeField</span>
+<span class="sd">            WakeField to add.</span>
+<span class="sd">        beta1 : array of shape (2,)</span>
+<span class="sd">            Beta functions at wake1 postion.</span>
+<span class="sd">        wake2 : WakeField</span>
+<span class="sd">            WakeField to add.</span>
+<span class="sd">        beta2 : array of shape (2,)</span>
+<span class="sd">            Beta functions at wake2 postion.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        wake_sum : WakeField</span>
+<span class="sd">            WakeField with summed components.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">wake_sum</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">wake1</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">component_name1</span> <span class="ow">in</span> <span class="n">wake1</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="n">comp1</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">wake_sum</span><span class="p">,</span> <span class="n">component_name1</span><span class="p">)</span>
+            <span class="n">weight1</span> <span class="o">=</span> <span class="p">((</span><span class="n">beta1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="n">comp1</span><span class="o">.</span><span class="n">power_x</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">beta1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="n">comp1</span><span class="o">.</span><span class="n">power_y</span><span class="p">))</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">wake_sum</span><span class="p">,</span> <span class="n">component_name1</span><span class="p">,</span> <span class="n">weight1</span> <span class="o">*</span> <span class="n">comp1</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">component_name2</span> <span class="ow">in</span> <span class="n">wake2</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="n">comp2</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">wake2</span><span class="p">,</span> <span class="n">component_name2</span><span class="p">)</span>
+            <span class="n">weight2</span> <span class="o">=</span> <span class="p">((</span><span class="n">beta2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="n">comp2</span><span class="o">.</span><span class="n">power_x</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">beta2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="n">comp2</span><span class="o">.</span><span class="n">power_y</span><span class="p">))</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">comp1</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">wake_sum</span><span class="p">,</span> <span class="n">component_name2</span><span class="p">)</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">wake_sum</span><span class="p">,</span> <span class="n">component_name2</span><span class="p">,</span> <span class="n">comp1</span> <span class="o">+</span> <span class="n">weight2</span><span class="o">*</span><span class="n">comp2</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">wake_sum</span><span class="p">,</span> <span class="n">component_name2</span><span class="p">,</span> <span class="n">weight2</span> <span class="o">*</span> <span class="n">comp2</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">wake_sum</span></div>
+
+<div class="viewcode-block" id="WakeField.add_several_wakefields"><a class="viewcode-back" href="../../../mbtrack2.impedance.html#mbtrack2.impedance.wakefield.WakeField.add_several_wakefields">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">add_several_wakefields</span><span class="p">(</span><span class="n">wakefields</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a list of WakeFields taking into account beta functions.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        wakefields : list of WakeField</span>
+<span class="sd">            WakeFields to add.</span>
+<span class="sd">        beta : array of shape (len(wakefields), 2)</span>
+<span class="sd">            Beta functions at the WakeField postions.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        wake_sum : WakeField</span>
+<span class="sd">            WakeField with summed components.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">wakefields</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">wakefields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">wakefields</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">wake_sum</span> <span class="o">=</span> <span class="n">WakeField</span><span class="o">.</span><span class="n">add_wakefields</span><span class="p">(</span><span class="n">wakefields</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">beta</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+                                                <span class="n">wakefields</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">beta</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">wakefields</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="n">wake_sum</span> <span class="o">=</span> <span class="n">WakeField</span><span class="o">.</span><span class="n">add_wakefields</span><span class="p">(</span><span class="n">wake_sum</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                                                    <span class="n">wakefields</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">],</span>
+                                                    <span class="n">beta</span><span class="p">[:,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">wake_sum</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Error in input.&quot;</span><span class="p">)</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.impedance.wakefield</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2024, A. Gamelin et al.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

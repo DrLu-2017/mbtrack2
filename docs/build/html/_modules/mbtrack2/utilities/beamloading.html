@@ -1,0 +1,487 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mbtrack2.utilities.beamloading &#8212; mbtrack2 0.6.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/nature.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.utilities.beamloading</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mbtrack2.utilities.beamloading</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module where the BeamLoadingEquilibrium class is defined.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.constants</span> <span class="kn">import</span> <span class="n">c</span>
+<span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">quad</span>
+<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">root</span>
+
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium">[docs]</a><span class="k">class</span> <span class="nc">BeamLoadingEquilibrium</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class used to compute beam equilibrium profile for a given storage ring </span>
+<span class="sd">    and a list of RF cavities of any harmonic. The class assumes an uniform </span>
+<span class="sd">    filling of the storage ring. Based on an extension of [1].</span>
+
+<span class="sd">    [1] Venturini, M. (2018). Passive higher-harmonic rf cavities with general</span>
+<span class="sd">    settings and multibunch instabilities in electron storage rings.</span>
+<span class="sd">    Physical Review Accelerators and Beams, 21(11), 114404.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ring : Synchrotron object</span>
+<span class="sd">    cavity_list : list of CavityResonator objects</span>
+<span class="sd">    I0 : beam current in [A].</span>
+<span class="sd">    auto_set_MC_theta : if True, allow class to change cavity phase for</span>
+<span class="sd">        CavityResonator objetcs with m = 1 (i.e. main cavities)</span>
+<span class="sd">    F : list of form factor amplitude</span>
+<span class="sd">    PHI : list of form factor phase</span>
+<span class="sd">    B1 : lower intergration boundary</span>
+<span class="sd">    B2 : upper intergration boundary</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">ring</span><span class="p">,</span>
+                 <span class="n">cavity_list</span><span class="p">,</span>
+                 <span class="n">I0</span><span class="p">,</span>
+                 <span class="n">auto_set_MC_theta</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">F</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">PHI</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">B1</span><span class="o">=-</span><span class="mf">0.2</span><span class="p">,</span>
+                 <span class="n">B2</span><span class="o">=</span><span class="mf">0.2</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ring</span> <span class="o">=</span> <span class="n">ring</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cavity_list</span> <span class="o">=</span> <span class="n">cavity_list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">I0</span> <span class="o">=</span> <span class="n">I0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cavity_list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auto_set_MC_theta</span> <span class="o">=</span> <span class="n">auto_set_MC_theta</span>
+        <span class="k">if</span> <span class="n">F</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span><span class="p">,</span> <span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="n">F</span>
+        <span class="k">if</span> <span class="n">PHI</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PHI</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span><span class="p">,</span> <span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PHI</span> <span class="o">=</span> <span class="n">PHI</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">B1</span> <span class="o">=</span> <span class="n">B1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">B2</span> <span class="o">=</span> <span class="n">B2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mpi</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;1.0&quot;</span>
+
+        <span class="c1"># Define constants for scaled potential u(z)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">u0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">U0</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">ac</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">E0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">L</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ug</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span><span class="p">,</span> <span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ub</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span><span class="p">,</span> <span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_potentials</span><span class="p">()</span>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.update_potentials"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.update_potentials">[docs]</a>    <span class="k">def</span> <span class="nf">update_potentials</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update potentials with cavity and ring data.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span><span class="p">):</span>
+            <span class="n">cavity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cavity_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ug</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">cavity</span><span class="o">.</span><span class="n">Vg</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">ac</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">E0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">L</span> <span class="o">*</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">k1</span> <span class="o">*</span> <span class="n">cavity</span><span class="o">.</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ub</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">I0</span> <span class="o">*</span> <span class="n">cavity</span><span class="o">.</span><span class="n">Rs</span> <span class="o">/</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">ac</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">E0</span> <span class="o">*</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">L</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">k1</span> <span class="o">*</span> <span class="n">cavity</span><span class="o">.</span><span class="n">m</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">cavity</span><span class="o">.</span><span class="n">beta</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.energy_balance"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.energy_balance">[docs]</a>    <span class="k">def</span> <span class="nf">energy_balance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return energy balance for the synchronous particle</span>
+<span class="sd">        (z = 0 ,delta = 0).&quot;&quot;&quot;</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">U0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span><span class="p">):</span>
+            <span class="n">cavity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cavity_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">delta</span> <span class="o">+=</span> <span class="n">cavity</span><span class="o">.</span><span class="n">Vb</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">I0</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">cavity</span><span class="o">.</span><span class="n">psi</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">PHI</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">delta</span> <span class="o">-=</span> <span class="n">cavity</span><span class="o">.</span><span class="n">Vg</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">cavity</span><span class="o">.</span><span class="n">theta_g</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">delta</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.center_of_mass"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.center_of_mass">[docs]</a>    <span class="k">def</span> <span class="nf">center_of_mass</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return center of mass position in [s]&quot;&quot;&quot;</span>
+        <span class="n">z0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">B1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">B2</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="p">(</span><span class="n">z0</span><span class="p">)</span>
+        <span class="n">CM</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">z0</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">rho</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">CM</span> <span class="o">/</span> <span class="n">c</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.u"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.u">[docs]</a>    <span class="k">def</span> <span class="nf">u</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Scaled potential u(z)&quot;&quot;&quot;</span>
+        <span class="n">pot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">u0</span> <span class="o">*</span> <span class="n">z</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span><span class="p">):</span>
+            <span class="n">cavity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cavity_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">pot</span> <span class="o">+=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">ug</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">k1</span> <span class="o">*</span> <span class="n">cavity</span><span class="o">.</span><span class="n">m</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="n">cavity</span><span class="o">.</span><span class="n">theta_g</span><span class="p">)</span> <span class="o">-</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">cavity</span><span class="o">.</span><span class="n">theta_g</span><span class="p">))</span>
+            <span class="n">pot</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ub</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">cavity</span><span class="o">.</span><span class="n">psi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">k1</span> <span class="o">*</span> <span class="n">cavity</span><span class="o">.</span><span class="n">m</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="n">cavity</span><span class="o">.</span><span class="n">psi</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">PHI</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">cavity</span><span class="o">.</span><span class="n">psi</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">PHI</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">pot</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.du_dz"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.du_dz">[docs]</a>    <span class="k">def</span> <span class="nf">du_dz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Partial derivative of the scaled potential u(z) by z&quot;&quot;&quot;</span>
+        <span class="n">pot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">u0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span><span class="p">):</span>
+            <span class="n">cavity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cavity_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">pot</span> <span class="o">+=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">ug</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">k1</span> <span class="o">*</span> <span class="n">cavity</span><span class="o">.</span><span class="n">m</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">k1</span> <span class="o">*</span> <span class="n">cavity</span><span class="o">.</span><span class="n">m</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="n">cavity</span><span class="o">.</span><span class="n">theta_g</span><span class="p">)</span>
+            <span class="n">pot</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ub</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">k1</span> <span class="o">*</span> <span class="n">cavity</span><span class="o">.</span><span class="n">m</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span>
+                <span class="n">cavity</span><span class="o">.</span><span class="n">psi</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">k1</span> <span class="o">*</span> <span class="n">cavity</span><span class="o">.</span><span class="n">m</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="n">cavity</span><span class="o">.</span><span class="n">psi</span> <span class="o">-</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">PHI</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">pot</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.uexp"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.uexp">[docs]</a>    <span class="k">def</span> <span class="nf">uexp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">(</span><span class="n">z</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.integrate_func"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.integrate_func">[docs]</a>    <span class="k">def</span> <span class="nf">integrate_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">g</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return Integral[f*g]/Integral[f] between B1 and B2&quot;&quot;&quot;</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">g</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">B1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">B2</span><span class="p">)</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">B1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">B2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">B</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.to_solve"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.to_solve">[docs]</a>    <span class="k">def</span> <span class="nf">to_solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">CM</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;System of non-linear equation to solve to find the form factors F</span>
+<span class="sd">        and PHI at equilibrum.</span>
+<span class="sd">        The system is composed of Eq. (B6) and (B7) of [1] for each cavity.</span>
+<span class="sd">        If auto_set_MC_theta == True, the system also find the main cavity </span>
+<span class="sd">        phase to impose energy balance or cancel center of mass offset.</span>
+<span class="sd">        If CM is True, the system imposes zero center of mass offset,</span>
+<span class="sd">        if False, the system imposes energy balance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Update values of F, PHI and theta</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_set_MC_theta</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span><span class="p">):</span>
+                <span class="n">cavity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cavity_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">cavity</span><span class="o">.</span><span class="n">m</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">cavity</span><span class="o">.</span><span class="n">theta</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">cavity</span><span class="o">.</span><span class="n">set_generator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">I0</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">update_potentials</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="n">x</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PHI</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="c1"># Compute system</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_set_MC_theta</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="p">))</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span><span class="p">):</span>
+                <span class="n">cavity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cavity_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">res</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span>
+                    <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PHI</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrate_func</span><span class="p">(</span>
+                        <span class="k">lambda</span> <span class="n">y</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uexp</span><span class="p">(</span><span class="n">y</span><span class="p">),</span>
+                        <span class="k">lambda</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">k1</span> <span class="o">*</span> <span class="n">cavity</span><span class="o">.</span><span class="n">m</span> <span class="o">*</span> <span class="n">y</span><span class="p">))</span>
+                <span class="n">res</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span> <span class="o">+</span>
+                    <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PHI</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrate_func</span><span class="p">(</span>
+                        <span class="k">lambda</span> <span class="n">y</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uexp</span><span class="p">(</span><span class="n">y</span><span class="p">),</span>
+                        <span class="k">lambda</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">k1</span> <span class="o">*</span> <span class="n">cavity</span><span class="o">.</span><span class="n">m</span> <span class="o">*</span> <span class="n">y</span><span class="p">))</span>
+            <span class="c1"># Factor 1e-8 or 1e12 for better convergence</span>
+            <span class="k">if</span> <span class="n">CM</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">res</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span> <span class="o">*</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">center_of_mass</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1e12</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">res</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span> <span class="o">*</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy_balance</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1e-8</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="p">))</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span><span class="p">):</span>
+                <span class="n">cavity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cavity_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">res</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span>
+                    <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PHI</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrate_func</span><span class="p">(</span>
+                        <span class="k">lambda</span> <span class="n">y</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uexp</span><span class="p">(</span><span class="n">y</span><span class="p">),</span>
+                        <span class="k">lambda</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">k1</span> <span class="o">*</span> <span class="n">cavity</span><span class="o">.</span><span class="n">m</span> <span class="o">*</span> <span class="n">y</span><span class="p">))</span>
+                <span class="n">res</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span> <span class="o">+</span>
+                    <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PHI</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrate_func</span><span class="p">(</span>
+                        <span class="k">lambda</span> <span class="n">y</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uexp</span><span class="p">(</span><span class="n">y</span><span class="p">),</span>
+                        <span class="k">lambda</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">k1</span> <span class="o">*</span> <span class="n">cavity</span><span class="o">.</span><span class="n">m</span> <span class="o">*</span> <span class="n">y</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.rho"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.rho">[docs]</a>    <span class="k">def</span> <span class="nf">rho</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return bunch equilibrium profile at postion z&quot;&quot;&quot;</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="k">lambda</span> <span class="n">y</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uexp</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">B1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">B2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">uexp</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">/</span> <span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.plot_rho"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.plot_rho">[docs]</a>    <span class="k">def</span> <span class="nf">plot_rho</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">z2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot the bunch equilibrium profile between z1 and z2&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">z1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">z1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">B1</span>
+        <span class="k">if</span> <span class="n">z2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">z2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">B2</span>
+        <span class="n">z0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">z1</span><span class="p">,</span> <span class="n">z2</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">z0</span> <span class="o">/</span> <span class="n">c</span> <span class="o">*</span> <span class="mf">1e12</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="p">(</span><span class="n">z0</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\tau$ [ps]&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Equilibrium bunch profile&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.voltage"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.voltage">[docs]</a>    <span class="k">def</span> <span class="nf">voltage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the RF system total voltage at position z&quot;&quot;&quot;</span>
+        <span class="n">Vtot</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span><span class="p">):</span>
+            <span class="n">cavity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cavity_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">Vtot</span> <span class="o">+=</span> <span class="n">cavity</span><span class="o">.</span><span class="n">VRF</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">I0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">PHI</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">Vtot</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.dV"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.dV">[docs]</a>    <span class="k">def</span> <span class="nf">dV</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return derivative of the RF system total voltage at position z&quot;&quot;&quot;</span>
+        <span class="n">Vtot</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span><span class="p">):</span>
+            <span class="n">cavity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cavity_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">Vtot</span> <span class="o">+=</span> <span class="n">cavity</span><span class="o">.</span><span class="n">dVRF</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">I0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">PHI</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">Vtot</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.ddV"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.ddV">[docs]</a>    <span class="k">def</span> <span class="nf">ddV</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the second derivative of the RF system total voltage at position z&quot;&quot;&quot;</span>
+        <span class="n">Vtot</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span><span class="p">):</span>
+            <span class="n">cavity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cavity_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">Vtot</span> <span class="o">+=</span> <span class="n">cavity</span><span class="o">.</span><span class="n">ddVRF</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">I0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">PHI</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">Vtot</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.deltaVRF"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.deltaVRF">[docs]</a>    <span class="k">def</span> <span class="nf">deltaVRF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the generator voltage minus beam loading voltage of the total RF system at position z&quot;&quot;&quot;</span>
+        <span class="n">Vtot</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span><span class="p">):</span>
+            <span class="n">cavity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cavity_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">Vtot</span> <span class="o">+=</span> <span class="n">cavity</span><span class="o">.</span><span class="n">deltaVRF</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">I0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">PHI</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">Vtot</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.plot_dV"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.plot_dV">[docs]</a>    <span class="k">def</span> <span class="nf">plot_dV</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">z2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot the derivative of RF system total voltage between z1 and z2&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">z1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">z1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">B1</span>
+        <span class="k">if</span> <span class="n">z2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">z2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">B2</span>
+        <span class="n">z0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">z1</span><span class="p">,</span> <span class="n">z2</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">z0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dV</span><span class="p">(</span><span class="n">z0</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;z [m]&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Total RF voltage (V)&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.plot_voltage"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.plot_voltage">[docs]</a>    <span class="k">def</span> <span class="nf">plot_voltage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">z2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot the RF system total voltage between z1 and z2&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">z1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">z1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">B1</span>
+        <span class="k">if</span> <span class="n">z2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">z2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">B2</span>
+        <span class="n">z0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">z1</span><span class="p">,</span> <span class="n">z2</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">z0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">voltage</span><span class="p">(</span><span class="n">z0</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;z [m]&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Total RF voltage (V)&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.std_rho"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.std_rho">[docs]</a>    <span class="k">def</span> <span class="nf">std_rho</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">z2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the rms bunch equilibrium size in [m]&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">z1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">z1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">B1</span>
+        <span class="k">if</span> <span class="n">z2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">z2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">B2</span>
+        <span class="n">z0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">z1</span><span class="p">,</span> <span class="n">z2</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="p">(</span><span class="n">z0</span><span class="p">)</span>
+        <span class="n">average</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">z0</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">variance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">((</span><span class="n">z0</span> <span class="o">-</span> <span class="n">average</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">values</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">variance</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.beam_equilibrium"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.beam_equilibrium">[docs]</a>    <span class="k">def</span> <span class="nf">beam_equilibrium</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                         <span class="n">x0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">tol</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span>
+                         <span class="n">method</span><span class="o">=</span><span class="s1">&#39;hybr&#39;</span><span class="p">,</span>
+                         <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">CM</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                         <span class="n">verbiose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve system of non-linear equation to find the form factors F</span>
+<span class="sd">        and PHI at equilibrum. Can be used to compute the equilibrium bunch</span>
+<span class="sd">        profile.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x0 : initial guess</span>
+<span class="sd">        tol : tolerance for termination of the algorithm</span>
+<span class="sd">        method : method used by scipy.optimize.root to solve the system</span>
+<span class="sd">        options : options given to scipy.optimize.root</span>
+<span class="sd">        plot : if True, plot the equilibrium bunch profile</span>
+<span class="sd">        CM : if True, the system imposes zero center of mass offset,</span>
+<span class="sd">        if False, the system imposes energy balance.</span>
+<span class="sd">        verbiose : if True, print out informations about convergence.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        sol : OptimizeResult object representing the solution</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">x0</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x0</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_set_MC_theta</span><span class="p">:</span>
+                <span class="n">x0</span> <span class="o">=</span> <span class="n">x0</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cavity_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">theta</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">verbiose</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">CM</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The initial center of mass offset is &quot;</span> <span class="o">+</span>
+                      <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">center_of_mass</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1e12</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; ps&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The initial energy balance is &quot;</span> <span class="o">+</span>
+                      <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">energy_balance</span><span class="p">())</span> <span class="o">+</span> <span class="s2">&quot; eV&quot;</span><span class="p">)</span>
+
+        <span class="n">sol</span> <span class="o">=</span> <span class="n">root</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_solve</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">CM</span><span class="p">),</span>
+                   <span class="n">x0</span><span class="p">,</span>
+                   <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span>
+                   <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
+                   <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">)</span>
+
+        <span class="c1"># Update values of F, PHI and theta_g</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_set_MC_theta</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">x</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cavity</span><span class="p">):</span>
+                <span class="n">cavity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cavity_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">cavity</span><span class="o">.</span><span class="n">m</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">cavity</span><span class="o">.</span><span class="n">theta</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">x</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PHI</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">verbiose</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">CM</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The final center of mass offset is &quot;</span> <span class="o">+</span>
+                      <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">center_of_mass</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1e12</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; ps&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The final energy balance is &quot;</span> <span class="o">+</span>
+                      <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">energy_balance</span><span class="p">())</span> <span class="o">+</span> <span class="s2">&quot; eV&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">sol</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The algorithm has converged: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">success</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">plot</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plot_rho</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">B1</span> <span class="o">/</span> <span class="mi">4</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">B2</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">sol</span></div>
+
+<div class="viewcode-block" id="BeamLoadingEquilibrium.PTBL_threshold"><a class="viewcode-back" href="../../../mbtrack2.utilities.html#mbtrack2.utilities.beamloading.BeamLoadingEquilibrium.PTBL_threshold">[docs]</a>    <span class="k">def</span> <span class="nf">PTBL_threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">I0</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">MC_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">HC_index</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the periodic transient beam loading (PTBL) instability </span>
+<span class="sd">        threshold based on [1].</span>
+<span class="sd">        </span>
+<span class="sd">        The beam_equilibrium method should be called before the PTBL_threshold </span>
+<span class="sd">        one.</span>
+<span class="sd">        </span>
+<span class="sd">        Eq. (22) and (23) have been modified for cosine voltage convention </span>
+<span class="sd">        for the main cavity.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        I0 : float</span>
+<span class="sd">            Beam total current in [A].</span>
+<span class="sd">        m : int, optional</span>
+<span class="sd">            Number of bunches in the beam. </span>
+<span class="sd">            The default is None. If None, uniform filling is assumed.</span>
+<span class="sd">        MC_index : int, optional</span>
+<span class="sd">            Index of the main cavity in cavity_list. The default is 0.</span>
+<span class="sd">        HC_index : int, optional</span>
+<span class="sd">            Index of the harmonic cavity in cavity_list. The default is 1.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        eta : float</span>
+<span class="sd">            Amplification factor, if bigger than 1 then the beam is possibly </span>
+<span class="sd">            in the PTBL regime, Eq. (22) of [1].</span>
+<span class="sd">        RQth : float</span>
+<span class="sd">            R/Q threshold, Eq. (24) of [1].</span>
+<span class="sd">        f : float</span>
+<span class="sd">            f function, Eq. (23) of [1].</span>
+<span class="sd">            </span>
+<span class="sd">        Reference</span>
+<span class="sd">        ---------</span>
+<span class="sd">        [1] : He, T. (2022). Novel perturbation method for judging the </span>
+<span class="sd">        stability of the equilibrium solution in the presence of passive </span>
+<span class="sd">        harmonic cavities. Physical Review Accelerators and Beams, 25(9), </span>
+<span class="sd">        094402.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">h</span>
+
+        <span class="n">MC</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cavity_list</span><span class="p">[</span><span class="n">MC_index</span><span class="p">]</span>
+        <span class="n">HC</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cavity_list</span><span class="p">[</span><span class="n">HC_index</span><span class="p">]</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">HC</span><span class="o">.</span><span class="n">wr</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">T0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">HC</span><span class="o">.</span><span class="n">Q</span><span class="p">))</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">HC</span><span class="o">.</span><span class="n">detune</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">T0</span>
+        <span class="n">dtheta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">((</span><span class="mi">1</span><span class="o">-</span><span class="n">a</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span>
+                           <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">a</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">a</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">))))</span>
+
+        <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+        <span class="n">d_k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">HC</span><span class="o">.</span><span class="n">wr</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">T0</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">HC</span><span class="o">.</span><span class="n">Q</span> <span class="o">*</span> <span class="n">m</span><span class="p">))</span>
+        <span class="n">theta_k</span> <span class="o">=</span> <span class="p">(</span><span class="n">theta</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="n">dtheta</span> <span class="o">-</span> <span class="p">(</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">m</span> <span class="o">*</span> <span class="n">theta</span><span class="p">)</span>
+        <span class="n">eps_k</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">k</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">m</span><span class="p">)</span>
+
+        <span class="n">num</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">eps_k</span> <span class="o">*</span> <span class="n">d_k</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta_k</span><span class="p">))</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">num</span> <span class="o">/</span> <span class="p">(</span><span class="n">m</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">a</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">a</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)))</span>
+
+        <span class="n">eta</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">HC</span><span class="o">.</span><span class="n">m</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">HC_index</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">h</span> <span class="o">*</span> <span class="n">I0</span> <span class="o">*</span>
+               <span class="n">HC</span><span class="o">.</span><span class="n">Rs</span> <span class="o">/</span> <span class="n">HC</span><span class="o">.</span><span class="n">Q</span> <span class="o">*</span> <span class="n">f</span> <span class="o">/</span>
+               <span class="p">(</span><span class="n">MC</span><span class="o">.</span><span class="n">Vc</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">MC</span><span class="o">.</span><span class="n">theta</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">PHI</span><span class="p">[</span><span class="n">HC_index</span><span class="p">]</span> <span class="o">/</span> <span class="n">HC</span><span class="o">.</span><span class="n">m</span><span class="p">)))</span>
+
+        <span class="n">RQth</span> <span class="o">=</span> <span class="p">(</span><span class="n">MC</span><span class="o">.</span><span class="n">Vc</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">MC</span><span class="o">.</span><span class="n">theta</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">PHI</span><span class="p">[</span><span class="n">HC_index</span><span class="p">]</span> <span class="o">/</span> <span class="n">HC</span><span class="o">.</span><span class="n">m</span><span class="p">)</span> <span class="o">/</span>
+                <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">HC</span><span class="o">.</span><span class="n">m</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">h</span> <span class="o">*</span> <span class="n">I0</span> <span class="o">*</span> <span class="n">f</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">eta</span><span class="p">,</span> <span class="n">RQth</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.utilities.beamloading</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2024, A. Gamelin et al.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

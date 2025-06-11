@@ -1,0 +1,45 @@
+[tool.poetry]
+name = "mbtrack2"
+version = "0.8.0"
+description = "A coherent object-oriented framework to work on collective effects in synchrotrons."
+authors = ["Alexis Gamelin <alexis.gamelin@synchrotron-soleil.fr>"]
+license = "BSD-3-Clause"
+readme = "README.md"
+repository = "https://gitlab.synchrotron-soleil.fr/PA/collective-effects/mbtrack2"
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+numpy = "^1.21"
+pandas = ">=1.5.3"
+scipy = "^1.7"
+h5py = "^3.6"
+mpi4py = "^3.1"
+matplotlib = "^3.5"
+mpmath = "^1.2.1"
+accelerator-toolbox = ">= 0.5.0"
+seaborn = "^0.12"
+
+[tool.poetry.group.dev.dependencies]
+yapf = ">= 0.29"
+isort = "5.*"
+pytest = "^7.1"
+pytest-mock = ">= 3.14.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.yapf]
+based_on_style = "pep8"
+arithmetic_precedence_indication = true
+blank_line_before_nested_class_or_def = true
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+
+[tool.pytest.ini_options]
+markers = [
+    "unit: mark a test as a unit-test.",
+    "phys: mark a test as a physical-test.",
+]

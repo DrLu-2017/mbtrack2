@@ -1,0 +1,1136 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mbtrack2.tracking.particles &#8212; mbtrack2 0.6.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/nature.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.tracking.particles</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mbtrack2.tracking.particles</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module where particles, bunches and beams are described as objects.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">h5py</span> <span class="k">as</span> <span class="nn">hp</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+<span class="kn">from</span> <span class="nn">scipy.constants</span> <span class="kn">import</span> <span class="n">c</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">m_e</span><span class="p">,</span> <span class="n">m_p</span>
+
+
+<div class="viewcode-block" id="Particle"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Particle">[docs]</a><span class="k">class</span> <span class="nc">Particle</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Define a particle object.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mass : float</span>
+<span class="sd">        total particle mass in [kg]</span>
+<span class="sd">    charge : float</span>
+<span class="sd">        electrical charge in [C]</span>
+<span class="sd">    E_rest : float</span>
+<span class="sd">        particle rest energy in [eV]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mass</span><span class="p">,</span> <span class="n">charge</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mass</span> <span class="o">=</span> <span class="n">mass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge</span> <span class="o">=</span> <span class="n">charge</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">E_rest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass</span> <span class="o">*</span> <span class="n">c</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">e</span></div>
+
+
+<div class="viewcode-block" id="Electron"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Electron">[docs]</a><span class="k">class</span> <span class="nc">Electron</span><span class="p">(</span><span class="n">Particle</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Define an electron&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">m_e</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">e</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Proton"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Proton">[docs]</a><span class="k">class</span> <span class="nc">Proton</span><span class="p">(</span><span class="n">Particle</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Define a proton&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">m_p</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Bunch"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Bunch">[docs]</a><span class="k">class</span> <span class="nc">Bunch</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Define a bunch object.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ring : Synchrotron object</span>
+<span class="sd">    mp_number : float, optional</span>
+<span class="sd">        Macro-particle number.</span>
+<span class="sd">    current : float, optional</span>
+<span class="sd">        Bunch current in [A].</span>
+<span class="sd">    track_alive : bool, optional</span>
+<span class="sd">        If False, the code no longer take into account alive/dead particles.</span>
+<span class="sd">        Should be set to True if element such as apertures are used.</span>
+<span class="sd">        Can be set to False to gain a speed increase.</span>
+<span class="sd">    alive : bool, optional</span>
+<span class="sd">        If False, the bunch is defined as empty.</span>
+<span class="sd">    load_from_file : str, optional</span>
+<span class="sd">        Name of bunch save file generated by save method.</span>
+<span class="sd">        If None, the bunch is initialized using the input parameters.</span>
+<span class="sd">        Otherwise, the bunch from the file is loaded and the other inputs are </span>
+<span class="sd">        ignored.</span>
+<span class="sd">        Default is None.</span>
+<span class="sd">    load_suffix : str or int, optional</span>
+<span class="sd">        Suffix to the group name used to load the data from the HDF5 file.</span>
+<span class="sd">        Default is None.</span>
+<span class="sd">        </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mp_number : int</span>
+<span class="sd">        Macro-particle number.</span>
+<span class="sd">    alive : array of bool of shape (mp_number,)</span>
+<span class="sd">        Array used to monitor which particle is dead or alive.</span>
+<span class="sd">    charge : float</span>
+<span class="sd">        Bunch charge in [C].</span>
+<span class="sd">    charge_per_mp : float</span>
+<span class="sd">        Charge per macro-particle in [C].</span>
+<span class="sd">    particle_number : int</span>
+<span class="sd">        Number of particles in the bunch.</span>
+<span class="sd">    current : float</span>
+<span class="sd">        Bunch current in [A].</span>
+<span class="sd">    is_empty : bool</span>
+<span class="sd">        Return True if the bunch is empty.</span>
+<span class="sd">    mean : array of shape (6,)</span>
+<span class="sd">        Mean position of alive particles for each coordinates.</span>
+<span class="sd">    std : array of shape (6,)</span>
+<span class="sd">        Standard deviation of the position of alive particles for each </span>
+<span class="sd">        coordinates.</span>
+<span class="sd">    emit : array of shape (3,)</span>
+<span class="sd">        Bunch emittance for each plane [1]. !!! -&gt; Correct for long ?</span>
+<span class="sd">        </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    init_gaussian(cov=None, mean=None, **kwargs)</span>
+<span class="sd">        Initialize bunch particles with 6D gaussian phase space.</span>
+<span class="sd">    plot_phasespace(x_var=&quot;tau&quot;, y_var=&quot;delta&quot;, plot_type=&quot;j&quot;)</span>
+<span class="sd">        Plot phase space.</span>
+<span class="sd">    save(file_name)</span>
+<span class="sd">        Save bunch object data (6D phase space, current, and state) in an HDF5 </span>
+<span class="sd">        file format.</span>
+<span class="sd">    load(file_name)</span>
+<span class="sd">        Load data from a HDF5 file recorded by Bunch save method.</span>
+<span class="sd">    </span>
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] Wiedemann, H. (2015). Particle accelerator physics. 4th edition. </span>
+<span class="sd">    Springer, Eq.(8.39) of p224.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">ring</span><span class="p">,</span>
+                 <span class="n">mp_number</span><span class="o">=</span><span class="mf">1e3</span><span class="p">,</span>
+                 <span class="n">current</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+                 <span class="n">track_alive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">alive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">load_from_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">load_suffix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ring</span> <span class="o">=</span> <span class="n">ring</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">alive</span><span class="p">:</span>
+            <span class="n">mp_number</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mp_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mp_number</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">particles</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mp_number</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+            <span class="s2">&quot;xp&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mp_number</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+            <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mp_number</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+            <span class="s2">&quot;yp&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mp_number</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+            <span class="s2">&quot;tau&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mp_number</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+            <span class="s2">&quot;delta&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mp_number</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">track_alive</span> <span class="o">=</span> <span class="n">track_alive</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">mp_number</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="n">current</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">alive</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">mp_number</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">load_from_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">load_from_file</span><span class="p">,</span> <span class="n">load_suffix</span><span class="p">,</span> <span class="n">track_alive</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the number of alive particles&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the columns label for alive particles&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">track_alive</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">[</span><span class="n">label</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">alive</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set value to the columns label for alive particles&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">track_alive</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">[</span><span class="n">label</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">alive</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterate over labels&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return representation of alive particles&quot;&quot;&quot;</span>
+        <span class="n">rep</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">()])</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+                           <span class="n">columns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">()))</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;Bunch with macro-particles: </span><span class="se">\n</span><span class="s1"> </span><span class="si">{</span><span class="n">rep</span><span class="si">!r}</span><span class="s1">&#39;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mp_number</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Macro-particle number&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mp_number</span>
+
+    <span class="nd">@mp_number</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">mp_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mp_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">charge_per_mp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Charge per macro-particle [C]&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_charge_per_mp</span>
+
+    <span class="nd">@charge_per_mp</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">charge_per_mp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_charge_per_mp</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">charge</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Bunch charge in [C]&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__len__</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge_per_mp</span>
+
+    <span class="nd">@charge</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">charge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge_per_mp</span> <span class="o">=</span> <span class="n">value</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__len__</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">particle_number</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Particle number&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">charge</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">particle</span><span class="o">.</span><span class="n">charge</span><span class="p">))</span>
+
+    <span class="nd">@particle_number</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">particle_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge_per_mp</span> <span class="o">=</span> <span class="n">value</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">particle</span><span class="o">.</span><span class="n">charge</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__len__</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">current</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Bunch current [A]&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">T0</span>
+
+    <span class="nd">@current</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">current</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge_per_mp</span> <span class="o">=</span> <span class="n">value</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">T0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__len__</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_empty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if the bunch is empty.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alive</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the mean position of alive particles for each coordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mean</span> <span class="o">=</span> <span class="p">[[</span><span class="bp">self</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mean</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">std</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the standard deviation of the position of alive </span>
+<span class="sd">        particles for each coordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="p">[[</span><span class="bp">self</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">std</span><span class="p">()]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">std</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">emit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the bunch emittance for each plane.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">([[</span><span class="bp">self</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">])</span>
+        <span class="n">emitX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cor</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cor</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cor</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">cor</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">emitY</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cor</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cor</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cor</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">cor</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">emitS</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cor</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cor</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cor</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">*</span> <span class="n">cor</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">emitX</span><span class="p">,</span> <span class="n">emitY</span><span class="p">,</span> <span class="n">emitS</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cs_invariant</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the average Courant-Snyder invariant of each plane.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Jx</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">optics</span><span class="o">.</span><span class="n">local_gamma</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> \
+              <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">optics</span><span class="o">.</span><span class="n">local_alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">])</span><span class="o">*</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;xp&#39;</span><span class="p">]</span> <span class="o">+</span> \
+              <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">optics</span><span class="o">.</span><span class="n">local_beta</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;xp&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">Jy</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">optics</span><span class="o">.</span><span class="n">local_gamma</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> \
+              <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">optics</span><span class="o">.</span><span class="n">local_alpha</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;yp&#39;</span><span class="p">])</span> <span class="o">+</span> \
+              <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">optics</span><span class="o">.</span><span class="n">local_beta</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;yp&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">Js</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">long_gamma</span> <span class="o">*</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;tau&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> \
+              <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">long_alpha</span> <span class="o">*</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;tau&#39;</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;delta&#39;</span><span class="p">])</span> <span class="o">+</span> \
+              <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">long_beta</span> <span class="o">*</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;delta&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Jx</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Jy</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Js</span><span class="p">)))</span>
+
+<div class="viewcode-block" id="Bunch.init_gaussian"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Bunch.init_gaussian">[docs]</a>    <span class="k">def</span> <span class="nf">init_gaussian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize bunch particles with 6D gaussian phase space.</span>
+<span class="sd">        Covariance matrix is taken from [1] and dispersion is added following</span>
+<span class="sd">        the method explained in [2].</span>
+<span class="sd">                </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cov : (6,6) array, optional</span>
+<span class="sd">            Covariance matrix of the bunch distribution</span>
+<span class="sd">        mean : (6,) array, optional</span>
+<span class="sd">            Mean of the bunch distribution</span>
+<span class="sd">        </span>
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        [1] Wiedemann, H. (2015). Particle accelerator physics. 4th </span>
+<span class="sd">        edition. Springer, Eq.(8.38) of p223.</span>
+<span class="sd">        [2] http://www.pp.rhul.ac.uk/bdsim/manual-develop/dev_beamgeneration.html</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">mean</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">6</span><span class="p">,</span> <span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">cov</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sigma_0</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sigma_0&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_0</span><span class="p">)</span>
+            <span class="n">sigma_delta</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sigma_delta&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="p">)</span>
+            <span class="n">optics</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;optics&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">optics</span><span class="p">)</span>
+
+            <span class="n">cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">emit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_beta</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span>
+                <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">emit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_gamma</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span>
+                <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">emit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span>
+                <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">emit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_alpha</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span>
+                <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">emit</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_beta</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span>
+                <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">emit</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_gamma</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span>
+                <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">emit</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_alpha</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span>
+                <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">emit</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_alpha</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span>
+                <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">optics</span><span class="o">.</span><span class="n">local_dispersion</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigma_0</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">cov</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigma_delta</span><span class="o">**</span><span class="mi">2</span>
+
+        <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mp_number</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">[</span><span class="s2">&quot;xp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">[</span><span class="s2">&quot;yp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">[</span><span class="s2">&quot;tau&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">[</span><span class="s2">&quot;delta&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Bunch.binning"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Bunch.binning">[docs]</a>    <span class="k">def</span> <span class="nf">binning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="s2">&quot;tau&quot;</span><span class="p">,</span> <span class="n">n_bin</span><span class="o">=</span><span class="mi">75</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Bin macro-particles.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dimension : str, optional</span>
+<span class="sd">            Dimension in which the binning is done. The default is &quot;tau&quot;.</span>
+<span class="sd">        n_bin : int, optional</span>
+<span class="sd">            Number of bins. The default is 75.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bins : array of shape (n_bin,)</span>
+<span class="sd">            Bins where the particles are sorted.</span>
+<span class="sd">        sorted_index : array of shape (self.mp_number,)</span>
+<span class="sd">            Bin number of each macro-particles.</span>
+<span class="sd">        profile : array of shape (n_bin - 1,)</span>
+<span class="sd">            Number of marco-particles in each bin.</span>
+<span class="sd">        center : array of shape (n_bin - 1,)</span>
+<span class="sd">            Center of each bin.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bin_min</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">dimension</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+        <span class="n">bin_min</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">bin_min</span> <span class="o">*</span> <span class="mf">0.99</span><span class="p">,</span> <span class="n">bin_min</span> <span class="o">*</span> <span class="mf">1.01</span><span class="p">)</span>
+        <span class="n">bin_max</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">dimension</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">bin_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">bin_max</span> <span class="o">*</span> <span class="mf">0.99</span><span class="p">,</span> <span class="n">bin_max</span> <span class="o">*</span> <span class="mf">1.01</span><span class="p">)</span>
+
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">bin_min</span><span class="p">,</span> <span class="n">bin_max</span><span class="p">,</span> <span class="n">n_bin</span><span class="p">)</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="p">(</span><span class="n">bins</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="n">bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">sorted_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="bp">self</span><span class="p">[</span><span class="n">dimension</span><span class="p">],</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+        <span class="n">sorted_index</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="n">profile</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">sorted_index</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="n">n_bin</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="n">sorted_index</span><span class="p">,</span> <span class="n">profile</span><span class="p">,</span> <span class="n">center</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Bunch.plot_profile"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Bunch.plot_profile">[docs]</a>    <span class="k">def</span> <span class="nf">plot_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="s2">&quot;tau&quot;</span><span class="p">,</span> <span class="n">n_bin</span><span class="o">=</span><span class="mi">75</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot bunch profile.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dimension : str, optional</span>
+<span class="sd">            Dimension to plot. The default is &quot;tau&quot;.</span>
+<span class="sd">        n_bin : int, optional</span>
+<span class="sd">            Number of bins. The default is 75.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bins</span><span class="p">,</span> <span class="n">sorted_index</span><span class="p">,</span> <span class="n">profile</span><span class="p">,</span> <span class="n">center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">binning</span><span class="p">(</span><span class="n">dimension</span><span class="p">,</span> <span class="n">n_bin</span><span class="p">)</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">center</span><span class="p">,</span> <span class="n">profile</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Bunch.plot_phasespace"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Bunch.plot_phasespace">[docs]</a>    <span class="k">def</span> <span class="nf">plot_phasespace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_var</span><span class="o">=</span><span class="s2">&quot;tau&quot;</span><span class="p">,</span> <span class="n">y_var</span><span class="o">=</span><span class="s2">&quot;delta&quot;</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;scatter&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot phase space.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x_var : str </span>
+<span class="sd">            Dimension to plot on horizontal axis.</span>
+<span class="sd">        y_var : str </span>
+<span class="sd">            Dimension to plot on vertical axis.</span>
+<span class="sd">        kind : str, {&quot;scatter&quot;, &quot;kde&quot;, &quot;hist&quot;, &quot;hex&quot;, &quot;reg&quot;, &quot;resid&quot;}</span>
+<span class="sd">            Kind of plot to draw. See seeborn documentation.</span>
+<span class="sd">            The defualt value is &quot;scatter&quot;.</span>
+<span class="sd">            </span>
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        fig : Figure</span>
+<span class="sd">            Figure object with the plot on it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">label_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;x (mm)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;xp&quot;</span><span class="p">:</span> <span class="s2">&quot;x&#39; (mrad)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;y (mm)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;yp&quot;</span><span class="p">:</span> <span class="s2">&quot;y&#39; (mrad)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;tau&quot;</span><span class="p">:</span> <span class="s2">&quot;$</span><span class="se">\\</span><span class="s2">tau$ (ps)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;delta&quot;</span><span class="p">:</span> <span class="s2">&quot;$</span><span class="se">\\</span><span class="s2">delta$&quot;</span>
+        <span class="p">}</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="mf">1e3</span><span class="p">,</span>
+            <span class="s2">&quot;xp&quot;</span><span class="p">:</span> <span class="mf">1e3</span><span class="p">,</span>
+            <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="mf">1e3</span><span class="p">,</span>
+            <span class="s2">&quot;yp&quot;</span><span class="p">:</span> <span class="mf">1e3</span><span class="p">,</span>
+            <span class="s2">&quot;tau&quot;</span><span class="p">:</span> <span class="mf">1e12</span><span class="p">,</span>
+            <span class="s2">&quot;delta&quot;</span><span class="p">:</span> <span class="mi">1</span>
+        <span class="p">}</span>
+
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">jointplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">[</span><span class="n">x_var</span><span class="p">]</span> <span class="o">*</span> <span class="n">scale</span><span class="p">[</span><span class="n">x_var</span><span class="p">],</span>
+                            <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">[</span><span class="n">y_var</span><span class="p">]</span> <span class="o">*</span> <span class="n">scale</span><span class="p">[</span><span class="n">y_var</span><span class="p">],</span>
+                            <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="n">label_dict</span><span class="p">[</span><span class="n">x_var</span><span class="p">])</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="n">label_dict</span><span class="p">[</span><span class="n">y_var</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+<div class="viewcode-block" id="Bunch.save"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Bunch.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mpi_comm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save bunch object data (6D phase space, current, and state) in an HDF5 </span>
+<span class="sd">        file format.</span>
+<span class="sd">        </span>
+<span class="sd">        The output file is named as &quot;&lt;file_name&gt;.hdf5&quot;.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file_name : str</span>
+<span class="sd">            Name of the output file.</span>
+<span class="sd">        suffix : str or int, optional</span>
+<span class="sd">            Suffix to the group name used to save the data into the HDF5 file.</span>
+<span class="sd">            If None, it is not used.</span>
+<span class="sd">        mpi_comm : MPI communicator, optional</span>
+<span class="sd">            For internal use if mpi is used in Beam objects.</span>
+<span class="sd">            Default is None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">mpi_comm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">file_name</span> <span class="o">+</span> <span class="s2">&quot;.hdf5&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">libver</span><span class="o">=</span><span class="s2">&quot;earliest&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">file_name</span> <span class="o">+</span> <span class="s2">&quot;.hdf5&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;a&quot;</span><span class="p">,</span>
+                        <span class="n">libver</span><span class="o">=</span><span class="s1">&#39;earliest&#39;</span><span class="p">,</span>
+                        <span class="n">driver</span><span class="o">=</span><span class="s1">&#39;mpio&#39;</span><span class="p">,</span>
+                        <span class="n">comm</span><span class="o">=</span><span class="n">mpi_comm</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">suffix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">group_name</span> <span class="o">=</span> <span class="s2">&quot;Bunch&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">group_name</span> <span class="o">=</span> <span class="s2">&quot;Bunch_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">suffix</span><span class="p">)</span>
+
+        <span class="n">g</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="n">group_name</span><span class="p">)</span>
+        <span class="n">g</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">&quot;alive&quot;</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mp_number</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="n">g</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">&quot;phasespace&quot;</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mp_number</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">g</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">&quot;current&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+        <span class="n">f</span><span class="p">[</span><span class="n">group_name</span><span class="p">][</span><span class="s2">&quot;alive&quot;</span><span class="p">][:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span>
+        <span class="n">f</span><span class="p">[</span><span class="n">group_name</span><span class="p">][</span><span class="s2">&quot;current&quot;</span><span class="p">][:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">f</span><span class="p">[</span><span class="n">group_name</span><span class="p">][</span><span class="s2">&quot;phasespace&quot;</span><span class="p">][:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span>
+
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Bunch.load"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Bunch.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">track_alive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load data from a HDF5 file recorded by Bunch save method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file_name : str</span>
+<span class="sd">            Path to the HDF5 file where the Bunch data is stored.</span>
+<span class="sd">        suffix : str or int, optional</span>
+<span class="sd">            Suffix to the group name used to load the data from the HDF5 file.</span>
+<span class="sd">            If None, it is not used.</span>
+<span class="sd">        track_alive : bool, optional</span>
+<span class="sd">            If False, the code no longer take into account alive/dead particles.</span>
+<span class="sd">            Should be set to True if element such as apertures are used.</span>
+<span class="sd">            Can be set to False to gain a speed increase.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">f</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">suffix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">group_name</span> <span class="o">=</span> <span class="s2">&quot;Bunch&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">group_name</span> <span class="o">=</span> <span class="s2">&quot;Bunch_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">suffix</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mp_number</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="n">group_name</span><span class="p">][</span><span class="s1">&#39;alive&#39;</span><span class="p">][:])</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">particles</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">group_name</span><span class="p">][</span><span class="s2">&quot;phasespace&quot;</span><span class="p">][:,</span> <span class="n">i</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">group_name</span><span class="p">][</span><span class="s1">&#39;alive&#39;</span><span class="p">][:]</span>
+        <span class="k">if</span> <span class="n">f</span><span class="p">[</span><span class="n">group_name</span><span class="p">][</span><span class="s1">&#39;current&#39;</span><span class="p">][:][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">group_name</span><span class="p">][</span><span class="s1">&#39;current&#39;</span><span class="p">][:][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">charge_per_mp</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">track_alive</span> <span class="o">=</span> <span class="n">track_alive</span>
+
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="Beam"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Beam">[docs]</a><span class="k">class</span> <span class="nc">Beam</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Define a Beam object composed of several Bunch objects. </span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ring : Synchrotron object</span>
+<span class="sd">    bunch_list : list of Bunch object, optional</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    current : float</span>
+<span class="sd">        Total beam current in [A]</span>
+<span class="sd">    charge : float</span>
+<span class="sd">        Total bunch charge in [C]</span>
+<span class="sd">    particle_number : int</span>
+<span class="sd">        Total number of particle in the beam</span>
+<span class="sd">    filling_pattern : bool array of shape (ring.h,)</span>
+<span class="sd">        Filling pattern of the beam</span>
+<span class="sd">    bunch_current : array of shape (ring.h,)</span>
+<span class="sd">        Current in each bunch in [A]</span>
+<span class="sd">    bunch_charge : array of shape (ring.h,)</span>
+<span class="sd">        Charge in each bunch in [C]</span>
+<span class="sd">    bunch_particle : array of shape (ring.h,)</span>
+<span class="sd">        Particle number in each bunch</span>
+<span class="sd">    bunch_mean : array of shape (6, ring.h)</span>
+<span class="sd">        Mean position of alive particles for each bunch</span>
+<span class="sd">    bunch_std : array of shape (6, ring.h)</span>
+<span class="sd">        Standard deviation of the position of alive particles for each bunch        </span>
+<span class="sd">    bunch_emit : array of shape (6, ring.h)</span>
+<span class="sd">        Bunch emittance of alive particles for each bunch</span>
+<span class="sd">    mpi : Mpi object</span>
+<span class="sd">    mpi_switch : bool</span>
+<span class="sd">        Status of MPI parallelisation, should not be changed directly but with</span>
+<span class="sd">        mpi_init() and mpi_close()</span>
+<span class="sd">    bunch_index : array of shape (len(self,))</span>
+<span class="sd">        Return an array with the positions of the non-empty bunches</span>
+<span class="sd">        </span>
+<span class="sd">    Methods</span>
+<span class="sd">    ------</span>
+<span class="sd">    init_beam(filling_pattern, current_per_bunch=1e-3, mp_per_bunch=1e3)</span>
+<span class="sd">        Initialize beam with a given filling pattern and marco-particle number </span>
+<span class="sd">        per bunch. Then initialize the different bunches with a 6D gaussian</span>
+<span class="sd">        phase space.</span>
+<span class="sd">    mpi_init()</span>
+<span class="sd">        Switch on MPI parallelisation and initialise a Mpi object</span>
+<span class="sd">    mpi_gather()</span>
+<span class="sd">        Gather beam, all bunches of the different processors are sent to </span>
+<span class="sd">        all processors. Rather slow</span>
+<span class="sd">    mpi_share_distributions()</span>
+<span class="sd">        Compute the bunch profile and share it between the different bunches.</span>
+<span class="sd">    mpi_close()</span>
+<span class="sd">        Call mpi_gather and switch off MPI parallelisation</span>
+<span class="sd">    plot(var, option=None)</span>
+<span class="sd">        Plot variables with respect to bunch number.</span>
+<span class="sd">    save(file_name)</span>
+<span class="sd">        Save beam object data in an HDF5 file format.</span>
+<span class="sd">    load(file_name, mpi)</span>
+<span class="sd">        Load data from a HDF5 file recorded by Beam save method.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ring</span><span class="p">,</span> <span class="n">bunch_list</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ring</span> <span class="o">=</span> <span class="n">ring</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mpi_switch</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">bunch_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">init_beam</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bunch_list</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">h</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">((</span><span class="s2">&quot;The length of the bunch list is </span><span class="si">{}</span><span class="s2"> &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">bunch_list</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;but should be </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">h</span><span class="p">)))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bunch_list</span> <span class="o">=</span> <span class="n">bunch_list</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the number of (not empty) bunches&quot;&quot;&quot;</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">bunch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">not_empty</span><span class="p">:</span>
+            <span class="n">length</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">length</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the bunch number i&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bunch_list</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set value to the bunch number i&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bunch_list</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterate over all bunches&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bunch_list</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return representation of the beam filling pattern&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;Beam with bunch current:</span><span class="se">\n</span><span class="s1"> </span><span class="si">{</span><span class="nb">list</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">bunch_current</span><span class="p">))</span><span class="si">!r}</span><span class="s1">&#39;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">not_empty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a generator to iterate over not empty bunches.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filling_pattern</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="bp">self</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">distance_between_bunches</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an array which contains the distance to the next bunch in </span>
+<span class="sd">        units of the RF period (ring.T1)&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_distance_between_bunches</span>
+
+<div class="viewcode-block" id="Beam.update_distance_between_bunches"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Beam.update_distance_between_bunches">[docs]</a>    <span class="k">def</span> <span class="nf">update_distance_between_bunches</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the distance_between_bunches array&quot;&quot;&quot;</span>
+        <span class="n">filling_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filling_pattern</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">filling_pattern</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">last_value</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># All bunches</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">filling_pattern</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">elif</span> <span class="n">value</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">last_value</span> <span class="o">=</span> <span class="n">index</span>
+                <span class="n">count</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">for</span> <span class="n">value2</span> <span class="ow">in</span> <span class="n">filling_pattern</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]:</span>
+                    <span class="k">if</span> <span class="n">value2</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">elif</span> <span class="n">value2</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                        <span class="k">break</span>
+                <span class="n">distance</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">count</span>
+
+        <span class="c1"># Last bunch case</span>
+        <span class="n">count2</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">index2</span><span class="p">,</span> <span class="n">value2</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">filling_pattern</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">value2</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="n">value2</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="n">count2</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">distance</span><span class="p">[</span><span class="n">last_value</span><span class="p">]</span> <span class="o">+=</span> <span class="n">count2</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_distance_between_bunches</span> <span class="o">=</span> <span class="n">distance</span></div>
+
+<div class="viewcode-block" id="Beam.init_beam"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Beam.init_beam">[docs]</a>    <span class="k">def</span> <span class="nf">init_beam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                  <span class="n">filling_pattern</span><span class="p">,</span>
+                  <span class="n">current_per_bunch</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+                  <span class="n">mp_per_bunch</span><span class="o">=</span><span class="mf">1e3</span><span class="p">,</span>
+                  <span class="n">track_alive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                  <span class="n">mpi</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize beam with a given filling pattern and marco-particle number </span>
+<span class="sd">        per bunch. Then initialize the different bunches with a 6D gaussian</span>
+<span class="sd">        phase space.</span>
+<span class="sd">        </span>
+<span class="sd">        If the filling pattern is an array of bool then the current per bunch </span>
+<span class="sd">        is uniform, else the filling pattern can be an array with the current</span>
+<span class="sd">        in each bunch.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filling_pattern : numpy array or list of length ring.h</span>
+<span class="sd">            Filling pattern of the beam, can be a list or an array of bool, </span>
+<span class="sd">            then current_per_bunch is used. Or can be an array with the current</span>
+<span class="sd">            in each bunch.</span>
+<span class="sd">        current_per_bunch : float, optional</span>
+<span class="sd">            Current per bunch in [A]</span>
+<span class="sd">        mp_per_bunch : float, optional</span>
+<span class="sd">            Macro-particle number per bunch</span>
+<span class="sd">        track_alive : bool, optional</span>
+<span class="sd">            If False, the code no longer take into account alive/dead particles.</span>
+<span class="sd">            Should be set to True if element such as apertures are used.</span>
+<span class="sd">            Can be set to False to gain a speed increase.</span>
+<span class="sd">        mpi : bool, optional</span>
+<span class="sd">            If True, only a single bunch is fully initialized on each core, the</span>
+<span class="sd">            other bunches are initialized with a single marco-particle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">filling_pattern</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">h</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">((</span><span class="s2">&quot;The length of filling pattern is </span><span class="si">{}</span><span class="s2"> &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">filling_pattern</span><span class="p">))</span> <span class="o">+</span>
+                              <span class="s2">&quot;but should be </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">h</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="n">mpi</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">mp_per_bunch_mpi</span> <span class="o">=</span> <span class="n">mp_per_bunch</span>
+            <span class="n">mp_per_bunch</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">filling_pattern</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">filling_pattern</span><span class="p">)</span>
+        <span class="n">bunch_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">filling_pattern</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s2">&quot;bool&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">filling_pattern</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="n">bunch_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="n">Bunch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="p">,</span> <span class="n">mp_per_bunch</span><span class="p">,</span> <span class="n">current_per_bunch</span><span class="p">,</span>
+                              <span class="n">track_alive</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">value</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                    <span class="n">bunch_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Bunch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="p">,</span> <span class="n">alive</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">filling_pattern</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">current</span> <span class="ow">in</span> <span class="n">filling_pattern</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">current</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">bunch_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="n">Bunch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="p">,</span> <span class="n">mp_per_bunch</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="n">track_alive</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">current</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">bunch_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Bunch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="p">,</span> <span class="n">alive</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> should be bool or float64&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">filling_pattern</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bunch_list</span> <span class="o">=</span> <span class="n">bunch_list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_filling_pattern</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_distance_between_bunches</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">mpi</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mpi_init</span><span class="p">()</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">rank_to_bunch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">rank</span><span class="p">)]</span><span class="o">.</span><span class="n">current</span>
+            <span class="n">bunch</span> <span class="o">=</span> <span class="n">Bunch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="p">,</span> <span class="n">mp_per_bunch_mpi</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="n">track_alive</span><span class="p">)</span>
+            <span class="n">bunch</span><span class="o">.</span><span class="n">init_gaussian</span><span class="p">()</span>
+            <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">rank_to_bunch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">rank</span><span class="p">)]</span> <span class="o">=</span> <span class="n">bunch</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">bunch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">not_empty</span><span class="p">:</span>
+                <span class="n">bunch</span><span class="o">.</span><span class="n">init_gaussian</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Beam.update_filling_pattern"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Beam.update_filling_pattern">[docs]</a>    <span class="k">def</span> <span class="nf">update_filling_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the beam filling pattern.&quot;&quot;&quot;</span>
+        <span class="n">filling_pattern</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">bunch</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">bunch</span><span class="o">.</span><span class="n">current</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">filling_pattern</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">filling_pattern</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_filling_pattern</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">filling_pattern</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">filling_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an array with the filling pattern of the beam as bool&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filling_pattern</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bunch_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an array with the positions of the non-empty bunches.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filling_pattern</span> <span class="o">==</span> <span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bunch_current</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an array with the current in each bunch in [A]&quot;&quot;&quot;</span>
+        <span class="n">bunch_current</span> <span class="o">=</span> <span class="p">[</span><span class="n">bunch</span><span class="o">.</span><span class="n">current</span> <span class="k">for</span> <span class="n">bunch</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">bunch_current</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bunch_charge</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an array with the charge in each bunch in [C]&quot;&quot;&quot;</span>
+        <span class="n">bunch_charge</span> <span class="o">=</span> <span class="p">[</span><span class="n">bunch</span><span class="o">.</span><span class="n">charge</span> <span class="k">for</span> <span class="n">bunch</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">bunch_charge</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bunch_particle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an array with the particle number in each bunch&quot;&quot;&quot;</span>
+        <span class="n">bunch_particle</span> <span class="o">=</span> <span class="p">[</span><span class="n">bunch</span><span class="o">.</span><span class="n">particle_number</span> <span class="k">for</span> <span class="n">bunch</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">bunch_particle</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">current</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Total beam current in [A]&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bunch_current</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">charge</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Total beam charge in [C]&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bunch_charge</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">particle_number</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Total number of particles in the beam&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bunch_particle</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bunch_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an array with the mean position of alive particles for each</span>
+<span class="sd">        bunches&quot;&quot;&quot;</span>
+        <span class="n">bunch_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">6</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">h</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">bunch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">not_empty</span><span class="p">):</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bunch_index</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">bunch_mean</span><span class="p">[:,</span> <span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">bunch</span><span class="o">.</span><span class="n">mean</span>
+        <span class="k">return</span> <span class="n">bunch_mean</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bunch_std</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an array with the standard deviation of the position of alive </span>
+<span class="sd">        particles for each bunches&quot;&quot;&quot;</span>
+        <span class="n">bunch_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">6</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">h</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">bunch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">not_empty</span><span class="p">):</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bunch_index</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">bunch_std</span><span class="p">[:,</span> <span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">bunch</span><span class="o">.</span><span class="n">std</span>
+        <span class="k">return</span> <span class="n">bunch_std</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bunch_emit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an array with the bunch emittance of alive particles for each</span>
+<span class="sd">        bunches and each plane&quot;&quot;&quot;</span>
+        <span class="n">bunch_emit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">h</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">bunch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">not_empty</span><span class="p">):</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bunch_index</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">bunch_emit</span><span class="p">[:,</span> <span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">bunch</span><span class="o">.</span><span class="n">emit</span>
+        <span class="k">return</span> <span class="n">bunch_emit</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bunch_cs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an array with the average Courant-Snyder invariant for each </span>
+<span class="sd">        bunch&quot;&quot;&quot;</span>
+        <span class="n">bunch_cs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">h</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">bunch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">not_empty</span><span class="p">):</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bunch_index</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">bunch_cs</span><span class="p">[:,</span> <span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">bunch</span><span class="o">.</span><span class="n">cs_invariant</span>
+        <span class="k">return</span> <span class="n">bunch_cs</span>
+
+<div class="viewcode-block" id="Beam.mpi_init"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Beam.mpi_init">[docs]</a>    <span class="k">def</span> <span class="nf">mpi_init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Switch on MPI parallelisation and initialise a Mpi object&quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">mbtrack2.tracking.parallel</span> <span class="kn">import</span> <span class="n">Mpi</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mpi</span> <span class="o">=</span> <span class="n">Mpi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filling_pattern</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mpi_switch</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="Beam.mpi_gather"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Beam.mpi_gather">[docs]</a>    <span class="k">def</span> <span class="nf">mpi_gather</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gather beam, all bunches of the different processors are sent to </span>
+<span class="sd">        all processors. Rather slow&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpi_switch</span> <span class="o">==</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error, mpi is not initialised.&quot;</span><span class="p">)</span>
+
+        <span class="n">bunch</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">bunch_num</span><span class="p">]</span>
+        <span class="n">bunches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">bunch</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">rank</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">rank_to_bunch</span><span class="p">(</span><span class="n">rank</span><span class="p">)]</span> <span class="o">=</span> <span class="n">bunches</span><span class="p">[</span><span class="n">rank</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Beam.mpi_close"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Beam.mpi_close">[docs]</a>    <span class="k">def</span> <span class="nf">mpi_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Call mpi_gather and switch off MPI parallelisation&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mpi_gather</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mpi_switch</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mpi</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="Beam.plot"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Beam.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">option</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot variables with respect to bunch number.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        var : str {&quot;bunch_current&quot;, &quot;bunch_charge&quot;, &quot;bunch_particle&quot;, </span>
+<span class="sd">                   &quot;bunch_mean&quot;, &quot;bunch_std&quot;, &quot;bunch_emit&quot;}</span>
+<span class="sd">            Variable to be plotted.</span>
+<span class="sd">        option : str, optional</span>
+<span class="sd">            If var is &quot;bunch_mean&quot;, &quot;bunch_std&quot;, or &quot;bunch_emit, option needs </span>
+<span class="sd">            to be specified.</span>
+<span class="sd">            For &quot;bunch_mean&quot; and &quot;bunch_std&quot;, </span>
+<span class="sd">                option = {&quot;x&quot;,&quot;xp&quot;,&quot;y&quot;,&quot;yp&quot;,&quot;tau&quot;,&quot;delta&quot;}.</span>
+<span class="sd">            For &quot;bunch_emit&quot;, option = {&quot;x&quot;,&quot;y&quot;,&quot;s&quot;}.</span>
+<span class="sd">            The default is None.</span>
+<span class="sd">            </span>
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        fig : Figure</span>
+<span class="sd">            Figure object with the plot on it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">var_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;bunch_current&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bunch_current</span><span class="p">,</span>
+            <span class="s2">&quot;bunch_charge&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bunch_charge</span><span class="p">,</span>
+            <span class="s2">&quot;bunch_particle&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bunch_particle</span><span class="p">,</span>
+            <span class="s2">&quot;bunch_mean&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bunch_mean</span><span class="p">,</span>
+            <span class="s2">&quot;bunch_std&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bunch_std</span><span class="p">,</span>
+            <span class="s2">&quot;bunch_emit&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bunch_emit</span>
+        <span class="p">}</span>
+
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">var</span> <span class="o">==</span> <span class="s2">&quot;bunch_mean&quot;</span> <span class="ow">or</span> <span class="n">var</span> <span class="o">==</span> <span class="s2">&quot;bunch_std&quot;</span><span class="p">:</span>
+            <span class="n">value_dict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;xp&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="s2">&quot;yp&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                <span class="s2">&quot;tau&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+                <span class="s2">&quot;delta&quot;</span><span class="p">:</span> <span class="mi">5</span>
+            <span class="p">}</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1e6</span><span class="p">,</span> <span class="mf">1e6</span><span class="p">,</span> <span class="mf">1e6</span><span class="p">,</span> <span class="mf">1e6</span><span class="p">,</span> <span class="mf">1e12</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">label_mean</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="s2">&quot;x (um)&quot;</span><span class="p">,</span> <span class="s2">&quot;x&#39; ($</span><span class="se">\\</span><span class="s2">mu$rad)&quot;</span><span class="p">,</span> <span class="s2">&quot;y (um)&quot;</span><span class="p">,</span> <span class="s2">&quot;y&#39; ($</span><span class="se">\\</span><span class="s2">mu$rad)&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;$</span><span class="se">\\</span><span class="s2">tau$ (ps)&quot;</span><span class="p">,</span> <span class="s2">&quot;$</span><span class="se">\\</span><span class="s2">delta$&quot;</span>
+            <span class="p">]</span>
+            <span class="n">label_std</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="s2">&quot;std x (um)&quot;</span><span class="p">,</span> <span class="s2">&quot;std x&#39; ($</span><span class="se">\\</span><span class="s2">mu$rad)&quot;</span><span class="p">,</span> <span class="s2">&quot;std y (um)&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;std y&#39; ($</span><span class="se">\\</span><span class="s2">mu$rad)&quot;</span><span class="p">,</span> <span class="s2">&quot;std $</span><span class="se">\\</span><span class="s2">tau$ (ps)&quot;</span><span class="p">,</span> <span class="s2">&quot;std $</span><span class="se">\\</span><span class="s2">delta$&quot;</span>
+            <span class="p">]</span>
+
+            <span class="n">y_axis</span> <span class="o">=</span> <span class="n">var_dict</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">value_dict</span><span class="p">[</span><span class="n">option</span><span class="p">]]</span>
+
+            <span class="c1"># Convert NaN in y_axis array into zero</span>
+            <span class="n">where_is_nan</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">y_axis</span><span class="p">)</span>
+            <span class="n">y_axis</span><span class="p">[</span><span class="n">where_is_nan</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filling_pattern</span><span class="p">)),</span>
+                    <span class="n">y_axis</span> <span class="o">*</span> <span class="n">scale</span><span class="p">[</span><span class="n">value_dict</span><span class="p">[</span><span class="n">option</span><span class="p">]])</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;bunch number&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">var</span> <span class="o">==</span> <span class="s2">&quot;bunch_mean&quot;</span><span class="p">:</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">label_mean</span><span class="p">[</span><span class="n">value_dict</span><span class="p">[</span><span class="n">option</span><span class="p">]])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">label_std</span><span class="p">[</span><span class="n">value_dict</span><span class="p">[</span><span class="n">option</span><span class="p">]])</span>
+
+        <span class="k">elif</span> <span class="n">var</span> <span class="o">==</span> <span class="s2">&quot;bunch_emit&quot;</span><span class="p">:</span>
+            <span class="n">value_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;s&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1e9</span><span class="p">,</span> <span class="mf">1e9</span><span class="p">,</span> <span class="mf">1e15</span><span class="p">]</span>
+
+            <span class="n">y_axis</span> <span class="o">=</span> <span class="n">var_dict</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">value_dict</span><span class="p">[</span><span class="n">option</span><span class="p">]]</span>
+
+            <span class="c1"># Convert NaN in y_axis array into zero</span>
+            <span class="n">where_is_nan</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">y_axis</span><span class="p">)</span>
+            <span class="n">y_axis</span><span class="p">[</span><span class="n">where_is_nan</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filling_pattern</span><span class="p">)),</span>
+                    <span class="n">y_axis</span> <span class="o">*</span> <span class="n">scale</span><span class="p">[</span><span class="n">value_dict</span><span class="p">[</span><span class="n">option</span><span class="p">]])</span>
+
+            <span class="k">if</span> <span class="n">option</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">label_y</span> <span class="o">=</span> <span class="s2">&quot;hor. emittance (nm.rad)&quot;</span>
+            <span class="k">elif</span> <span class="n">option</span> <span class="o">==</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">label_y</span> <span class="o">=</span> <span class="s2">&quot;ver. emittance (nm.rad)&quot;</span>
+            <span class="k">elif</span> <span class="n">option</span> <span class="o">==</span> <span class="s2">&quot;s&quot;</span><span class="p">:</span> <span class="n">label_y</span> <span class="o">=</span> <span class="s2">&quot;long. emittance (fm.rad)&quot;</span>
+
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;bunch number&#39;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">label_y</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">var</span> <span class="o">==</span> <span class="s2">&quot;bunch_current&quot;</span> <span class="ow">or</span> <span class="n">var</span> <span class="o">==</span> <span class="s2">&quot;bunch_charge&quot;</span> <span class="ow">or</span> <span class="n">var</span> <span class="o">==</span> <span class="s2">&quot;bunch_particle&quot;</span><span class="p">:</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;bunch_current&quot;</span><span class="p">:</span> <span class="mf">1e3</span><span class="p">,</span>
+                <span class="s2">&quot;bunch_charge&quot;</span><span class="p">:</span> <span class="mf">1e9</span><span class="p">,</span>
+                <span class="s2">&quot;bunch_particle&quot;</span><span class="p">:</span> <span class="mi">1</span>
+            <span class="p">}</span>
+
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filling_pattern</span><span class="p">)),</span>
+                    <span class="n">var_dict</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">*</span> <span class="n">scale</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;bunch number&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">var</span> <span class="o">==</span> <span class="s2">&quot;bunch_current&quot;</span><span class="p">:</span> <span class="n">label_y</span> <span class="o">=</span> <span class="s2">&quot;bunch current (mA)&quot;</span>
+            <span class="k">elif</span> <span class="n">var</span> <span class="o">==</span> <span class="s2">&quot;bunch_charge&quot;</span><span class="p">:</span> <span class="n">label_y</span> <span class="o">=</span> <span class="s2">&quot;bunch chagre (nC)&quot;</span>
+            <span class="k">else</span><span class="p">:</span> <span class="n">label_y</span> <span class="o">=</span> <span class="s2">&quot;number of particles&quot;</span>
+
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">label_y</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">var</span> <span class="o">==</span> <span class="s2">&quot;current&quot;</span> <span class="ow">or</span> <span class="n">var</span> <span class="o">==</span> <span class="s2">&quot;charge&quot;</span> <span class="ow">or</span> <span class="n">var</span> <span class="o">==</span> <span class="s2">&quot;particle_number&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;&#39;</span><span class="si">{0}</span><span class="s2">&#39;is a total value and cannot be plotted.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">var</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+<div class="viewcode-block" id="Beam.save"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Beam.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save beam object data in an HDF5 file format.</span>
+<span class="sd">        </span>
+<span class="sd">        The output file is named as &quot;&lt;file_name&gt;.hdf5&quot;.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file_name : str</span>
+<span class="sd">            Name of the output file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpi_switch</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">bunch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">table</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">bunch_num</span><span class="p">:</span>
+                        <span class="n">mp_number</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">bunch_num</span><span class="p">]</span><span class="o">.</span><span class="n">mp_number</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">mp_number</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">rank</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">bunch_num</span><span class="p">]</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span>
+                                                      <span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">bunch_num</span><span class="p">,</span>
+                                                      <span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">comm</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">mp_number</span> <span class="o">=</span> <span class="kc">None</span>
+                        <span class="n">mp_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span>
+                            <span class="n">mp_number</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">bunch_to_rank</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+                        <span class="n">f</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">file_name</span> <span class="o">+</span> <span class="s2">&quot;.hdf5&quot;</span><span class="p">,</span>
+                                    <span class="s2">&quot;a&quot;</span><span class="p">,</span>
+                                    <span class="n">libver</span><span class="o">=</span><span class="s1">&#39;earliest&#39;</span><span class="p">,</span>
+                                    <span class="n">driver</span><span class="o">=</span><span class="s1">&#39;mpio&#39;</span><span class="p">,</span>
+                                    <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">comm</span><span class="p">)</span>
+                        <span class="n">group_name</span> <span class="o">=</span> <span class="s2">&quot;Bunch_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                        <span class="n">g</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="n">group_name</span><span class="p">)</span>
+                        <span class="n">g</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">&quot;alive&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">mp_number</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+                        <span class="n">g</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">&quot;phasespace&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">mp_number</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+                                         <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                        <span class="n">g</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">&quot;current&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">bunch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">comm</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">bunch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">bunch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Beam.load"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.particles.Beam.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">mpi</span><span class="p">,</span> <span class="n">track_alive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load data from a HDF5 file recorded by Beam save method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file_name : str</span>
+<span class="sd">            Path to the HDF5 file where the Beam data is stored.</span>
+<span class="sd">        mpi : bool</span>
+<span class="sd">            If True, only a single bunch is fully initialized on each core, the</span>
+<span class="sd">            other bunches are initialized with a single marco-particle.</span>
+<span class="sd">        track_alive : bool, optional</span>
+<span class="sd">            If False, the code no longer take into account alive/dead particles.</span>
+<span class="sd">            Should be set to True if element such as apertures are used.</span>
+<span class="sd">            Can be set to False to gain a speed increase.</span>
+<span class="sd">            The default is True.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">mpi</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+            <span class="n">filling_pattern</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">h</span><span class="p">):</span>
+                <span class="n">current</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s2">&quot;Bunch_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)][</span><span class="s1">&#39;current&#39;</span><span class="p">][:][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">filling_pattern</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">init_beam</span><span class="p">(</span><span class="n">filling_pattern</span><span class="p">,</span>
+                           <span class="n">mp_per_bunch</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                           <span class="n">track_alive</span><span class="o">=</span><span class="n">track_alive</span><span class="p">,</span>
+                           <span class="n">mpi</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">bunch_num</span><span class="p">]</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">bunch_num</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">bunch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">bunch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">track_alive</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_filling_pattern</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_distance_between_bunches</span><span class="p">()</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.tracking.particles</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2024, A. Gamelin et al.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

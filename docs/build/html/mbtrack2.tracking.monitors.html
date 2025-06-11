@@ -1,0 +1,1259 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>mbtrack2.tracking.monitors package &#8212; mbtrack2 0.6.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.tracking.monitors package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="mbtrack2-tracking-monitors-package">
+<h1>mbtrack2.tracking.monitors package<a class="headerlink" href="#mbtrack2-tracking-monitors-package" title="Permalink to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="module-mbtrack2.tracking.monitors.monitors">
+<span id="mbtrack2-tracking-monitors-monitors-module"></span><h2>mbtrack2.tracking.monitors.monitors module<a class="headerlink" href="#module-mbtrack2.tracking.monitors.monitors" title="Permalink to this heading">¶</a></h2>
+<p>This module defines the different monitor class which are used to save data
+during tracking.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BeamMonitor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.monitors.</span></span><span class="sig-name descname"><span class="pre">BeamMonitor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_every</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mpi_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BeamMonitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BeamMonitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.tracking.monitors.monitors.Monitor" title="mbtrack2.tracking.monitors.monitors.Monitor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Monitor</span></code></a></p>
+<p>Monitor the full beam and save each bunch attributes (mean, std, emit and 
+current).</p>
+<dl>
+<dt>h<span class="classifier">int</span></dt><dd><p>Harmonic number of the ring.</p>
+</dd>
+<dt>save_every<span class="classifier">int or float</span></dt><dd><p>Set the frequency of the save. The data is saved every save_every 
+call of the montior.</p>
+</dd>
+<dt>buffer_size<span class="classifier">int or float</span></dt><dd><p>Size of the save buffer.</p>
+</dd>
+<dt>total_size<span class="classifier">int or float</span></dt><dd><p>Total size of the save. The following relationships between the 
+parameters must exist:</p>
+<blockquote>
+<div><p>total_size % buffer_size == 0
+number of call to track / save_every == total_size</p>
+</div></blockquote>
+</dd>
+<dt>file_name<span class="classifier">string, optional</span></dt><dd><p>Name of the HDF5 where the data will be stored. Must be specified
+the first time a subclass of Monitor is instancied and must be None
+the following times.</p>
+</dd>
+<dt>mpi_mode<span class="classifier">bool, optional</span></dt><dd><p>If True, open the HDF5 file in parallel mode, which is needed to
+allow several cores to write in the same file at the same time.
+If False, open the HDF5 file in standard mode.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>track(beam)</dt><dd><p>Save data</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BeamMonitor.to_buffer">
+<span class="sig-name descname"><span class="pre">to_buffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bunch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bunch_num</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BeamMonitor.to_buffer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BeamMonitor.to_buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save data to buffer, if mpi is being used.</p>
+<p>bunch : Bunch object
+bunch_num : int</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BeamMonitor.to_buffer_no_mpi">
+<span class="sig-name descname"><span class="pre">to_buffer_no_mpi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beam</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BeamMonitor.to_buffer_no_mpi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BeamMonitor.to_buffer_no_mpi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save data to buffer, if mpi is not being used.</p>
+<p>beam : Beam object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BeamMonitor.track">
+<span class="sig-name descname"><span class="pre">track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beam</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BeamMonitor.track"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BeamMonitor.track" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save data</p>
+<p>beam : Beam object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BeamMonitor.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bunch_num</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BeamMonitor.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BeamMonitor.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write data from buffer to the HDF5 file, if mpi is being used.</p>
+<p>bunch_num : int</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BeamMonitor.write_no_mpi">
+<span class="sig-name descname"><span class="pre">write_no_mpi</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BeamMonitor.write_no_mpi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BeamMonitor.write_no_mpi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write data from buffer to the HDF5 file, if mpi is not being used.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BeamSpectrumMonitor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.monitors.</span></span><span class="sig-name descname"><span class="pre">BeamSpectrumMonitor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_every</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_fft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mpi_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BeamSpectrumMonitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BeamSpectrumMonitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.tracking.monitors.monitors.Monitor" title="mbtrack2.tracking.monitors.monitors.Monitor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Monitor</span></code></a></p>
+<p>Monitor coherent beam spectrum.</p>
+<p>ring : Synchrotron object
+save_every : int or float</p>
+<blockquote>
+<div><p>Set the frequency of the save. The spectrums are computed every 
+save_every call of the montior.</p>
+</div></blockquote>
+<dl>
+<dt>buffer_size<span class="classifier">int or float</span></dt><dd><p>Size of the save buffer.</p>
+</dd>
+<dt>total_size<span class="classifier">int or float</span></dt><dd><p>Total size of the save. The following relationships between the 
+parameters must exist:</p>
+<blockquote>
+<div><p>total_size % buffer_size == 0
+number of call to track / save_every == total_size - 1</p>
+</div></blockquote>
+</dd>
+<dt>dim<span class="classifier">str, optional</span></dt><dd><p>Dimensions in which the spectrums have to be computed.
+Can be:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>“all”</p></li>
+<li><p>“tau”</p></li>
+<li><p>“x”</p></li>
+<li><p>“y”</p></li>
+<li><p>“xy” or “yx”</p></li>
+<li><p>“xtau” or “taux”</p></li>
+<li><p>“ytau” or “tauy”</p></li>
+</ul>
+</div></blockquote>
+</dd>
+<dt>n_fft<span class="classifier">int or float, optional</span></dt><dd><p>The number of points used for FFT computation, if n_fft is bigger than
+save_every zero-padding is applied.
+If None, save_every is used.</p>
+</dd>
+<dt>file_name<span class="classifier">string, optional</span></dt><dd><p>Name of the HDF5 where the data will be stored. Must be specified
+the first time a subclass of Monitor is instancied and must be None
+the following times.</p>
+</dd>
+<dt>mpi_mode<span class="classifier">bool, optional</span></dt><dd><p>If True, open the HDF5 file in parallel mode, which is needed to
+allow several cores to write in the same file at the same time.
+If False, open the HDF5 file in standard mode.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>fft_resolution<span class="classifier">float</span></dt><dd><p>Return the fft resolution in [Hz].</p>
+</dd>
+<dt>signal_resolution<span class="classifier">float</span></dt><dd><p>Return the signal resolution in [Hz].</p>
+</dd>
+<dt>frequency_samples<span class="classifier">array of float</span></dt><dd><p>Return the fft frequency samples in [Hz].</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>track(bunch):</dt><dd><p>Save spectrum data.</p>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BeamSpectrumMonitor.fft_resolution">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fft_resolution</span></span><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BeamSpectrumMonitor.fft_resolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the fft resolution in [Hz].</p>
+<p>It is defined as the sampling frequency over the number of samples.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BeamSpectrumMonitor.frequency_samples">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">frequency_samples</span></span><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BeamSpectrumMonitor.frequency_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the fft frequency samples in [Hz].</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BeamSpectrumMonitor.get_beam_spectrum">
+<span class="sig-name descname"><span class="pre">get_beam_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BeamSpectrumMonitor.get_beam_spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BeamSpectrumMonitor.get_beam_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the beam coherent spectrum i.e. the absolute value of the FT 
+of the mean position of every bunch.</p>
+<dl class="simple">
+<dt>coherent<span class="classifier">array</span></dt><dd><p>The beam coherent spectrum.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BeamSpectrumMonitor.signal_resolution">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">signal_resolution</span></span><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BeamSpectrumMonitor.signal_resolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the signal resolution in [Hz].</p>
+<p>It is defined as the inverse of the signal length.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BeamSpectrumMonitor.to_buffer">
+<span class="sig-name descname"><span class="pre">to_buffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beam</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BeamSpectrumMonitor.to_buffer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BeamSpectrumMonitor.to_buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>A method to hold saved data before writing it to the output file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BeamSpectrumMonitor.track">
+<span class="sig-name descname"><span class="pre">track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beam</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BeamSpectrumMonitor.track"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BeamSpectrumMonitor.track" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save mean data.</p>
+<p>beam : Beam object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BeamSpectrumMonitor.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BeamSpectrumMonitor.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BeamSpectrumMonitor.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write data from buffer to output file.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BunchMonitor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.monitors.</span></span><span class="sig-name descname"><span class="pre">BunchMonitor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bunch_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_every</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mpi_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BunchMonitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BunchMonitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.tracking.monitors.monitors.Monitor" title="mbtrack2.tracking.monitors.monitors.Monitor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Monitor</span></code></a></p>
+<p>Monitor a single bunch and save attributes 
+(mean, std, emit, current, and cs_invariant).</p>
+<dl>
+<dt>bunch_number<span class="classifier">int</span></dt><dd><p>Bunch to monitor</p>
+</dd>
+<dt>save_every<span class="classifier">int or float</span></dt><dd><p>Set the frequency of the save. The data is saved every save_every 
+call of the montior.</p>
+</dd>
+<dt>buffer_size<span class="classifier">int or float</span></dt><dd><p>Size of the save buffer.</p>
+</dd>
+<dt>total_size<span class="classifier">int or float</span></dt><dd><p>Total size of the save. The following relationships between the 
+parameters must exist:</p>
+<blockquote>
+<div><p>total_size % buffer_size == 0
+number of call to track / save_every == total_size</p>
+</div></blockquote>
+</dd>
+<dt>file_name<span class="classifier">string, optional</span></dt><dd><p>Name of the HDF5 where the data will be stored. Must be specified
+the first time a subclass of Monitor is instancied and must be None
+the following times.</p>
+</dd>
+<dt>mpi_mode<span class="classifier">bool, optional</span></dt><dd><p>If True, open the HDF5 file in parallel mode, which is needed to
+allow several cores to write in the same file at the same time.
+If False, open the HDF5 file in standard mode.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>track(object_to_save)</dt><dd><p>Save data</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BunchMonitor.track">
+<span class="sig-name descname"><span class="pre">track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">object_to_save</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BunchMonitor.track"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BunchMonitor.track" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save data</p>
+<p>object_to_save : Bunch or Beam object</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.monitors.</span></span><span class="sig-name descname"><span class="pre">BunchSpectrumMonitor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bunch_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mp_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_every</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_fft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mpi_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BunchSpectrumMonitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.tracking.monitors.monitors.Monitor" title="mbtrack2.tracking.monitors.monitors.Monitor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Monitor</span></code></a></p>
+<p>Monitor the coherent and incoherent bunch spectrums.</p>
+<p>ring : Synchrotron object
+bunch_number : int</p>
+<blockquote>
+<div><p>Bunch to monitor</p>
+</div></blockquote>
+<dl>
+<dt>mp_number<span class="classifier">int or float</span></dt><dd><p>Total number of macro-particles in the bunch.</p>
+</dd>
+<dt>sample_size<span class="classifier">int or float</span></dt><dd><p>Number of macro-particles to be used for tune and FFT computation.
+This number cannot exceed mp_number.</p>
+</dd>
+<dt>save_every<span class="classifier">int or float</span></dt><dd><p>Set the frequency of the save. The spectrums are computed every 
+save_every call of the montior.</p>
+</dd>
+<dt>buffer_size<span class="classifier">int or float</span></dt><dd><p>Size of the save buffer.</p>
+</dd>
+<dt>total_size<span class="classifier">int or float</span></dt><dd><p>Total size of the save. The following relationships between the 
+parameters must exist:</p>
+<blockquote>
+<div><p>total_size % buffer_size == 0
+number of call to track / save_every == total_size - 1</p>
+</div></blockquote>
+</dd>
+<dt>dim<span class="classifier">str, optional</span></dt><dd><p>Dimensions in which the spectrums have to be computed.
+Can be:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>“all”</p></li>
+<li><p>“tau”</p></li>
+<li><p>“x”</p></li>
+<li><p>“y”</p></li>
+<li><p>“xy” or “yx”</p></li>
+<li><p>“xtau” or “taux”</p></li>
+<li><p>“ytau” or “tauy”</p></li>
+</ul>
+</div></blockquote>
+</dd>
+<dt>n_fft<span class="classifier">int or float, optional</span></dt><dd><p>The number of points used for FFT computation, if n_fft is bigger than
+save_every zero-padding is applied.
+If None, save_every is used.</p>
+</dd>
+<dt>file_name<span class="classifier">string, optional</span></dt><dd><p>Name of the HDF5 where the data will be stored. Must be specified
+the first time a subclass of Monitor is instancied and must be None
+the following times.</p>
+</dd>
+<dt>mpi_mode<span class="classifier">bool, optional</span></dt><dd><p>If True, open the HDF5 file in parallel mode, which is needed to
+allow several cores to write in the same file at the same time.
+If False, open the HDF5 file in standard mode.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>fft_resolution<span class="classifier">float</span></dt><dd><p>Return the fft resolution in [Hz].</p>
+</dd>
+<dt>signal_resolution<span class="classifier">float</span></dt><dd><p>Return the signal resolution in [Hz].</p>
+</dd>
+<dt>frequency_samples<span class="classifier">array of float</span></dt><dd><p>Return the fft frequency samples in [Hz].</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>track(bunch):</dt><dd><p>Save spectrum data.</p>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor.fft_resolution">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fft_resolution</span></span><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor.fft_resolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the fft resolution in [Hz].</p>
+<p>It is defined as the sampling frequency over the number of samples.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor.frequency_samples">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">frequency_samples</span></span><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor.frequency_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the fft frequency samples in [Hz].</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor.get_coherent_spectrum">
+<span class="sig-name descname"><span class="pre">get_coherent_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BunchSpectrumMonitor.get_coherent_spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor.get_coherent_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the coherent spectrum i.e. the absolute value of the FT of the
+mean position of the bunch.</p>
+<dl class="simple">
+<dt>coherent<span class="classifier">array</span></dt><dd><p>Bunch coherent spectrum.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor.get_incoherent_spectrum">
+<span class="sig-name descname"><span class="pre">get_incoherent_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">positions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BunchSpectrumMonitor.get_incoherent_spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor.get_incoherent_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the incoherent spectrum i.e. the average of the absolute value 
+of the FT of the position of every particule of the bunch.</p>
+<dl class="simple">
+<dt>incoherent<span class="classifier">array</span></dt><dd><p>Bunch incoherent spectrum.</p>
+</dd>
+<dt>mean_incoherent<span class="classifier">float</span></dt><dd><p>Mean frequency of the maximum of each individual particle spectrum
+in [Hz].</p>
+</dd>
+<dt>std_incoherent<span class="classifier">float</span></dt><dd><p>Standard deviation of the frequency of the maximum of each 
+individual particle spectrum in [Hz].</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor.signal_resolution">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">signal_resolution</span></span><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor.signal_resolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the signal resolution in [Hz].</p>
+<p>It is defined as the inverse of the signal length.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor.to_buffer">
+<span class="sig-name descname"><span class="pre">to_buffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bunch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BunchSpectrumMonitor.to_buffer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor.to_buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>A method to hold saved data before writing it to the output file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor.track">
+<span class="sig-name descname"><span class="pre">track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">object_to_save</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BunchSpectrumMonitor.track"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor.track" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save spectrum data.</p>
+<p>object_to_save : Beam or Bunch object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#BunchSpectrumMonitor.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.BunchSpectrumMonitor.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write data from buffer to output file.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.CavityMonitor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.monitors.</span></span><span class="sig-name descname"><span class="pre">CavityMonitor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cavity_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_every</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mpi_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#CavityMonitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.CavityMonitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.tracking.monitors.monitors.Monitor" title="mbtrack2.tracking.monitors.monitors.Monitor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Monitor</span></code></a></p>
+<p>Monitor a CavityResonator object and save attributes.</p>
+<dl class="simple">
+<dt>cavity_name<span class="classifier">str</span></dt><dd><p>Name of the CavityResonator object to monitor.</p>
+</dd>
+</dl>
+<p>ring : Synchrotron object
+save_every : int or float</p>
+<blockquote>
+<div><p>Set the frequency of the save. The data is saved every save_every 
+call of the montior.</p>
+</div></blockquote>
+<dl>
+<dt>buffer_size<span class="classifier">int or float</span></dt><dd><p>Size of the save buffer.</p>
+</dd>
+<dt>total_size<span class="classifier">int or float</span></dt><dd><p>Total size of the save. The following relationships between the 
+parameters must exist:</p>
+<blockquote>
+<div><p>total_size % buffer_size == 0
+number of call to track / save_every == total_size</p>
+</div></blockquote>
+</dd>
+<dt>file_name<span class="classifier">string, optional</span></dt><dd><p>Name of the HDF5 where the data will be stored. Must be specified
+the first time a subclass of Monitor is instancied and must be None
+the following times.</p>
+</dd>
+<dt>mpi_mode<span class="classifier">bool, optional</span></dt><dd><p>If True, open the HDF5 file in parallel mode, which is needed to
+allow several cores to write in the same file at the same time.
+If False, open the HDF5 file in standard mode.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>track(beam, cavity)</dt><dd><p>Save data</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.CavityMonitor.track">
+<span class="sig-name descname"><span class="pre">track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beam</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cavity</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#CavityMonitor.track"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.CavityMonitor.track" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save data</p>
+<p>beam : Beam object
+cavity : CavityResonator object</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.Monitor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.monitors.</span></span><span class="sig-name descname"><span class="pre">Monitor</span></span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#Monitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.Monitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="mbtrack2.tracking.html#mbtrack2.tracking.element.Element" title="mbtrack2.tracking.element.Element"><code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></a></p>
+<p>Abstract Monitor class used for subclass inheritance to define all the
+different kind of monitors objects.</p>
+<p>The Monitor class is based on h5py module to be able to write data on 
+structured binary files. The class provides a common file where the 
+different Monitor subclass can write.</p>
+<dl class="simple">
+<dt>file<span class="classifier">HDF5 file</span></dt><dd><p>Common file where all monitors, Monitor subclass elements, write the
+saved data. Based on class attribute _file_storage.</p>
+</dd>
+<dt>file_name<span class="classifier">string</span></dt><dd><p>Name of the HDF5 file where the data is stored. Based on class 
+attribute _file_name_storage.</p>
+</dd>
+</dl>
+<dl>
+<dt>monitor_init(group_name, save_every, buffer_size, total_size,</dt><dd><blockquote>
+<div><p>dict_buffer, dict_file, file_name=None, mpi_mode=True)</p>
+</div></blockquote>
+<p>Method called to initialize Monitor subclass.</p>
+</dd>
+<dt>write()</dt><dd><p>Write data from buffer to the HDF5 file.</p>
+</dd>
+<dt>to_buffer(object_to_save)</dt><dd><p>Save data to buffer.</p>
+</dd>
+<dt>close()</dt><dd><p>Close the HDF5 file shared by all Monitor subclass, must be called 
+by at least an instance of a Montior subclass at the end of the 
+tracking.</p>
+</dd>
+<dt>track_bunch_data(object_to_save)</dt><dd><p>Track method to use when saving bunch data.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.Monitor.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#Monitor.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.Monitor.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the HDF5 file shared by all Monitor subclass, must be called 
+by at least an instance of a Montior subclass at the end of the 
+tracking.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.Monitor.file">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">file</span></span><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.Monitor.file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the HDF5 file where the data is stored.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.Monitor.file_name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">file_name</span></span><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.Monitor.file_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Common file where all monitors, Monitor subclass elements, write the
+saved data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.Monitor.monitor_init">
+<span class="sig-name descname"><span class="pre">monitor_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_every</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dict_buffer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dict_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mpi_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dict_dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#Monitor.monitor_init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.Monitor.monitor_init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method called to initialize Monitor subclass.</p>
+<dl>
+<dt>group_name<span class="classifier">string</span></dt><dd><p>Name of the HDF5 group in which the data for the current monitor 
+will be saved.</p>
+</dd>
+<dt>save_every<span class="classifier">int or float</span></dt><dd><p>Set the frequency of the save. The data is saved every save_every 
+call of the montior.</p>
+</dd>
+<dt>buffer_size<span class="classifier">int or float</span></dt><dd><p>Size of the save buffer.</p>
+</dd>
+<dt>total_size<span class="classifier">int or float</span></dt><dd><p>Total size of the save. The following relationships between the 
+parameters must exist:</p>
+<blockquote>
+<div><p>total_size % buffer_size == 0
+number of call to track / save_every == total_size</p>
+</div></blockquote>
+</dd>
+<dt>dict_buffer<span class="classifier">dict</span></dt><dd><p>Dictionary with keys as the attribute name to save and values as
+the shape of the buffer to create to hold the attribute, like 
+(key.shape, buffer_size)</p>
+</dd>
+<dt>dict_file<span class="classifier">dict</span></dt><dd><p>Dictionary with keys as the attribute name to save and values as
+the shape of the dataset to create to hold the attribute, like 
+(key.shape, total_size)</p>
+</dd>
+<dt>file_name<span class="classifier">string, optional</span></dt><dd><p>Name of the HDF5 where the data will be stored. Must be specified
+the first time a subclass of Monitor is instancied and must be None
+the following times.</p>
+</dd>
+<dt>mpi_mode<span class="classifier">bool, optional</span></dt><dd><p>If True, open the HDF5 file in parallel mode, which is needed to
+allow several cores to write in the same file at the same time.
+If False, open the HDF5 file in standard mode.</p>
+</dd>
+<dt>dict_dtype<span class="classifier">dict, optional</span></dt><dd><p>Dictionary with keys as the attribute name to save and values as
+the dtype to use to save the values.
+If None, float is used for all attributes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.Monitor.to_buffer">
+<span class="sig-name descname"><span class="pre">to_buffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">object_to_save</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#Monitor.to_buffer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.Monitor.to_buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save data to buffer.</p>
+<dl class="simple">
+<dt>object_to_save<span class="classifier">python object</span></dt><dd><p>Depends on the Monitor subclass, typically a Beam or Bunch object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.Monitor.track_bunch_data">
+<span class="sig-name descname"><span class="pre">track_bunch_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">object_to_save</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_empty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#Monitor.track_bunch_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.Monitor.track_bunch_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Track method to use when saving bunch data.</p>
+<p>object_to_save : Beam or Bunch
+check_emptiness: bool</p>
+<blockquote>
+<div><p>If True, check if the bunch is empty. If it is, then do nothing.</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.Monitor.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#Monitor.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.Monitor.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write data from buffer to the HDF5 file.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.PhaseSpaceMonitor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.monitors.</span></span><span class="sig-name descname"><span class="pre">PhaseSpaceMonitor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bunch_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mp_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_every</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mpi_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#PhaseSpaceMonitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.PhaseSpaceMonitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.tracking.monitors.monitors.Monitor" title="mbtrack2.tracking.monitors.monitors.Monitor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Monitor</span></code></a></p>
+<p>Monitor a single bunch and save the full phase space.</p>
+<dl>
+<dt>bunch_number<span class="classifier">int</span></dt><dd><p>Bunch to monitor</p>
+</dd>
+<dt>mp_number<span class="classifier">int or float</span></dt><dd><p>Number of macroparticle in the phase space to save. If less than the 
+total number of macroparticles, a random fraction of the bunch is saved.</p>
+</dd>
+<dt>save_every<span class="classifier">int or float</span></dt><dd><p>Set the frequency of the save. The data is saved every save_every 
+call of the montior.</p>
+</dd>
+<dt>buffer_size<span class="classifier">int or float</span></dt><dd><p>Size of the save buffer.</p>
+</dd>
+<dt>total_size<span class="classifier">int or float</span></dt><dd><p>Total size of the save. The following relationships between the 
+parameters must exist:</p>
+<blockquote>
+<div><p>total_size % buffer_size == 0
+number of call to track / save_every == total_size</p>
+</div></blockquote>
+</dd>
+<dt>file_name<span class="classifier">string, optional</span></dt><dd><p>Name of the HDF5 where the data will be stored. Must be specified
+the first time a subclass of Monitor is instancied and must be None
+the following times.</p>
+</dd>
+<dt>mpi_mode<span class="classifier">bool, optional</span></dt><dd><p>If True, open the HDF5 file in parallel mode, which is needed to
+allow several cores to write in the same file at the same time.
+If False, open the HDF5 file in standard mode.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>track(object_to_save)</dt><dd><p>Save data</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.PhaseSpaceMonitor.to_buffer">
+<span class="sig-name descname"><span class="pre">to_buffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bunch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#PhaseSpaceMonitor.to_buffer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.PhaseSpaceMonitor.to_buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save data to buffer.</p>
+<p>bunch : Bunch object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.PhaseSpaceMonitor.track">
+<span class="sig-name descname"><span class="pre">track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">object_to_save</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#PhaseSpaceMonitor.track"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.PhaseSpaceMonitor.track" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save data</p>
+<p>object_to_save : Bunch or Beam object</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.ProfileMonitor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.monitors.</span></span><span class="sig-name descname"><span class="pre">ProfileMonitor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bunch_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_every</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimensions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tau'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_bin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">75</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mpi_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#ProfileMonitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.ProfileMonitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.tracking.monitors.monitors.Monitor" title="mbtrack2.tracking.monitors.monitors.Monitor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Monitor</span></code></a></p>
+<p>Monitor a single bunch and save bunch profiles.</p>
+<dl>
+<dt>bunch_number<span class="classifier">int</span></dt><dd><p>Bunch to monitor.</p>
+</dd>
+<dt>save_every<span class="classifier">int or float</span></dt><dd><p>Set the frequency of the save. The data is saved every save_every 
+call of the montior.</p>
+</dd>
+<dt>buffer_size<span class="classifier">int or float</span></dt><dd><p>Size of the save buffer.</p>
+</dd>
+<dt>total_size<span class="classifier">int or float</span></dt><dd><p>Total size of the save. The following relationships between the 
+parameters must exist:</p>
+<blockquote>
+<div><p>total_size % buffer_size == 0
+number of call to track / save_every == total_size</p>
+</div></blockquote>
+</dd>
+<dt>dimensions<span class="classifier">str or list of str, optional</span></dt><dd><p>Dimensions to save.</p>
+</dd>
+<dt>n_bin<span class="classifier">int or list of int, optional</span></dt><dd><p>Number of bin to use in each dimension.</p>
+</dd>
+<dt>file_name<span class="classifier">string, optional</span></dt><dd><p>Name of the HDF5 where the data will be stored. Must be specified
+the first time a subclass of Monitor is instancied and must be None
+the following times.</p>
+</dd>
+<dt>mpi_mode<span class="classifier">bool, optional</span></dt><dd><p>If True, open the HDF5 file in parallel mode, which is needed to
+allow several cores to write in the same file at the same time.
+If False, open the HDF5 file in standard mode.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>track(object_to_save)</dt><dd><p>Save data.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.ProfileMonitor.to_buffer">
+<span class="sig-name descname"><span class="pre">to_buffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bunch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#ProfileMonitor.to_buffer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.ProfileMonitor.to_buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save data to buffer.</p>
+<p>bunch : Bunch object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.ProfileMonitor.track">
+<span class="sig-name descname"><span class="pre">track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">object_to_save</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#ProfileMonitor.track"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.ProfileMonitor.track" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save data.</p>
+<p>object_to_save : Bunch or Beam object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.ProfileMonitor.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#ProfileMonitor.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.ProfileMonitor.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write data from buffer to the HDF5 file.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.WakePotentialMonitor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.monitors.</span></span><span class="sig-name descname"><span class="pre">WakePotentialMonitor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bunch_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wake_types</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_bin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_every</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mpi_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#WakePotentialMonitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.WakePotentialMonitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.tracking.monitors.monitors.Monitor" title="mbtrack2.tracking.monitors.monitors.Monitor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Monitor</span></code></a></p>
+<p>Monitor the wake potential from a single bunch and save attributes (tau, 
+…).</p>
+<dl>
+<dt>bunch_number<span class="classifier">int</span></dt><dd><p>Bunch to monitor.</p>
+</dd>
+<dt>wake_types<span class="classifier">str or list of str</span></dt><dd><p>Wake types to save: “Wlong, “Wxdip”, …</p>
+</dd>
+<dt>n_bin<span class="classifier">int</span></dt><dd><p>Number of bin to be used to interpolate the wake potential on a fixed
+grid.</p>
+</dd>
+<dt>save_every<span class="classifier">int or float</span></dt><dd><p>Set the frequency of the save. The data is saved every save_every 
+call of the montior.</p>
+</dd>
+<dt>buffer_size<span class="classifier">int or float</span></dt><dd><p>Size of the save buffer.</p>
+</dd>
+<dt>total_size<span class="classifier">int or float</span></dt><dd><p>Total size of the save. The following relationships between the 
+parameters must exist:</p>
+<blockquote>
+<div><p>total_size % buffer_size == 0
+number of call to track / save_every == total_size</p>
+</div></blockquote>
+</dd>
+<dt>file_name<span class="classifier">string, optional</span></dt><dd><p>Name of the HDF5 where the data will be stored. Must be specified
+the first time a subclass of Monitor is instancied and must be None
+the following times.</p>
+</dd>
+<dt>mpi_mode<span class="classifier">bool, optional</span></dt><dd><p>If True, open the HDF5 file in parallel mode, which is needed to
+allow several cores to write in the same file at the same time.
+If False, open the HDF5 file in standard mode.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>track(object_to_save, wake_potential_to_save)</dt><dd><p>Save data.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.WakePotentialMonitor.to_buffer">
+<span class="sig-name descname"><span class="pre">to_buffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#WakePotentialMonitor.to_buffer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.WakePotentialMonitor.to_buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save data to buffer.</p>
+<p>wp : WakePotential object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.WakePotentialMonitor.track">
+<span class="sig-name descname"><span class="pre">track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">object_to_save</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wake_potential_to_save</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#WakePotentialMonitor.track"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.WakePotentialMonitor.track" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save data.</p>
+<p>object_to_save : Bunch or Beam object
+wake_potential_to_save : WakePotential object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.monitors.WakePotentialMonitor.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/monitors.html#WakePotentialMonitor.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.monitors.WakePotentialMonitor.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write data from buffer to the HDF5 file.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-mbtrack2.tracking.monitors.plotting">
+<span id="mbtrack2-tracking-monitors-plotting-module"></span><h2>mbtrack2.tracking.monitors.plotting module<a class="headerlink" href="#module-mbtrack2.tracking.monitors.plotting" title="Permalink to this heading">¶</a></h2>
+<p>Module for plotting the data recorded by the monitor module during the 
+tracking.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.plotting.plot_beamdata">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_beamdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filenames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tau'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stat_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'time'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/plotting.html#plot_beamdata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.plotting.plot_beamdata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot 2D data recorded by BeamMonitor.</p>
+<dl>
+<dt>filenames<span class="classifier">str or list of str</span></dt><dd><p>Names of the HDF5 files to be plotted.</p>
+</dd>
+<dt>dataset<span class="classifier">{“current”,”emit”,”mean”,”std”,”cs_invariant”}</span></dt><dd><p>HDF5 file’s dataset to be plotted. The default is “mean”.</p>
+</dd>
+<dt>dimension<span class="classifier">str</span></dt><dd><blockquote>
+<div><dl class="simple">
+<dt>The dimension of the dataset to plot:</dt><dd><p>for “emit”, dimension = {“x”,”y”,”s”},
+for “cs_invariant”, dimension = {“x”,”y”,”s”},
+for “mean” and “std”, dimension = {“x”,”xp”,”y”,”yp”,”tau”,”delta”}.
+not used if “current”.</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>The default is “tau”.</p>
+</dd>
+<dt>stat_var<span class="classifier">{“mean”, “std”}</span></dt><dd><p>Statistical value of the dimension.</p>
+</dd>
+<dt>x_var<span class="classifier">{“time”, “index”}</span></dt><dd><dl class="simple">
+<dt>Choice of the horizontal axis:</dt><dd><p>“time” corresponds to turn number.
+“index” corresponds to bunch index.</p>
+</dd>
+</dl>
+</dd>
+<dt>turn<span class="classifier">int or float, optional</span></dt><dd><p>Choice of the turn to plot when x_var = “index”.
+If None, the last turn is plotted.</p>
+</dd>
+<dt>legend<span class="classifier">list of str, optional</span></dt><dd><p>Legend to add for each file.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>fig<span class="classifier">Figure</span></dt><dd><p>Figure object with the plot on it.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.plotting.plot_beamspectrum">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_beamspectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filenames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tau'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/plotting.html#plot_beamspectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.plotting.plot_beamspectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot coherent beam spectrum data.</p>
+<dl class="simple">
+<dt>filenames<span class="classifier">str or list of str</span></dt><dd><p>Names of the HDF5 files to be plotted.</p>
+</dd>
+<dt>dim<span class="classifier">{“x”,”y”,”tau”}, optional</span></dt><dd><p>The dimension of the dataset to plot.
+The default is “tau”.</p>
+</dd>
+<dt>turns<span class="classifier">array or None, optional</span></dt><dd><p>Numbers of the turns to plot.
+If None, all turns are shown. 
+The default is None.</p>
+</dd>
+<dt>f0<span class="classifier">float or None, optional</span></dt><dd><p>If not None, the frequency axis is noramlised by f0. 
+The default is None.</p>
+</dd>
+<dt>log_scale<span class="classifier">bool, optional</span></dt><dd><p>If True, the spectrum plots are shown in y-log scale. 
+The default is True.</p>
+</dd>
+<dt>legend<span class="classifier">list of str, optional</span></dt><dd><p>Legend to add for each file.
+The default is None.</p>
+</dd>
+<dt>norm<span class="classifier">bool, optional</span></dt><dd><p>If True, normalise the data of each spectrum by its geometric mean.
+The default is False.</p>
+</dd>
+</dl>
+<p>fig : Figure</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.plotting.plot_bunchdata">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_bunchdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filenames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bunch_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'x'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/plotting.html#plot_bunchdata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.plotting.plot_bunchdata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot data recorded by BunchMonitor.</p>
+<dl>
+<dt>filenames<span class="classifier">str or list of str</span></dt><dd><p>Names of the HDF5 files to be plotted.</p>
+</dd>
+<dt>bunch_number<span class="classifier">int or list of int</span></dt><dd><p>Bunch to plot. This has to be identical to ‘bunch_number’ parameter in 
+‘BunchMonitor’ object.</p>
+</dd>
+<dt>dataset<span class="classifier">{“current”, “emit”, “mean”, “std”, “cs_invariant”}</span></dt><dd><p>HDF5 file’s dataset to be plotted.</p>
+</dd>
+<dt>dimension<span class="classifier">str, optional</span></dt><dd><p>The dimension of the dataset to plot. Use “None” for “current”,
+otherwise use the following :</p>
+<blockquote>
+<div><p>for “emit”, dimension = {“x”,”y”,”s”},
+for “cs_invariant”, dimension = {“x”,”y”,”s”},
+for “mean” and “std”, dimension = {“x”,”xp”,”y”,”yp”,”tau”,”delta”},
+for “action”, dimension = {“x”,”y”}.</p>
+</div></blockquote>
+</dd>
+<dt>legend<span class="classifier">list of str, optional</span></dt><dd><p>Legend to add for each file.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>fig<span class="classifier">Figure</span></dt><dd><p>Figure object with the plot on it.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.plotting.plot_bunchspectrum">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_bunchspectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filenames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bunch_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'incoherent'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tau'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/plotting.html#plot_bunchspectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.plotting.plot_bunchspectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot coherent and incoherent spectrum data.</p>
+<dl class="simple">
+<dt>filenames<span class="classifier">str or list of str</span></dt><dd><p>Names of the HDF5 files to be plotted.</p>
+</dd>
+<dt>bunch_number<span class="classifier">int or list of int</span></dt><dd><p>Bunch to plot. This has to be identical to ‘bunch_number’ parameter in 
+‘BunchSpectrumMonitor’ object.</p>
+</dd>
+<dt>dataset<span class="classifier">{“mean_incoherent”, “coherent”, “incoherent”}</span></dt><dd><p>HDF5 file’s dataset to be plotted. 
+The default is “incoherent”.</p>
+</dd>
+<dt>dim<span class="classifier">{“x”,”y”,”tau”}, optional</span></dt><dd><p>The dimension of the dataset to plot.
+The default is “tau”.</p>
+</dd>
+<dt>turns<span class="classifier">array or None, optional</span></dt><dd><p>Numbers of the turns to plot.
+If None, all turns are shown. 
+The default is None.</p>
+</dd>
+<dt>fs<span class="classifier">float or None, optional</span></dt><dd><p>If not None, the frequency axis is noramlised by fs. 
+The default is None.</p>
+</dd>
+<dt>log_scale<span class="classifier">bool, optional</span></dt><dd><p>If True, the spectrum plots are shown in y-log scale. 
+The default is True.</p>
+</dd>
+<dt>legend<span class="classifier">list of str, optional</span></dt><dd><p>Legend to add for each file.
+The default is None.</p>
+</dd>
+<dt>norm<span class="classifier">bool, optional</span></dt><dd><p>If True, normalise the data of each spectrum by its geometric mean.
+The default is False.</p>
+</dd>
+</dl>
+<p>fig : Figure</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.plotting.plot_cavitydata">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_cavitydata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cavity_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phasor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cavity'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bunch'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bunch_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cm_lim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_objective</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/plotting.html#plot_cavitydata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.plotting.plot_cavitydata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot data recorded by CavityMonitor.</p>
+<dl>
+<dt>filename<span class="classifier">str </span></dt><dd><p>Name of the HDF5 file that contains the data.</p>
+</dd>
+<dt>cavity_name<span class="classifier">str</span></dt><dd><p>Name of the CavityResonator object.</p>
+</dd>
+<dt>phasor<span class="classifier">str, optional</span></dt><dd><p>Type of the phasor to plot. Can be “beam”, “cavity”, “generator” or 
+“ig”.</p>
+</dd>
+<dt>plot_type<span class="classifier">str, optional</span></dt><dd><dl>
+<dt>Type of plot:</dt><dd><ul class="simple">
+<li><p>“bunch” plots the phasor voltage and angle versus time for a</p></li>
+</ul>
+<p>given bunch.
+- “turn” plots the phasor voltage and ange versus bunch index for
+a given turn.
+- “streak_amplitude” plots the phasor amplitude versus bunch index 
+and time.
+- “streak_angle” plots the phasor angle versus bunch index and 
+time.
+- “detune” or “psi” plots the detuning or tuning angle versus time.
+- “power” plots the generator, cavity, beam and reflected power
+versus time. Needs BeamMonitor data with same save_every as 
+CavityMonitor.
+- “mean” plots the mean phasor voltage and angle versus time for 
+non empty bunches. Needs BeamMonitor data with same save_every as 
+CavityMonitor.
+- “tuner_diff” plots the tuner difference from optimal tuning 
+condition (for a given bunch) and the tuning angle versus time.</p>
+</dd>
+</dl>
+</dd>
+<dt>bunch_number<span class="classifier">int, optional</span></dt><dd><p>Bunch number to select. The default is 0.</p>
+</dd>
+<dt>turn<span class="classifier">int, optional</span></dt><dd><p>Turn to plot. The default is None.</p>
+</dd>
+<dt>cm_lim<span class="classifier">list [vmin, vmax], optional</span></dt><dd><p>Colormap scale for the “streak” plots.</p>
+</dd>
+<dt>show_objective<span class="classifier">bool, optional</span></dt><dd><p>If True, shows the Cavity voltage and phase objective value (Vc and 
+theta) in plot type “mean” and “bunch” for “cavity” phasor.
+Default is False.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>fig<span class="classifier">Figure</span></dt><dd><p>Figure object with the plot on it.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.plotting.plot_phasespacedata">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_phasespacedata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bunch_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only_alive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'kde'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/plotting.html#plot_phasespacedata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.plotting.plot_phasespacedata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot data recorded by PhaseSpaceMonitor.</p>
+<dl class="simple">
+<dt>filename<span class="classifier">str</span></dt><dd><p>Name of the HDF5 file that contains the data.</p>
+</dd>
+<dt>bunch_number<span class="classifier">int</span></dt><dd><p>Bunch to plot. This has to be identical to ‘bunch_number’ parameter in 
+‘PhaseSpaceMonitor’ object.</p>
+</dd>
+<dt>x_var, y_var<span class="classifier">str {“x”, “xp”, “y”, “yp”, “tau”, “delta”}</span></dt><dd><p>If dataset is “particles”, the variables to be plotted on the 
+horizontal and the vertical axes need to be specified.</p>
+</dd>
+<dt>turn<span class="classifier">int</span></dt><dd><p>Turn at which the data will be extracted.</p>
+</dd>
+<dt>only_alive<span class="classifier">bool, optional</span></dt><dd><p>When only_alive is True, only alive particles are plotted and dead 
+particles will be discarded.</p>
+</dd>
+<dt>plot_size<span class="classifier">[0,1], optional</span></dt><dd><p>Number of macro-particles to plot relative to the total number 
+of macro-particles recorded. This option helps reduce processing time
+when the data is big.</p>
+</dd>
+<dt>plot_kind<span class="classifier">{‘scatter’, ‘kde’, ‘hex’, ‘reg’, ‘resid’}, optional</span></dt><dd><p>The plot style. The default is ‘kde’.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>fig<span class="classifier">Figure</span></dt><dd><p>Figure object with the plot on it.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.plotting.plot_profiledata">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_profiledata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bunch_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tau'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">streak_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/plotting.html#plot_profiledata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.plotting.plot_profiledata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot data recorded by ProfileMonitor</p>
+<dl class="simple">
+<dt>filename<span class="classifier">str</span></dt><dd><p>Name of the HDF5 file that contains the data.</p>
+</dd>
+<dt>bunch_number<span class="classifier">int</span></dt><dd><p>Bunch to plot. This has to be identical to ‘bunch_number’ parameter in 
+‘ProfileMonitor’ object.</p>
+</dd>
+<dt>dimension<span class="classifier">str, optional</span></dt><dd><p>Dimension to plot. The default is “tau”</p>
+</dd>
+<dt>start<span class="classifier">int, optional</span></dt><dd><p>First turn to plot. The default is 0.</p>
+</dd>
+<dt>stop<span class="classifier">int, optional</span></dt><dd><p>Last turn to plot. If None, the last turn of the record is selected.</p>
+</dd>
+<dt>step<span class="classifier">int, optional</span></dt><dd><p>Plotting step. This has to be divisible by ‘save_every’ parameter in
+‘ProfileMonitor’ object, i.e. step % save_every == 0. If None, step is
+equivalent to save_every.</p>
+</dd>
+<dt>profile_plot<span class="classifier">bool, optional</span></dt><dd><p>If Ture, bunch profile plot is plotted.</p>
+</dd>
+<dt>streak_plot<span class="classifier">bool, optional</span></dt><dd><p>If True, strek plot is plotted.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>fig<span class="classifier">Figure</span></dt><dd><p>Figure object with the plot on it.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.plotting.plot_wakedata">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_wakedata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bunch_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wake_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Wlong'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">streak_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bunch_profile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dipole</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/plotting.html#plot_wakedata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.plotting.plot_wakedata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot data recorded by WakePotentialMonitor</p>
+<dl class="simple">
+<dt>filename<span class="classifier">str</span></dt><dd><p>Name of the HDF5 file that contains the data.</p>
+</dd>
+<dt>bunch_number<span class="classifier">int</span></dt><dd><p>Bunch to plot. This has to be identical to ‘bunch_number’ parameter in 
+‘WakePotentialMonitor’ object.</p>
+</dd>
+<dt>wake_type<span class="classifier">str, optional</span></dt><dd><p>Wake type to plot: “Wlong”, “Wxdip”, …</p>
+</dd>
+<dt>start<span class="classifier">int, optional</span></dt><dd><p>First turn to plot. The default is 0.</p>
+</dd>
+<dt>stop<span class="classifier">int, optional</span></dt><dd><p>Last turn to plot. If None, the last turn of the record is selected.</p>
+</dd>
+<dt>step<span class="classifier">int, optional</span></dt><dd><p>Plotting step. This has to be divisible by ‘save_every’ parameter in
+‘WakePotentialMonitor’ object, i.e. step % save_every == 0. If None, 
+step is equivalent to save_every.</p>
+</dd>
+<dt>profile_plot<span class="classifier">bool, optional</span></dt><dd><p>If Ture, wake potential profile plot is plotted.</p>
+</dd>
+<dt>streak_plot<span class="classifier">bool, optional</span></dt><dd><p>If True, strek plot is plotted.</p>
+</dd>
+<dt>bunch_profile<span class="classifier">bool, optional.</span></dt><dd><p>If True, the bunch profile is plotted.</p>
+</dd>
+<dt>dipole<span class="classifier">bool, optional</span></dt><dd><p>If True, the dipole moment is plotted.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>fig<span class="classifier">Figure</span></dt><dd><p>Figure object with the plot on it.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.plotting.streak_beamdata">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.plotting.</span></span><span class="sig-name descname"><span class="pre">streak_beamdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tau'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cm_lim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/plotting.html#streak_beamdata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.plotting.streak_beamdata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot 3D data recorded by BeamMonitor.</p>
+<dl>
+<dt>filename<span class="classifier">str</span></dt><dd><p>Name of the HDF5 file that contains the data.</p>
+</dd>
+<dt>dataset<span class="classifier">{“current”,”emit”,”mean”,”std”,”cs_invariant”}</span></dt><dd><p>HDF5 file’s dataset to be plotted. The default is “mean”.</p>
+</dd>
+<dt>dimension<span class="classifier">str</span></dt><dd><blockquote>
+<div><dl class="simple">
+<dt>The dimension of the dataset to plot:</dt><dd><p>for “emit”, dimension = {“x”,”y”,”s”},
+for “cs_invariant”, dimension = {“x”,”y”,”s”},
+for “mean” and “std”, dimension = {“x”,”xp”,”y”,”yp”,”tau”,”delta”}.
+not used if “current”.</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>The default is “tau”.</p>
+</dd>
+<dt>cm_lim<span class="classifier">list [vmin, vmax], optional</span></dt><dd><p>Colormap scale for the “streak” plot.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>fig<span class="classifier">Figure</span></dt><dd><p>Figure object with the plot on it.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.plotting.streak_beamspectrum">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.plotting.</span></span><span class="sig-name descname"><span class="pre">streak_beamspectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tau'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/plotting.html#streak_beamspectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.plotting.streak_beamspectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot 3D data recorded by the BeamSpectrumMonitor.</p>
+<dl class="simple">
+<dt>filenames<span class="classifier">str</span></dt><dd><p>Name of the HDF5 file to be plotted.</p>
+</dd>
+<dt>dim<span class="classifier">{“x”,”y”,”tau”}, optional</span></dt><dd><p>The dimension of the dataset to plot.
+The default is “tau”.</p>
+</dd>
+<dt>f0<span class="classifier">float or None, optional</span></dt><dd><p>If not None, the frequency axis is noramlised by f0.</p>
+</dd>
+<dt>log_scale<span class="classifier">bool, optional</span></dt><dd><p>If True, the spectrum plots are shown in y-log scale. 
+The default is True.</p>
+</dd>
+<dt>fmin<span class="classifier">float, optional</span></dt><dd><p>If not None, the plot is limitted to values bigger than fmin.</p>
+</dd>
+<dt>fmax<span class="classifier">float, optional</span></dt><dd><p>If not None, the plot is limitted to values smaller than fmax.</p>
+</dd>
+<dt>turns<span class="classifier">array, optional</span></dt><dd><p>If not None, only the turn numbers in the turns array are plotted.</p>
+</dd>
+<dt>norm<span class="classifier">bool, optional</span></dt><dd><p>If True, normalise the data of each spectrum by its geometric mean.
+The default is False.</p>
+</dd>
+<dt>ylim<span class="classifier">array, optional</span></dt><dd><p>If not None, should be array like in the form [ymin, ymax] where ymin 
+and ymax are the minimum and maxmimum values used in the y axis.</p>
+</dd>
+</dl>
+<p>fig : Figure</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.plotting.streak_bunchspectrum">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.plotting.</span></span><span class="sig-name descname"><span class="pre">streak_bunchspectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bunch_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'incoherent'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tau'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/plotting.html#streak_bunchspectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.plotting.streak_bunchspectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot 3D data recorded by the BunchSpectrumMonitor.</p>
+<dl class="simple">
+<dt>filenames<span class="classifier">str</span></dt><dd><p>Name of the HDF5 file to be plotted.</p>
+</dd>
+<dt>bunch_number<span class="classifier">int</span></dt><dd><p>Bunch to plot. This has to be identical to ‘bunch_number’ parameter in 
+‘BunchSpectrumMonitor’ object.</p>
+</dd>
+<dt>dataset<span class="classifier">{“coherent”, “incoherent”}</span></dt><dd><p>HDF5 file’s dataset to be plotted. 
+The default is “incoherent”.</p>
+</dd>
+<dt>dim<span class="classifier">{“x”,”y”,”tau”}, optional</span></dt><dd><p>The dimension of the dataset to plot.
+The default is “tau”.</p>
+</dd>
+<dt>fs<span class="classifier">float or None, optional</span></dt><dd><p>If not None, the frequency axis is noramlised by fs.</p>
+</dd>
+<dt>log_scale<span class="classifier">bool, optional</span></dt><dd><p>If True, the spectrum plots are shown in y-log scale. 
+The default is True.</p>
+</dd>
+<dt>fmin<span class="classifier">float, optional</span></dt><dd><p>If not None, the plot is limitted to values bigger than fmin.</p>
+</dd>
+<dt>fmax<span class="classifier">float, optional</span></dt><dd><p>If not None, the plot is limitted to values smaller than fmax.</p>
+</dd>
+<dt>turns<span class="classifier">array, optional</span></dt><dd><p>If not None, only the turn numbers in the turns array are plotted.</p>
+</dd>
+<dt>norm<span class="classifier">bool, optional</span></dt><dd><p>If True, normalise the data of each spectrum by its geometric mean.
+The default is False.</p>
+</dd>
+<dt>ylim<span class="classifier">array, optional</span></dt><dd><p>If not None, should be array like in the form [ymin, ymax] where ymin 
+and ymax are the minimum and maxmimum values used in the y axis.</p>
+</dd>
+</dl>
+<p>fig : Figure</p>
+</dd></dl>
+
+</section>
+<section id="module-mbtrack2.tracking.monitors.tools">
+<span id="mbtrack2-tracking-monitors-tools-module"></span><h2>mbtrack2.tracking.monitors.tools module<a class="headerlink" href="#module-mbtrack2.tracking.monitors.tools" title="Permalink to this heading">¶</a></h2>
+<p>This module defines utilities functions, helping to deals with tracking output 
+and hdf5 files.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.tools.copy_files">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.tools.</span></span><span class="sig-name descname"><span class="pre">copy_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/tools.html#copy_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.tools.copy_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy a source hdf5 file into another hdf5 file using a different HDF5 
+version.</p>
+<p>The function assumes that the source file has only a single group layer.</p>
+<dl class="simple">
+<dt>source<span class="classifier">str</span></dt><dd><p>Name of the source file.</p>
+</dd>
+<dt>copy<span class="classifier">str</span></dt><dd><p>Name of the copy file.</p>
+</dd>
+<dt>version<span class="classifier">str, optional</span></dt><dd><p>Version number of the copy file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.tracking.monitors.tools.merge_files">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.tracking.monitors.tools.</span></span><span class="sig-name descname"><span class="pre">merge_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">files_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/tracking/monitors/tools.html#merge_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.tracking.monitors.tools.merge_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merge several hdf5 files into one.</p>
+<p>The function assumes that the files to merge have names in the follwing 
+format:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>“files_prefix_0.hdf5”</p></li>
+<li><p>“files_prefix_1.hdf5”</p></li>
+</ul>
+<p>…
+- “files_prefix_files_number.hdf5”</p>
+</div></blockquote>
+<dl class="simple">
+<dt>files_prefix<span class="classifier">str</span></dt><dd><p>Name of the files to merge.</p>
+</dd>
+<dt>files_number<span class="classifier">int</span></dt><dd><p>Number of files to merge.</p>
+</dd>
+<dt>start_idx<span class="classifier">int, optional</span></dt><dd><p>Start index of the hdf5 files.</p>
+</dd>
+<dt>file_name<span class="classifier">str, optional</span></dt><dd><p>Name of the file with the merged data. If None, files_prefix without
+number is used.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-mbtrack2.tracking.monitors">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mbtrack2.tracking.monitors" title="Permalink to this heading">¶</a></h2>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">mbtrack2.tracking.monitors package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.tracking.monitors.monitors">mbtrack2.tracking.monitors.monitors module</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.tracking.monitors.plotting">mbtrack2.tracking.monitors.plotting module</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.tracking.monitors.tools">mbtrack2.tracking.monitors.tools module</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.tracking.monitors">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/mbtrack2.tracking.monitors.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.tracking.monitors package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2024, A. Gamelin et al.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

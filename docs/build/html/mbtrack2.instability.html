@@ -1,0 +1,484 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>mbtrack2.instability package &#8212; mbtrack2 0.6.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.instability package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="mbtrack2-instability-package">
+<h1>mbtrack2.instability package<a class="headerlink" href="#mbtrack2-instability-package" title="Permalink to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="module-mbtrack2.instability.instabilities">
+<span id="mbtrack2-instability-instabilities-module"></span><h2>mbtrack2.instability.instabilities module<a class="headerlink" href="#module-mbtrack2.instability.instabilities" title="Permalink to this heading">¶</a></h2>
+<p>General calculations about instability thresholds.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.instability.instabilities.cbi_threshold">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.instability.instabilities.</span></span><span class="sig-name descname"><span class="pre">cbi_threshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">I</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Vrf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ncav</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/instability/instabilities.html#cbi_threshold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.instability.instabilities.cbi_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the longitudinal and transverse coupled bunch instability 
+thresolds driven by HOMs [1].</p>
+<p>Approximate formula, does not take into account variation with Q.
+For better estimate use lcbi_growth_rate.</p>
+<p>ring : Synchrotron object
+I : float</p>
+<blockquote>
+<div><p>Total beam current in [A].</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Vrf<span class="classifier">float</span></dt><dd><p>Total RF voltage in [V].</p>
+</dd>
+<dt>f<span class="classifier">float</span></dt><dd><p>Frequency of the HOM in [Hz].</p>
+</dd>
+<dt>beta<span class="classifier">array-like of shape (2,)</span></dt><dd><p>Horizontal and vertical beta function at the HOM position in [m].</p>
+</dd>
+<dt>Ncav<span class="classifier">int, optional</span></dt><dd><p>Number of RF cavity.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Zlong<span class="classifier">float</span></dt><dd><p>Maximum longitudinal impedance of the HOM in [ohm].</p>
+</dd>
+<dt>Zxdip<span class="classifier">float</span></dt><dd><p>Maximum horizontal dipolar impedance of the HOM in [ohm/m].</p>
+</dd>
+<dt>Zydip<span class="classifier">float</span></dt><dd><p>Maximum vertical dipolar impedance of the HOM in [ohm/m].</p>
+</dd>
+</dl>
+<p>[1] : Ruprecht, Martin, et al. “Calculation of Transverse Coupled Bunch 
+Instabilities in Electron Storage Rings Driven By Quadrupole Higher Order 
+Modes.” 7th Int. Particle Accelerator Conf.(IPAC’16), Busan, Korea.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.instability.instabilities.lcbi_growth_rate">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.instability.instabilities.</span></span><span class="sig-name descname"><span class="pre">lcbi_growth_rate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">I</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">synchrotron_tune</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Vrf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">RL</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">QL</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/instability/instabilities.html#lcbi_growth_rate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.instability.instabilities.lcbi_growth_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the maximum growth rate for longitudinal coupled bunch instability 
+driven an impedance [1].</p>
+<p>Use either a list of resonators (fr, RL, QL) or an Impedance object (Z).</p>
+<p>ring : Synchrotron object
+I : float</p>
+<blockquote>
+<div><p>Total beam current in [A].</p>
+</div></blockquote>
+<dl class="simple">
+<dt>M<span class="classifier">int</span></dt><dd><p>Nomber of bunches in the beam.</p>
+</dd>
+<dt>synchrotron_tune<span class="classifier">float, optional</span></dt><dd><p>Synchrotron tune.</p>
+</dd>
+<dt>Vrf<span class="classifier">float, optinal</span></dt><dd><p>Total RF voltage in [V] used to compute synchrotron tune if not given.</p>
+</dd>
+<dt>fr<span class="classifier">float or list, optional</span></dt><dd><p>Frequency of the HOM in [Hz].</p>
+</dd>
+<dt>RL<span class="classifier">float or list, optional</span></dt><dd><p>Loaded shunt impedance of the HOM in [Ohm].</p>
+</dd>
+<dt>QL<span class="classifier">float or list, optional</span></dt><dd><p>Loaded quality factor of the HOM.</p>
+</dd>
+<dt>Z<span class="classifier">Impedance, optional</span></dt><dd><p>Longitunial impedance to consider.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>growth_rate<span class="classifier">float</span></dt><dd><p>Maximum coupled bunch instability growth rate in [s-1].</p>
+</dd>
+<dt>mu<span class="classifier">int</span></dt><dd><p>Coupled bunch mode number corresponding to the maximum coupled bunch 
+instability growth rate.</p>
+</dd>
+<dt>growth_rates<span class="classifier">array</span></dt><dd><p>Coupled bunch instability growth rates for the different mode numbers 
+in [s-1].</p>
+</dd>
+</dl>
+<p>[1] : Eq. 51 p139 of Akai, Kazunori. “RF System for Electron Storage 
+Rings.” Physics And Engineering Of High Performance Electron Storage Rings 
+And Application Of Superconducting Technology. 2002. 118-149.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.instability.instabilities.lcbi_growth_rate_mode">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.instability.instabilities.</span></span><span class="sig-name descname"><span class="pre">lcbi_growth_rate_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">I</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">synchrotron_tune</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Vrf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">RL</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">QL</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/instability/instabilities.html#lcbi_growth_rate_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.instability.instabilities.lcbi_growth_rate_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the longitudinal coupled bunch instability growth rate driven by
+an impedance for a given coupled bunch mode mu [1].</p>
+<p>Use either a list of resonators (fr, RL, QL) or an Impedance object (Z).</p>
+<p>ring : Synchrotron object
+I : float</p>
+<blockquote>
+<div><p>Total beam current in [A].</p>
+</div></blockquote>
+<dl class="simple">
+<dt>M<span class="classifier">int</span></dt><dd><p>Nomber of bunches in the beam.</p>
+</dd>
+<dt>mu<span class="classifier">int</span></dt><dd><p>Coupled bunch mode number (= 0, …, M-1).</p>
+</dd>
+<dt>synchrotron_tune<span class="classifier">float, optional</span></dt><dd><p>Synchrotron tune.</p>
+</dd>
+<dt>Vrf<span class="classifier">float, optinal</span></dt><dd><p>Total RF voltage in [V] used to compute synchrotron tune if not given.</p>
+</dd>
+<dt>fr<span class="classifier">float or list, optional</span></dt><dd><p>Frequency of the resonator in [Hz].</p>
+</dd>
+<dt>RL<span class="classifier">float or list, optional</span></dt><dd><p>Loaded shunt impedance of the resonator in [Ohm].</p>
+</dd>
+<dt>QL<span class="classifier">float or list, optional</span></dt><dd><p>Loaded quality factor of the resonator.</p>
+</dd>
+<dt>Z<span class="classifier">Impedance, optional</span></dt><dd><p>Longitunial impedance to consider.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>float</dt><dd><p>Coupled bunch instability growth rate for the mode mu in [s-1].</p>
+</dd>
+</dl>
+<p>[1] : Eq. 51 p139 of Akai, Kazunori. “RF System for Electron Storage 
+Rings.” Physics And Engineering Of High Performance Electron Storage Rings 
+And Application Of Superconducting Technology. 2002. 118-149.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.instability.instabilities.lcbi_stability_diagram">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.instability.instabilities.</span></span><span class="sig-name descname"><span class="pre">lcbi_stability_diagram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">I</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cavity_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">synchrotron_tune</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Vrf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/instability/instabilities.html#lcbi_stability_diagram"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.instability.instabilities.lcbi_stability_diagram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot longitudinal coupled bunch instability stability diagram for a 
+arbitrary list of CavityResonator objects around a detuning range.</p>
+<p>Last object in the cavity_list is assumed to be the one with the variable 
+detuning.</p>
+<dl class="simple">
+<dt>ring<span class="classifier">Synchrotron object</span></dt><dd><p>Ring parameters.</p>
+</dd>
+<dt>I<span class="classifier">float</span></dt><dd><p>Total beam current in [A].</p>
+</dd>
+<dt>M<span class="classifier">int</span></dt><dd><p>Nomber of bunches in the beam.</p>
+</dd>
+<dt>modes<span class="classifier">list</span></dt><dd><p>Coupled bunch mode numbers to consider.</p>
+</dd>
+<dt>cavity_list<span class="classifier">list</span></dt><dd><dl class="simple">
+<dt>List of CavityResonator objects to consider, which can be:</dt><dd><ul class="simple">
+<li><p>active cavities</p></li>
+<li><p>passive cavities</p></li>
+<li><p>HOMs</p></li>
+<li><p>mode dampers</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+<dt>detune_range<span class="classifier">array</span></dt><dd><p>Detuning range (list of points) of the last CavityResonator object.</p>
+</dd>
+<dt>synchrotron_tune<span class="classifier">float, optional</span></dt><dd><p>Synchrotron tune.</p>
+</dd>
+<dt>Vrf<span class="classifier">float, optinal</span></dt><dd><p>Total RF voltage in [V] used to compute synchrotron tune if not given.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>fig<span class="classifier">Figure</span></dt><dd><p>Show the shunt impedance threshold for different coupled bunch modes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.instability.instabilities.mbi_threshold">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.instability.instabilities.</span></span><span class="sig-name descname"><span class="pre">mbi_threshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/instability/instabilities.html#mbi_threshold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.instability.instabilities.mbi_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the microbunching instability (MBI) threshold for a bunched beam
+considering the steady-state parallel plate model [1][2].</p>
+<p>ring : Synchrotron object
+sigma : float</p>
+<blockquote>
+<div><p>RMS bunch length in [s]</p>
+</div></blockquote>
+<dl class="simple">
+<dt>R<span class="classifier">float</span></dt><dd><p>dipole bending radius in [m]</p>
+</dd>
+<dt>b<span class="classifier">float</span></dt><dd><p>vertical distance between the conducting parallel plates in [m]</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>I<span class="classifier">float</span></dt><dd><p>MBI current threshold in [A]</p>
+</dd>
+</dl>
+<p>[1] : Y. Cai, “Theory of microwave instability and coherent synchrotron 
+radiation in electron storage rings”, SLAC-PUB-14561
+[2] : D. Zhou, “Coherent synchrotron radiation and microwave instability in 
+electron storage rings”, PhD thesis, p112</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.instability.instabilities.rwmbi_growth_rate">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.instability.instabilities.</span></span><span class="sig-name descname"><span class="pre">rwmbi_growth_rate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho_material</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plane</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'x'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/instability/instabilities.html#rwmbi_growth_rate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.instability.instabilities.rwmbi_growth_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the growth rate of the transverse coupled-bunch instability induced
+by resistive wall impedance [1].</p>
+<p>ring : Synchrotron object
+current : float</p>
+<blockquote>
+<div><p>Total beam current in [A].</p>
+</div></blockquote>
+<dl class="simple">
+<dt>beff<span class="classifier">float</span></dt><dd><p>Effective radius of the vacuum chamber in [m].</p>
+</dd>
+<dt>rho_material<span class="classifier">float</span></dt><dd><p>Resistivity of the chamber’s wall material in [Ohm.m].</p>
+</dd>
+<dt>plane<span class="classifier">str, optional</span></dt><dd><p>The plane in which the instability will be computed. Use ‘x’ for the 
+horizontal plane, and ‘y’ for the vertical.</p>
+</dd>
+</dl>
+<p>[1] Eq. (31) in R. Nagaoka and K. L. F. Bane, “Collective effects in a
+diffraction-limited storage ring”, J. Synchrotron Rad. Vol 21, 2014. pp.937-960</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.instability.instabilities.rwmbi_threshold">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.instability.instabilities.</span></span><span class="sig-name descname"><span class="pre">rwmbi_threshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho_material</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plane</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'x'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/instability/instabilities.html#rwmbi_threshold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.instability.instabilities.rwmbi_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the threshold current of the transverse coupled-bunch instability 
+induced by resistive wall impedance [1].</p>
+<p>ring : Synchrotron object
+beff : float</p>
+<blockquote>
+<div><p>Effective radius of the vacuum chamber in [m].</p>
+</div></blockquote>
+<dl class="simple">
+<dt>rho_material<span class="classifier">float</span></dt><dd><p>Resistivity of the chamber’s wall material in [Ohm.m].</p>
+</dd>
+<dt>plane<span class="classifier">str, optional</span></dt><dd><p>The plane in which the instability will be computed. Use ‘x’ for the 
+horizontal plane, and ‘y’ for the vertical.</p>
+</dd>
+</dl>
+<p>[1] Eq. (32) in R. Nagaoka and K. L. F. Bane, “Collective effects in a
+diffraction-limited storage ring”, J. Synchrotron Rad. Vol 21, 2014. pp.937-960</p>
+</dd></dl>
+
+</section>
+<section id="module-mbtrack2.instability.ions">
+<span id="mbtrack2-instability-ions-module"></span><h2>mbtrack2.instability.ions module<a class="headerlink" href="#module-mbtrack2.instability.ions" title="Permalink to this heading">¶</a></h2>
+<p>Various calculations about ion trapping and instabilities in electron storage 
+rings.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.instability.ions.fast_beam_ion">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.instability.ions.</span></span><span class="sig-name descname"><span class="pre">fast_beam_ion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Nb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Lsep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmay</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_omega</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'CO'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'y'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/instability/ions.html#fast_beam_ion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.instability.ions.fast_beam_ion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute fast beam ion instability rise time [1].</p>
+<p>Warning ! 
+If model=”linear”, the rise time is an assymptotic grow time 
+(i.e. y ~ exp(sqrt(t/tau))) [1].
+If model=”decoherence”, the rise time is an e-folding time 
+(i.e. y ~ exp(t/tau)) [2].
+If model=”non-linear”, the rise time is a linear growth time
+(i.e. y ~ t/tau) [3].</p>
+<dl class="simple">
+<dt>The linear model assumes that [1]:</dt><dd><p>x,y &lt;&lt; sigmax,sigmay</p>
+</dd>
+<dt>The decoherence model assumes that [2]:</dt><dd><p>Lsep &lt;&lt; c / (2 * pi * ion_frequency) 
+Lsep &lt;&lt; c / (2 * pi * betatron_frequency)</p>
+</dd>
+<dt>The non-linear model assumes that [3]:</dt><dd><p>x,y &gt;&gt; sigmax,sigmay</p>
+</dd>
+</dl>
+<p>ring : Synchrotron object
+Nb : float</p>
+<blockquote>
+<div><p>Number of electron per bunch.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>nb<span class="classifier">float</span></dt><dd><p>Number of bunches.</p>
+</dd>
+<dt>Lsep<span class="classifier">float</span></dt><dd><p>Bunch spacing in [m].</p>
+</dd>
+<dt>sigmax<span class="classifier">float</span></dt><dd><p>Horizontal beam size in [m].</p>
+</dd>
+<dt>sigmay<span class="classifier">float</span></dt><dd><p>Vertical beam size in [m].</p>
+</dd>
+<dt>P<span class="classifier">float</span></dt><dd><p>Partial pressure of the molecular ion in [Pa].</p>
+</dd>
+<dt>T<span class="classifier">float</span></dt><dd><p>Tempertature in [K].</p>
+</dd>
+<dt>beta<span class="classifier">float</span></dt><dd><p>Average betatron function around the ring in [m].</p>
+</dd>
+<dt>model<span class="classifier">str, optional</span></dt><dd><p>If “linear”, use [1].
+If “decoherence”, use [2].
+If “non-linear”, use [3].</p>
+</dd>
+<dt>delta_omega<span class="classifier">float, optional</span></dt><dd><p>RMS variation of the ion oscillation angular frequnecy around the ring
+in [Hz].</p>
+</dd>
+<dt>ion<span class="classifier">str, optional</span></dt><dd><p>Ion type. The default is “CO”.</p>
+</dd>
+<dt>dim<span class="classifier">“y” o “x”, optional</span></dt><dd><p>Dimension to consider. The default is “y”.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>tau<span class="classifier">float</span></dt><dd><p>Instability rise time in [s].</p>
+</dd>
+</dl>
+<p>[1] : T. O. Raubenheimer and F. Zimmermann, “Fast beam-ion instability. I. 
+linear theory and simulations”, Physical Review E 52 (1995).
+[2] : G. V. Stupakov, T. O. Raubenheimer, and F. Zimmermann, “Fast beam-ion 
+instability. II. effect of ion decoherence”, Physical Review E 52 (1995).
+[3] : Chao, A. W., &amp; Mess, K. H. (Eds.). (2013). Handbook of accelerator 
+physics and engineering. World scientific. 3rd Printing. p417.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.instability.ions.ion_cross_section">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.instability.ions.</span></span><span class="sig-name descname"><span class="pre">ion_cross_section</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ion</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/instability/ions.html#ion_cross_section"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.instability.ions.ion_cross_section" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the collisional ionization cross section.</p>
+<p>Compute the inelastic collision cross section between a molecule or an atom
+by a relativistic electron using the relativistic Bethe asymptotic formula 
+[1].</p>
+<p>Values of M02 and C02 from [2].</p>
+<p>ring : Synchrotron object
+ion : str</p>
+<blockquote>
+<div><p>Ion type.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>sigma<span class="classifier">float</span></dt><dd><p>Cross section in [m**2].</p>
+</dd>
+</dl>
+<p>[1] : M. Inokuti, “Inelastic collisions of fast charged particles with 
+atoms and molecules-the bethe theory revisited”, Reviews of modern physics 
+43 (1971).
+[2] : P. F. Tavares, “Bremsstrahlung detection of ions trapped in the EPA 
+electron beam”, Part. Accel. 43 (1993).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.instability.ions.ion_frequency">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.instability.ions.</span></span><span class="sig-name descname"><span class="pre">ion_frequency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Lsep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmay</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'CO'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'y'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">express</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'coupling'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/instability/ions.html#ion_frequency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.instability.ions.ion_frequency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the ion oscillation frequnecy.</p>
+<dl class="simple">
+<dt>N<span class="classifier">float</span></dt><dd><p>Number of electrons per bunch.</p>
+</dd>
+<dt>Lsep<span class="classifier">float</span></dt><dd><p>Bunch spacing in [m].</p>
+</dd>
+<dt>sigmax<span class="classifier">float or array</span></dt><dd><p>Horizontal beam size in [m].</p>
+</dd>
+<dt>sigmay<span class="classifier">float or array</span></dt><dd><p>Vertical beam size in [m].</p>
+</dd>
+<dt>ion<span class="classifier">str, optional</span></dt><dd><p>Ion type. The default is “CO”.</p>
+</dd>
+<dt>dim<span class="classifier">“y” o “x”, optional</span></dt><dd><p>Dimension to consider. The default is “y”.</p>
+</dd>
+<dt>express<span class="classifier">str, optional</span></dt><dd><p>Expression to use to compute the ion oscillation frequency. 
+The default is “coupling” corresponding to Gaussian electron and ion 
+distributions with coupling [1].
+Also possible is “no_coupling” corresponding to Gaussian electron and 
+ion distributions without coupling [2].</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>f<span class="classifier">float or array</span></dt><dd><p>Ion oscillation frequencies in [Hz].</p>
+</dd>
+</dl>
+<p>[1] : T. O. Raubenheimer and F. Zimmermann, “Fast beam-ion instability. I. 
+linear theory and simulations”, Physical Review E 52 (1995).
+[2] : G. V. Stupakov, T. O. Raubenheimer, and F. Zimmermann, “Fast beam-ion 
+instability. II. effect of ion decoherence”, Physical Review E 52 (1995).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.instability.ions.plot_critical_mass">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.instability.ions.</span></span><span class="sig-name descname"><span class="pre">plot_critical_mass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bunch_charge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bunch_spacing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/instability/ions.html#plot_critical_mass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.instability.ions.plot_critical_mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot ion critical mass, using Eq. (7.70) p147 of [1]</p>
+<p>ring : Synchrotron object
+bunch_charge : float</p>
+<blockquote>
+<div><p>Bunch charge in [C].</p>
+</div></blockquote>
+<dl class="simple">
+<dt>bunch_spacing<span class="classifier">float</span></dt><dd><p>Time in between two adjacent bunches in [s].</p>
+</dd>
+<dt>n_points<span class="classifier">float or int, optional</span></dt><dd><p>Number of point used in the plot. The default is 1e4.</p>
+</dd>
+</dl>
+<p>fig : figure</p>
+<p>[1] : Gamelin, A. (2018). Collective effects in a transient microbunching 
+regime and ion cloud mitigation in ThomX (Doctoral dissertation, 
+Université Paris-Saclay).</p>
+</dd></dl>
+
+</section>
+<section id="module-mbtrack2.instability">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mbtrack2.instability" title="Permalink to this heading">¶</a></h2>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">mbtrack2.instability package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.instability.instabilities">mbtrack2.instability.instabilities module</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.instability.ions">mbtrack2.instability.ions module</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.instability">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/mbtrack2.instability.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.instability package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2024, A. Gamelin et al.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

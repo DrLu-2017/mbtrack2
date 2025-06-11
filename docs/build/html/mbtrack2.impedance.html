@@ -1,0 +1,1335 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>mbtrack2.impedance package &#8212; mbtrack2 0.6.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.impedance package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="mbtrack2-impedance-package">
+<h1>mbtrack2.impedance package<a class="headerlink" href="#mbtrack2-impedance-package" title="Permalink to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="module-mbtrack2.impedance.csr">
+<span id="mbtrack2-impedance-csr-module"></span><h2>mbtrack2.impedance.csr module<a class="headerlink" href="#module-mbtrack2.impedance.csr" title="Permalink to this heading">¶</a></h2>
+<p>Define coherent synchrotron radiation (CSR) wakefields in various models.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.impedance.csr.FreeSpaceCSR">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.impedance.csr.</span></span><span class="sig-name descname"><span class="pre">FreeSpaceCSR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/csr.html#FreeSpaceCSR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.csr.FreeSpaceCSR" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.impedance.wakefield.WakeField" title="mbtrack2.impedance.wakefield.WakeField"><code class="xref py py-class docutils literal notranslate"><span class="pre">WakeField</span></code></a></p>
+<p>Free space steady-state coherent synchrotron radiation Wakefield element,
+based on [1].</p>
+<p>Impedance is computed using Eq. (A10) of [2].</p>
+<dl class="simple">
+<dt>time<span class="classifier">array of float</span></dt><dd><p>Time points where the wake function will be evaluated in [s].</p>
+</dd>
+<dt>frequency<span class="classifier">array of float</span></dt><dd><p>Frequency points where the impedance will be evaluated in [Hz].</p>
+</dd>
+<dt>length<span class="classifier">float </span></dt><dd><p>Length of the impedacen to consider in [m].</p>
+</dd>
+<dt>radius<span class="classifier">float </span></dt><dd><p>Dipole radius of curvature in [m].</p>
+</dd>
+</dl>
+<p>[1] : Faltens, A. N. D. R. I. S., &amp; Laslett, L. J. (1973). Longitudinal 
+coupling impedance of a stationary electron ring in a cylindrical 
+geometry. part. Accel., 4, 151-157.
+[2] : Agoh, T., and K. Yokoya. “Calculation of coherent synchrotron 
+radiation using mesh.” Physical Review Special Topics-Accelerators and 
+Beams 7.5 (2004): 054403.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.csr.FreeSpaceCSR.LongitudinalImpedance">
+<span class="sig-name descname"><span class="pre">LongitudinalImpedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/csr.html#FreeSpaceCSR.LongitudinalImpedance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.csr.FreeSpaceCSR.LongitudinalImpedance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the free space steady-state CSR impedance.
+Based on Eq. (A10) of [1].</p>
+<p>This formula is valid only if omega &lt;&lt; (3 * gamma^3 * c) / (2 * R).</p>
+<dl class="simple">
+<dt>frequency<span class="classifier">float array</span></dt><dd><p>Frequency in [Hz].</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Zl<span class="classifier">complex array</span></dt><dd><p>Longitudinal impedance in [ohm].</p>
+</dd>
+</dl>
+<p>[1] : Agoh, T., and K. Yokoya. “Calculation of coherent synchrotron 
+radiation using mesh.” Physical Review Special Topics-Accelerators and 
+Beams 7.5 (2004): 054403.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.csr.FreeSpaceCSR.LongitudinalWakeFunction">
+<span class="sig-name descname"><span class="pre">LongitudinalWakeFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/csr.html#FreeSpaceCSR.LongitudinalWakeFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.csr.FreeSpaceCSR.LongitudinalWakeFunction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.impedance.csr.ParallelPlatesCSR">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.impedance.csr.</span></span><span class="sig-name descname"><span class="pre">ParallelPlatesCSR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/csr.html#ParallelPlatesCSR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.csr.ParallelPlatesCSR" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.impedance.wakefield.WakeField" title="mbtrack2.impedance.wakefield.WakeField"><code class="xref py py-class docutils literal notranslate"><span class="pre">WakeField</span></code></a></p>
+<p>Perfectly conducting parallel plates steady-state coherent synchrotron 
+radiation Wakefield element, based on [1].</p>
+<dl class="simple">
+<dt>time<span class="classifier">array of float</span></dt><dd><p>Time points where the wake function will be evaluated in [s].</p>
+</dd>
+<dt>frequency<span class="classifier">array of float</span></dt><dd><p>Frequency points where the impedance will be evaluated in [Hz].</p>
+</dd>
+<dt>length<span class="classifier">float </span></dt><dd><p>Length of the impedacen to consider in [m].</p>
+</dd>
+<dt>radius<span class="classifier">float </span></dt><dd><p>Dipole radius of curvature in [m].</p>
+</dd>
+<dt>distance<span class="classifier">float</span></dt><dd><p>Vertical distance between the parallel plates in [m].</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>threshold<span class="classifier">float</span></dt><dd><p>Shielding threshold in the parallel plates model in [Hz].</p>
+</dd>
+</dl>
+<p>[1] : Agoh, T., and K. Yokoya. “Calculation of coherent synchrotron 
+radiation using mesh.” Physical Review Special Topics-Accelerators and 
+Beams 7.5 (2004): 054403.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.csr.ParallelPlatesCSR.LongitudinalImpedance">
+<span class="sig-name descname"><span class="pre">LongitudinalImpedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/csr.html#ParallelPlatesCSR.LongitudinalImpedance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.csr.ParallelPlatesCSR.LongitudinalImpedance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the CSR impedance using the perfectly conducting parallel 
+plates steady-state model.</p>
+<p>Impedance is computed using Eq. (A1) of [1].</p>
+<dl class="simple">
+<dt>frequency<span class="classifier">float array</span></dt><dd><p>Frequency in [Hz].</p>
+</dd>
+<dt>tol<span class="classifier">float, optinal</span></dt><dd><p>Desired maximum final error on sum_func.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Zl<span class="classifier">complex array</span></dt><dd><p>Longitudinal impedance in [ohm].</p>
+</dd>
+</dl>
+<p>[1] : Agoh, T., and K. Yokoya. “Calculation of coherent synchrotron 
+radiation using mesh.” Physical Review Special Topics-Accelerators and 
+Beams 7.5 (2004): 054403.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.csr.ParallelPlatesCSR.LongitudinalWakeFunction">
+<span class="sig-name descname"><span class="pre">LongitudinalWakeFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/csr.html#ParallelPlatesCSR.LongitudinalWakeFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.csr.ParallelPlatesCSR.LongitudinalWakeFunction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.csr.ParallelPlatesCSR.sum_func">
+<span class="sig-name descname"><span class="pre">sum_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/csr.html#ParallelPlatesCSR.sum_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.csr.ParallelPlatesCSR.sum_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility function for LongitudinalImpedance.</p>
+<p>p : int
+k : float</p>
+<p>sum_value : mpc</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.impedance.csr.ParallelPlatesCSR.threshold">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">threshold</span></span><a class="headerlink" href="#mbtrack2.impedance.csr.ParallelPlatesCSR.threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shielding threshold in the parallel plates model in [Hz].</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-mbtrack2.impedance.impedance_model">
+<span id="mbtrack2-impedance-impedance-model-module"></span><h2>mbtrack2.impedance.impedance_model module<a class="headerlink" href="#module-mbtrack2.impedance.impedance_model" title="Permalink to this heading">¶</a></h2>
+<p>Module where the ImpedanceModel class is defined.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.impedance.impedance_model.ImpedanceModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.impedance.impedance_model.</span></span><span class="sig-name descname"><span class="pre">ImpedanceModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ring</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/impedance_model.html#ImpedanceModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.impedance_model.ImpedanceModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Define the impedance model of the machine.</p>
+<p>The model must be completed with successive add(…) and add_global(…)
+calls, then compute_sum() must be run.</p>
+<p>The transverse impedance and wake functions are beta weighted and divided
+by the beta at the tracking location (ring.optics.local_beta).</p>
+<p>ring : Synchrotron object</p>
+<dl class="simple">
+<dt>wakefields<span class="classifier">list of WakeField objects</span></dt><dd><p>WakeFields in the model.</p>
+</dd>
+<dt>positions<span class="classifier">list of arrays</span></dt><dd><p>Positions corresponding the different WakeFields.</p>
+</dd>
+<dt>names<span class="classifier">list of str</span></dt><dd><p>Names of the WakeField objects.</p>
+</dd>
+<dt>sum<span class="classifier">WakeField</span></dt><dd><p>Sum of every WakeField in the model weigthed by beta functions.</p>
+</dd>
+<dt><a href="#id1"><span class="problematic" id="id2">sum_</span></a>”name”<span class="classifier">WakeField</span></dt><dd><p>Sum of the “name” Wakefield weigthed by beta functions.</p>
+</dd>
+<dt>sum_names<span class="classifier">array</span></dt><dd><p>Names of attributes where the WakeFields are summed by name.</p>
+</dd>
+<dt>globals<span class="classifier">list of WakeField objects</span></dt><dd><p>Globals WakeFields in the model.</p>
+</dd>
+<dt>globals_names<span class="classifier">list of str</span></dt><dd><p>Names of the global WakeFields objects.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>add(wakefield, positions, name)</dt><dd><p>Add the same WakeField object at different locations to the model.</p>
+</dd>
+<dt>add_global(wakefield, name)</dt><dd><p>Add a “global” WakeField object which will added to the sum WakeField
+but not weighted by beta functions.</p>
+</dd>
+<dt>sum_beta(wake, beta)</dt><dd><p>Weight a WakeField object by an array of beta functions.</p>
+</dd>
+<dt>compute_sum_names()</dt><dd><p>Compute the weighted WakeField for each WakeField object type.</p>
+</dd>
+<dt>compute_sum()</dt><dd><p>Compute the sum of all weighted WakeField into self.sum.</p>
+</dd>
+<dt>plot_area(Z_type=”Zlong”, component=”real”, sigma=None, attr_list=None)</dt><dd><p>Plot the contributions of different kind of WakeFields.</p>
+</dd>
+<dt>save(file)</dt><dd><p>Save impedance model to file.</p>
+</dd>
+<dt>load(file)</dt><dd><p>Load impedance model from file.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.impedance_model.ImpedanceModel.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wakefield</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/impedance_model.html#ImpedanceModel.add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.impedance_model.ImpedanceModel.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add the same WakeField object at different locations to the model.</p>
+<dl class="simple">
+<dt>wakefield<span class="classifier">WakeField</span></dt><dd><p>WakeField object to add to the model.</p>
+</dd>
+<dt>positions<span class="classifier">array, float or int</span></dt><dd><p>Array of longitudinal positions where the elements are loacted.</p>
+</dd>
+<dt>name<span class="classifier">str, optional</span></dt><dd><p>Name of the element type. If None, the name of the WakeField object
+is used. The default is None.</p>
+</dd>
+</dl>
+<p>None.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.impedance_model.ImpedanceModel.add_global">
+<span class="sig-name descname"><span class="pre">add_global</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wakefield</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/impedance_model.html#ImpedanceModel.add_global"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.impedance_model.ImpedanceModel.add_global" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a “global” WakeField object which will added to the sum WakeField
+but not weighted by beta functions.</p>
+<p>To use with “distributed” elements, for example a resistive wall
+wakefield computed from an effective radius (so which has already been
+weighted by beta functions).</p>
+<dl class="simple">
+<dt>wakefield<span class="classifier">WakeField</span></dt><dd><p>WakeField object to add to the model.</p>
+</dd>
+<dt>name<span class="classifier">str, optional</span></dt><dd><p>Name of the element type. If None, the name of the WakeField object
+is used. The default is None.</p>
+</dd>
+</dl>
+<p>None.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.impedance_model.ImpedanceModel.compute_sum">
+<span class="sig-name descname"><span class="pre">compute_sum</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/impedance_model.html#ImpedanceModel.compute_sum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.impedance_model.ImpedanceModel.compute_sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the sum of all weighted WakeField into self.sum.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.impedance_model.ImpedanceModel.compute_sum_names">
+<span class="sig-name descname"><span class="pre">compute_sum_names</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/impedance_model.html#ImpedanceModel.compute_sum_names"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.impedance_model.ImpedanceModel.compute_sum_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the weighted WakeField for each WakeField object type.
+The new summed WakeField object are set to into self.sum_name.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.impedance_model.ImpedanceModel.effective_impedance">
+<span class="sig-name descname"><span class="pre">effective_impedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tuneS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Hermite'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/impedance_model.html#ImpedanceModel.effective_impedance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.impedance_model.ImpedanceModel.effective_impedance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the longitudinal and transverse effective impedance.</p>
+<dl class="simple">
+<dt>mu<span class="classifier">int</span></dt><dd><p>coupled bunch mode number, goes from 0 to (M-1) where M is the
+number of bunches</p>
+</dd>
+<dt>m<span class="classifier">int</span></dt><dd><p>head-tail (or azimutal/synchrotron) mode number</p>
+</dd>
+<dt>sigma<span class="classifier">float</span></dt><dd><p>RMS bunch length in [s]</p>
+</dd>
+<dt>M<span class="classifier">int</span></dt><dd><p>Number of bunches.</p>
+</dd>
+<dt>tuneS<span class="classifier">float</span></dt><dd><p>Synchrotron tune.</p>
+</dd>
+<dt>xi<span class="classifier">float, optional</span></dt><dd><p>(non-normalized) chromaticity</p>
+</dd>
+<dt>mode: str, optional</dt><dd><p>type of the mode taken into account for the computation:
+-“Hermite” modes for Gaussian bunches</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>summary<span class="classifier">DataFrame</span></dt><dd><p>Longitudinal and transverse effective impedance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.impedance_model.ImpedanceModel.energy_loss">
+<span class="sig-name descname"><span class="pre">energy_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bunch_spacing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">I</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000000.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/impedance_model.html#ImpedanceModel.energy_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.impedance_model.ImpedanceModel.energy_loss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the beam and bunch loss factor and energy losses for each type 
+of element in the model assuming Gaussian bunches and constant spacing
+between bunches.</p>
+<dl class="simple">
+<dt>sigma<span class="classifier">float</span></dt><dd><p>RMS bunch length in [s].</p>
+</dd>
+<dt>M<span class="classifier">int</span></dt><dd><p>Number of bunches in the beam.</p>
+</dd>
+<dt>bunch_spacing<span class="classifier">float</span></dt><dd><p>Time between two bunches in [s].</p>
+</dd>
+<dt>I<span class="classifier">float</span></dt><dd><p>Total beam current in [A].</p>
+</dd>
+<dt>n_points<span class="classifier">float, optional</span></dt><dd><p>Number of points used in the frequency spectrums.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>summary<span class="classifier">Dataframe</span></dt><dd><p>Contains the beam and bunch loss factor and energy loss for the 
+full model and for each type of different component.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.impedance_model.ImpedanceModel.group_attributes">
+<span class="sig-name descname"><span class="pre">group_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string_in_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names_to_group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">property_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['Zlong']</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/impedance_model.html#ImpedanceModel.group_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.impedance_model.ImpedanceModel.group_attributes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Groups attributes in the ImpedanceModel based on a given string pattern.
+Args:</p>
+<blockquote>
+<div><p>string_in_name (str): The string pattern used to match attribute names for grouping. If names_to_group is given, this is a name of a new attribute instead.
+names_to_group (list, optional): List of attribute names to be explicitly grouped.</p>
+<blockquote>
+<div><p>If not provided, attributes matching the string pattern will be automatically grouped.
+Defaults to None.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>property_list (list, optional): List of property names to be grouped for each attribute.</dt><dd><p>Defaults to [‘Zlong’].</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>int: Returns 0 indicating the successful grouping of attributes.</p>
+</dd>
+<dt>Notes:</dt><dd><ul class="simple">
+<li><p>This method groups attributes in the ImpedanceModel class based on a given string pattern.</p></li>
+<li><p>If names_to_group is not provided, it automatically selects attributes from the existing sum_names that match the given string pattern.</p></li>
+<li><p>A new WakeField instance is created and assigned to the attribute named ‘string_in_name’.</p></li>
+<li><p>The specified properties from the first attribute in names_to_group are appended to the new WakeField instance.</p></li>
+<li><p>The values of the specified properties from the remaining attributes in names_to_group are added to the corresponding properties in the new WakeField instance.</p></li>
+<li><p>The names_to_group attributes are removed from the ImpedanceModel class.</p></li>
+<li><p>The new grouped attribute is added to sum_names, and the first attribute in names_to_group is removed from sum_names.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.impedance_model.ImpedanceModel.load">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/impedance_model.html#ImpedanceModel.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.impedance_model.ImpedanceModel.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load impedance model from file.</p>
+<p>The same pandas version is needed on both saving and loading computer
+for the pickle to work.</p>
+<dl class="simple">
+<dt>file<span class="classifier">str</span></dt><dd><p>File where the impedance model is saved.</p>
+</dd>
+</dl>
+<p>None.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.impedance_model.ImpedanceModel.plot_area">
+<span class="sig-name descname"><span class="pre">plot_area</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Zlong'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'real'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attr_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zoom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/impedance_model.html#ImpedanceModel.plot_area"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.impedance_model.ImpedanceModel.plot_area" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the contributions of different kind of WakeFields.</p>
+<dl class="simple">
+<dt>Z_type<span class="classifier">str, optional</span></dt><dd><p>Type of impedance to plot.</p>
+</dd>
+<dt>component<span class="classifier">str, optional</span></dt><dd><p>Component to plot, can be “real” or “imag”.</p>
+</dd>
+<dt>sigma<span class="classifier">float, optional</span></dt><dd><p>RMS bunch length in [s] to use for the spectral density. If equal
+to None, the spectral density is not plotted.</p>
+</dd>
+<dt>attr_list<span class="classifier">list or array of str, optional</span></dt><dd><p>Attributes to plot.</p>
+</dd>
+<dt>zoom<span class="classifier">bool</span></dt><dd><p>If True, add a zoomed plot on top right corner.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.impedance_model.ImpedanceModel.power_loss_spectrum">
+<span class="sig-name descname"><span class="pre">power_loss_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bunch_spacing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">I</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_overlap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/impedance_model.html#ImpedanceModel.power_loss_spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.impedance_model.ImpedanceModel.power_loss_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the power loss spectrum of the summed longitudinal impedance 
+as in Eq. (4) of [1].</p>
+<p>Assume Gaussian bunches and constant spacing between bunches.</p>
+<dl>
+<dt>sigma<span class="classifier">float</span></dt><dd><p>RMS bunch length in [s].</p>
+</dd>
+<dt>M<span class="classifier">int</span></dt><dd><p>Number of bunches in the beam.</p>
+</dd>
+<dt>bunch_spacing<span class="classifier">float</span></dt><dd><p>Time between two bunches in [s].</p>
+</dd>
+<dt>I<span class="classifier">float</span></dt><dd><p>Total beam current in [A].</p>
+</dd>
+<dt>n_points<span class="classifier">float, optional</span></dt><dd><p>Number of points used in the frequency spectrum.</p>
+</dd>
+<dt>max_overlap<span class="classifier">bool, optional</span></dt><dd><p>If True, the bunch spectrum (scaled to the number of bunches) is 
+used instead of the beam spectrum to compute the maximum value of 
+the power loss spectrum at each frequency. Should only be used to 
+maximise the power loss at a given frequency (e.g. for HOMs) and 
+not for the full spectrum.</p>
+</dd>
+<dt>plot<span class="classifier">bool, optional</span></dt><dd><dl>
+<dt>If True, plots:</dt><dd><ul class="simple">
+<li><p>the overlap between the real part of the longitudinal impedance</p></li>
+</ul>
+<p>and the beam spectrum.
+- the power loss spectrum.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="simple">
+<dt>pf0<span class="classifier">array</span></dt><dd><p>Frequency points.</p>
+</dd>
+<dt>power_loss<span class="classifier">array</span></dt><dd><p>Power loss spectrum in [W].</p>
+</dd>
+</dl>
+<p>[1] : L. Teofili, et al. “A Multi-Physics Approach to Simulate the RF 
+Heating 3D Power Map Induced by the Proton Beam in a Beam Intercepting 
+Device”, in IPAC’18, 2018, doi:10.18429/JACoW-IPAC2018-THPAK093</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.impedance_model.ImpedanceModel.rename_attribute">
+<span class="sig-name descname"><span class="pre">rename_attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/impedance_model.html#ImpedanceModel.rename_attribute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.impedance_model.ImpedanceModel.rename_attribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Renames an attribute in the ImpedanceModel.
+Args:</p>
+<blockquote>
+<div><p>old_name (str): The current name of the attribute to be renamed.
+new_name (str): The new name for the attribute.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Raises:</dt><dd><p>KeyError: If the old_name doesn’t exist as an attribute in the ImpedanceModel.</p>
+</dd>
+<dt>Notes:</dt><dd><ul class="simple">
+<li><p>This method renames an attribute in the ImpedanceModel class.</p></li>
+<li><p>The attribute with the old_name is removed from the class’s dictionary (__dict__) using the pop() method.</p></li>
+<li><p>The attribute is then added back to the class’s dictionary with the new_name using the __dict__ attribute.</p></li>
+<li><p>If the old_name doesn’t exist as an attribute in the ImpedanceModel, a KeyError is raised.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.impedance_model.ImpedanceModel.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/impedance_model.html#ImpedanceModel.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.impedance_model.ImpedanceModel.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save impedance model to file.</p>
+<p>The same pandas version is needed on both saving and loading computer
+for the pickle to work.</p>
+<dl class="simple">
+<dt>file<span class="classifier">str</span></dt><dd><p>File where the impedance model is saved.</p>
+</dd>
+</dl>
+<p>None.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.impedance_model.ImpedanceModel.sum_beta">
+<span class="sig-name descname"><span class="pre">sum_beta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wake</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/impedance_model.html#ImpedanceModel.sum_beta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.impedance_model.ImpedanceModel.sum_beta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Weight a WakeField object by an array of beta functions.</p>
+<dl class="simple">
+<dt>wake<span class="classifier">WakeField</span></dt><dd><p>WakeField element object.</p>
+</dd>
+<dt>beta<span class="classifier">array of shape (2, N)</span></dt><dd><p>Beta function at the locations of the elements.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>wake_sum<span class="classifier">WakeField</span></dt><dd><p>WakeField object weighted by beta functions.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-mbtrack2.impedance.resistive_wall">
+<span id="mbtrack2-impedance-resistive-wall-module"></span><h2>mbtrack2.impedance.resistive_wall module<a class="headerlink" href="#module-mbtrack2.impedance.resistive_wall" title="Permalink to this heading">¶</a></h2>
+<p>Define resistive wall elements based on the WakeField class.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.impedance.resistive_wall.CircularResistiveWall">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.impedance.resistive_wall.</span></span><span class="sig-name descname"><span class="pre">CircularResistiveWall</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exact</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/resistive_wall.html#CircularResistiveWall"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.resistive_wall.CircularResistiveWall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.impedance.wakefield.WakeField" title="mbtrack2.impedance.wakefield.WakeField"><code class="xref py py-class docutils literal notranslate"><span class="pre">WakeField</span></code></a></p>
+<p>Resistive wall WakeField element for a circular beam pipe.</p>
+<p>Impedance from approximated formulas from Eq. (2.77) of Chao book [1].
+Wake function formulas from [2].</p>
+<dl class="simple">
+<dt>time<span class="classifier">array of float</span></dt><dd><p>Time points where the wake function will be evaluated in [s].</p>
+</dd>
+<dt>frequency<span class="classifier">array of float</span></dt><dd><p>Frequency points where the impedance will be evaluated in [Hz].</p>
+</dd>
+<dt>length<span class="classifier">float </span></dt><dd><p>Beam pipe length in [m].</p>
+</dd>
+<dt>rho<span class="classifier">float</span></dt><dd><p>Resistivity in [ohm.m].</p>
+</dd>
+<dt>radius<span class="classifier">float </span></dt><dd><p>Beam pipe radius in [m].</p>
+</dd>
+<dt>exact<span class="classifier">bool, optional</span></dt><dd><p>If False, approxmiated formulas are used for the wake function 
+computations.</p>
+</dd>
+<dt>atol<span class="classifier">float, optional</span></dt><dd><p>Absolute tolerance used to enforce fundamental theorem of beam loading
+for the exact expression of the longitudinal wake function.
+Default is 1e-20.</p>
+</dd>
+</dl>
+<p>[1] : Chao, A. W. (1993). Physics of collective beam instabilities in high 
+energy accelerators. Wiley.
+[2] : Skripka, Galina, et al. “Simultaneous computation of intrabunch and 
+interbunch collective beam motions in storage rings.” Nuclear Instruments 
+and Methods in Physics Research Section A: Accelerators, Spectrometers, 
+Detectors and Associated Equipment 806 (2016): 221-230.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.resistive_wall.CircularResistiveWall.LongitudinalWakeFunction">
+<span class="sig-name descname"><span class="pre">LongitudinalWakeFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exact</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/resistive_wall.html#CircularResistiveWall.LongitudinalWakeFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.resistive_wall.CircularResistiveWall.LongitudinalWakeFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the longitudinal wake function of a circular resistive wall 
+using Eq. (22), or approxmiated expression Eq. (24), of [1]. The 
+approxmiated expression is valid if the time is large compared to the 
+characteristic time t0.</p>
+<p>If some time value is smaller than atol, then the fundamental theorem 
+of beam loading is applied: Wl(0) = Wl(0+)/2.</p>
+<dl class="simple">
+<dt>time<span class="classifier">array of float</span></dt><dd><p>Time points where the wake function is evaluated in [s].</p>
+</dd>
+<dt>exact<span class="classifier">bool, optional</span></dt><dd><p>If True, the exact expression is used. The default is False.</p>
+</dd>
+<dt>atol<span class="classifier">float, optional</span></dt><dd><p>Absolute tolerance used to enforce fundamental theorem of beam loading
+for the exact expression of the longitudinal wake function.
+Default is 1e-20.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>wl<span class="classifier">array of float</span></dt><dd><p>Longitudinal wake function in [V/C].</p>
+</dd>
+</dl>
+<p>[1] : Skripka, Galina, et al. “Simultaneous computation of intrabunch and 
+interbunch collective beam motions in storage rings.” Nuclear Instruments 
+and Methods in Physics Research Section A: Accelerators, Spectrometers, 
+Detectors and Associated Equipment 806 (2016): 221-230.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.resistive_wall.CircularResistiveWall.TransverseWakeFunction">
+<span class="sig-name descname"><span class="pre">TransverseWakeFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exact</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/resistive_wall.html#CircularResistiveWall.TransverseWakeFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.resistive_wall.CircularResistiveWall.TransverseWakeFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the transverse wake function of a circular resistive wall 
+using Eq. (25), or approxmiated expression Eq. (26), of [1]. The 
+approxmiated expression is valid if the time is large compared to the 
+characteristic time t0.</p>
+<p>Exact expression (Eq. (25) from [1]) is corrected by factor (c * t0).</p>
+<dl class="simple">
+<dt>time<span class="classifier">array of float</span></dt><dd><p>Time points where the wake function is evaluated in [s].</p>
+</dd>
+<dt>exact<span class="classifier">bool, optional</span></dt><dd><p>If True, the exact expression is used. The default is False.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>wt<span class="classifier">array of float</span></dt><dd><p>Transverse wake function in [V/C].</p>
+</dd>
+</dl>
+<p>[1] : Skripka, Galina, et al. “Simultaneous computation of intrabunch and 
+interbunch collective beam motions in storage rings.” Nuclear Instruments 
+and Methods in Physics Research Section A: Accelerators, Spectrometers, 
+Detectors and Associated Equipment 806 (2016): 221-230.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.impedance.resistive_wall.Coating">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.impedance.resistive_wall.</span></span><span class="sig-name descname"><span class="pre">Coating</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/resistive_wall.html#Coating"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.resistive_wall.Coating" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.impedance.wakefield.WakeField" title="mbtrack2.impedance.wakefield.WakeField"><code class="xref py py-class docutils literal notranslate"><span class="pre">WakeField</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.resistive_wall.Coating.LongitudinalImpedance">
+<span class="sig-name descname"><span class="pre">LongitudinalImpedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/resistive_wall.html#Coating.LongitudinalImpedance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.resistive_wall.Coating.LongitudinalImpedance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the longitudinal impedance of a coating using Eq. (5), or 
+approxmiated expression Eq. (8), of [1]. The approxmiated expression 
+is valid if the skin depth of the coating is large compared to the 
+coating thickness.</p>
+<dl class="simple">
+<dt>f<span class="classifier">array of float</span></dt><dd><p>Frequency points where the impedance is evaluated in [Hz].</p>
+</dd>
+<dt>approx<span class="classifier">bool</span></dt><dd><p>If True, used approxmiated formula.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Zl<span class="classifier">array</span></dt><dd><p>Longitudinal impedance values in [ohm].</p>
+</dd>
+</dl>
+<p>[1] : Migliorati, M., E. Belli, and M. Zobov. “Impact of the resistive 
+wall impedance on beam dynamics in the Future Circular e+ e− Collider.” 
+Physical Review Accelerators and Beams 21.4 (2018): 041001.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.resistive_wall.Coating.TransverseImpedance">
+<span class="sig-name descname"><span class="pre">TransverseImpedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/resistive_wall.html#Coating.TransverseImpedance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.resistive_wall.Coating.TransverseImpedance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the transverse impedance of a coating using Eq. (6), or 
+approxmiated expression Eq. (9), of [1]. The approxmiated expression 
+is valid if the skin depth of the coating is large compared to the 
+coating thickness.</p>
+<dl class="simple">
+<dt>f<span class="classifier">array of float</span></dt><dd><p>Frequency points where the impedance is evaluated in [Hz].</p>
+</dd>
+<dt>approx<span class="classifier">bool</span></dt><dd><p>If True, used approxmiated formula.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Zt<span class="classifier">array</span></dt><dd><p>Transverse impedance values in [ohm].</p>
+</dd>
+</dl>
+<p>[1] : Migliorati, M., E. Belli, and M. Zobov. “Impact of the resistive 
+wall impedance on beam dynamics in the Future Circular e+ e− Collider.” 
+Physical Review Accelerators and Beams 21.4 (2018): 041001.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mbtrack2.impedance.resistive_wall.skin_depth">
+<span class="sig-prename descclassname"><span class="pre">mbtrack2.impedance.resistive_wall.</span></span><span class="sig-name descname"><span class="pre">skin_depth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/resistive_wall.html#skin_depth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.resistive_wall.skin_depth" title="Permalink to this definition">¶</a></dt>
+<dd><p>General formula for the skin depth.</p>
+<dl class="simple">
+<dt>frequency<span class="classifier">array of float</span></dt><dd><p>Frequency points in [Hz].</p>
+</dd>
+<dt>rho<span class="classifier">float</span></dt><dd><p>Resistivity in [ohm.m].</p>
+</dd>
+<dt>mu_r<span class="classifier">float, optional</span></dt><dd><p>Relative magnetic permeability.</p>
+</dd>
+<dt>epsilon_r<span class="classifier">float, optional</span></dt><dd><p>Relative electric permittivity.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>delta<span class="classifier">array of float</span></dt><dd><p>Skin depth in [m].</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-mbtrack2.impedance.resonator">
+<span id="mbtrack2-impedance-resonator-module"></span><h2>mbtrack2.impedance.resonator module<a class="headerlink" href="#module-mbtrack2.impedance.resonator" title="Permalink to this heading">¶</a></h2>
+<p>This module defines the impedances and wake functions from the resonator model 
+based on the WakeField class.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.impedance.resonator.PureInductive">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.impedance.resonator.</span></span><span class="sig-name descname"><span class="pre">PureInductive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">L</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_wake</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_imp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imp_freq_lim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/resonator.html#PureInductive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.resonator.PureInductive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.impedance.wakefield.WakeField" title="mbtrack2.impedance.wakefield.WakeField"><code class="xref py py-class docutils literal notranslate"><span class="pre">WakeField</span></code></a></p>
+<p>Pure inductive Wakefield element which computes associated longitudinal 
+impedance and wake function.</p>
+<dl class="simple">
+<dt>L<span class="classifier">float</span></dt><dd><p>Inductance value in [Ohm/Hz].</p>
+</dd>
+<dt>n_wake<span class="classifier">int or float, optional</span></dt><dd><p>Number of points used in the wake function.</p>
+</dd>
+<dt>n_imp<span class="classifier">int or float, optional</span></dt><dd><p>Number of points used in the impedance.</p>
+</dd>
+<dt>imp_freq_lim<span class="classifier">float, optional</span></dt><dd><p>Maximum frequency used in the impedance.</p>
+</dd>
+</dl>
+<p>nout, trim : see Impedance.to_wakefunction</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.resonator.PureInductive.long_impedance">
+<span class="sig-name descname"><span class="pre">long_impedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/resonator.html#PureInductive.long_impedance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.resonator.PureInductive.long_impedance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.impedance.resonator.PureResistive">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.impedance.resonator.</span></span><span class="sig-name descname"><span class="pre">PureResistive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">R</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_wake</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_imp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imp_freq_lim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/resonator.html#PureResistive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.resonator.PureResistive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.impedance.wakefield.WakeField" title="mbtrack2.impedance.wakefield.WakeField"><code class="xref py py-class docutils literal notranslate"><span class="pre">WakeField</span></code></a></p>
+<p>Pure resistive Wakefield element which computes associated longitudinal 
+impedance and wake function.</p>
+<dl class="simple">
+<dt>R<span class="classifier">float</span></dt><dd><p>Resistance value in [Ohm].</p>
+</dd>
+<dt>n_wake<span class="classifier">int or float, optional</span></dt><dd><p>Number of points used in the wake function.</p>
+</dd>
+<dt>n_imp<span class="classifier">int or float, optional</span></dt><dd><p>Number of points used in the impedance.</p>
+</dd>
+<dt>imp_freq_lim<span class="classifier">float, optional</span></dt><dd><p>Maximum frequency used in the impedance.</p>
+</dd>
+</dl>
+<p>nout, trim : see Impedance.to_wakefunction</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.resonator.PureResistive.long_impedance">
+<span class="sig-name descname"><span class="pre">long_impedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/resonator.html#PureResistive.long_impedance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.resonator.PureResistive.long_impedance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.impedance.resonator.Resonator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.impedance.resonator.</span></span><span class="sig-name descname"><span class="pre">Resonator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Rs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plane</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/resonator.html#Resonator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.resonator.Resonator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.impedance.wakefield.WakeField" title="mbtrack2.impedance.wakefield.WakeField"><code class="xref py py-class docutils literal notranslate"><span class="pre">WakeField</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.resonator.Resonator.long_impedance">
+<span class="sig-name descname"><span class="pre">long_impedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/resonator.html#Resonator.long_impedance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.resonator.Resonator.long_impedance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.resonator.Resonator.long_wake_function">
+<span class="sig-name descname"><span class="pre">long_wake_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/resonator.html#Resonator.long_wake_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.resonator.Resonator.long_wake_function" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.resonator.Resonator.transverse_impedance">
+<span class="sig-name descname"><span class="pre">transverse_impedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/resonator.html#Resonator.transverse_impedance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.resonator.Resonator.transverse_impedance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.resonator.Resonator.transverse_wake_function">
+<span class="sig-name descname"><span class="pre">transverse_wake_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/resonator.html#Resonator.transverse_wake_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.resonator.Resonator.transverse_wake_function" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-mbtrack2.impedance.tapers">
+<span id="mbtrack2-impedance-tapers-module"></span><h2>mbtrack2.impedance.tapers module<a class="headerlink" href="#module-mbtrack2.impedance.tapers" title="Permalink to this heading">¶</a></h2>
+<p>Module where taper elements are defined.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.impedance.tapers.StupakovCircularTaper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.impedance.tapers.</span></span><span class="sig-name descname"><span class="pre">StupakovCircularTaper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius_entrance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius_exit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/tapers.html#StupakovCircularTaper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.tapers.StupakovCircularTaper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.impedance.wakefield.WakeField" title="mbtrack2.impedance.wakefield.WakeField"><code class="xref py py-class docutils literal notranslate"><span class="pre">WakeField</span></code></a></p>
+<p>Circular taper WakeField element, using the low frequency 
+approxmiation. Assume constant taper angle. Formulas from [1].</p>
+<p>! Valid for low w</p>
+<p>frequency: frequency points where the impedance will be evaluated in [Hz]
+radius_entrance : radius at taper entrance in [m]
+radius_exit : radius at taper exit in [m]
+length : taper length in [m]</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.impedance.tapers.StupakovCircularTaper.Z0">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Z0</span></span><a class="headerlink" href="#mbtrack2.impedance.tapers.StupakovCircularTaper.Z0" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.tapers.StupakovCircularTaper.Z_over_n">
+<span class="sig-name descname"><span class="pre">Z_over_n</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/tapers.html#StupakovCircularTaper.Z_over_n"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.tapers.StupakovCircularTaper.Z_over_n" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.impedance.tapers.StupakovCircularTaper.angle">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">angle</span></span><a class="headerlink" href="#mbtrack2.impedance.tapers.StupakovCircularTaper.angle" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.tapers.StupakovCircularTaper.dip">
+<span class="sig-name descname"><span class="pre">dip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frequency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/tapers.html#StupakovCircularTaper.dip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.tapers.StupakovCircularTaper.dip" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.tapers.StupakovCircularTaper.long">
+<span class="sig-name descname"><span class="pre">long</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frequency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/tapers.html#StupakovCircularTaper.long"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.tapers.StupakovCircularTaper.long" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.impedance.tapers.StupakovCircularTaper.radius_prime">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">radius_prime</span></span><a class="headerlink" href="#mbtrack2.impedance.tapers.StupakovCircularTaper.radius_prime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.impedance.tapers.StupakovRectangularTaper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.impedance.tapers.</span></span><span class="sig-name descname"><span class="pre">StupakovRectangularTaper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gap_entrance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gap_exit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/tapers.html#StupakovRectangularTaper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.tapers.StupakovRectangularTaper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.impedance.wakefield.WakeField" title="mbtrack2.impedance.wakefield.WakeField"><code class="xref py py-class docutils literal notranslate"><span class="pre">WakeField</span></code></a></p>
+<p>Rectangular vertical taper WakeField element, using the low frequency 
+approxmiation. Assume constant taper angle. Formulas from [1].</p>
+<p>! Valid for low w</p>
+<p>frequency: frequency points where the impedance will be evaluated in [Hz]
+gap_entrance : full vertical gap at taper entrance in [m]
+gap_exit: full vertical gap at taper exit in [m]
+length: taper length in [m]
+width : full horizontal width of the taper in [m]</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.impedance.tapers.StupakovRectangularTaper.Z0">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Z0</span></span><a class="headerlink" href="#mbtrack2.impedance.tapers.StupakovRectangularTaper.Z0" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.tapers.StupakovRectangularTaper.Z_over_n">
+<span class="sig-name descname"><span class="pre">Z_over_n</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/tapers.html#StupakovRectangularTaper.Z_over_n"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.tapers.StupakovRectangularTaper.Z_over_n" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.impedance.tapers.StupakovRectangularTaper.angle">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">angle</span></span><a class="headerlink" href="#mbtrack2.impedance.tapers.StupakovRectangularTaper.angle" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.impedance.tapers.StupakovRectangularTaper.gap_prime">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">gap_prime</span></span><a class="headerlink" href="#mbtrack2.impedance.tapers.StupakovRectangularTaper.gap_prime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.tapers.StupakovRectangularTaper.long">
+<span class="sig-name descname"><span class="pre">long</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frequency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/tapers.html#StupakovRectangularTaper.long"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.tapers.StupakovRectangularTaper.long" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.tapers.StupakovRectangularTaper.quad">
+<span class="sig-name descname"><span class="pre">quad</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/tapers.html#StupakovRectangularTaper.quad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.tapers.StupakovRectangularTaper.quad" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.tapers.StupakovRectangularTaper.xdip">
+<span class="sig-name descname"><span class="pre">xdip</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/tapers.html#StupakovRectangularTaper.xdip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.tapers.StupakovRectangularTaper.xdip" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.tapers.StupakovRectangularTaper.ydip">
+<span class="sig-name descname"><span class="pre">ydip</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/tapers.html#StupakovRectangularTaper.ydip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.tapers.StupakovRectangularTaper.ydip" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-mbtrack2.impedance.wakefield">
+<span id="mbtrack2-impedance-wakefield-module"></span><h2>mbtrack2.impedance.wakefield module<a class="headerlink" href="#module-mbtrack2.impedance.wakefield" title="Permalink to this heading">¶</a></h2>
+<p>This module defines general classes to describes wakefields, impedances and 
+wake functions.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.ComplexData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.impedance.wakefield.</span></span><span class="sig-name descname"><span class="pre">ComplexData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([-</span> <span class="pre">1.e+15,</span> <span class="pre">1.e+15])</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([0,</span> <span class="pre">0])</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#ComplexData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.ComplexData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Define a general data structure for a complex function based on a pandas 
+DataFrame.</p>
+<dl class="simple">
+<dt>variable<span class="classifier">list, numpy array</span></dt><dd><p>contains the function variable values</p>
+</dd>
+<dt>function<span class="classifier">list or numpy array of comp lex numbers</span></dt><dd><p>contains the values taken by the complex function</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.ComplexData.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">structure_to_add</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'zero'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interp_kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cubic'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'variable'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#ComplexData.add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.ComplexData.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to add two structures. If the data don’t have the same length,
+different cases are handled.</p>
+<dl>
+<dt>structure_to_add<span class="classifier">ComplexData object, int, float or complex.</span></dt><dd><p>structure to be added.</p>
+</dd>
+<dt>method<span class="classifier">str, optional</span></dt><dd><p>manage how the addition is done, possibilties are: 
+-common: the common range of the index (variable) from the two</p>
+<blockquote>
+<div><p>structures is used. The input data are cross-interpolated
+so that the result data contains the points at all initial
+points in the common domain.</p>
+</div></blockquote>
+<p>-extrapolate: extrapolate the value of both ComplexData.
+-zero: outside of the common range, the missing values are zero. In</p>
+<blockquote>
+<div><p>the common range, behave as “common” method.</p>
+</div></blockquote>
+</dd>
+<dt>interp_kind<span class="classifier">str, optional</span></dt><dd><p>interpolation method which is passed to pandas and to
+scipy.interpolate.interp1d.</p>
+</dd>
+<dt>index_name<span class="classifier">str, optional</span></dt><dd><p>name of the dataframe index passed to the method</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>ComplexData </dt><dd><p>Contains the sum of the two inputs.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.ComplexData.component_type">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">component_type</span></span><a class="headerlink" href="#mbtrack2.impedance.wakefield.ComplexData.component_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.ComplexData.initialize_coefficient">
+<span class="sig-name descname"><span class="pre">initialize_coefficient</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#ComplexData.initialize_coefficient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.ComplexData.initialize_coefficient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define the impedance coefficients and the plane of the impedance that
+are presents in attributes of the class.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.ComplexData.multiply">
+<span class="sig-name descname"><span class="pre">multiply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#ComplexData.multiply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.ComplexData.multiply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiply a data strucure with a float or an int.
+If the multiplication is done with something else, throw a warning.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.ComplexData.name_and_coefficients_table">
+<span class="sig-name descname"><span class="pre">name_and_coefficients_table</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#ComplexData.name_and_coefficients_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.ComplexData.name_and_coefficients_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a table associating the human readbale names of an impedance
+component and its associated coefficients and plane.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.ComplexData.power_x">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">power_x</span></span><a class="headerlink" href="#mbtrack2.impedance.wakefield.ComplexData.power_x" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.ComplexData.power_y">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">power_y</span></span><a class="headerlink" href="#mbtrack2.impedance.wakefield.ComplexData.power_y" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.Impedance">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.impedance.wakefield.</span></span><span class="sig-name descname"><span class="pre">Impedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([-</span> <span class="pre">1.e+15,</span> <span class="pre">1.e+15])</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([0,</span> <span class="pre">0])</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'long'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#Impedance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.Impedance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.impedance.wakefield.ComplexData" title="mbtrack2.impedance.wakefield.ComplexData"><code class="xref py py-class docutils literal notranslate"><span class="pre">ComplexData</span></code></a></p>
+<p>Define an Impedance object based on a ComplexData object.</p>
+<dl class="simple">
+<dt>variable<span class="classifier">array-like</span></dt><dd><p>Frequency domain structure of the impedance in [Hz].</p>
+</dd>
+<dt>function<span class="classifier">array-like</span></dt><dd><p>Impedance values in [Ohm].</p>
+</dd>
+<dt>component_type<span class="classifier">str, optinal</span></dt><dd><p>Type of the impedance: “long”, “xdip”, “xquad”, …</p>
+</dd>
+</dl>
+<p>data : DataFrame
+impedance_type : str</p>
+<dl class="simple">
+<dt>loss_factor(sigma)</dt><dd><p>Compute the loss factor or the kick factor for a Gaussian bunch.</p>
+</dd>
+<dt>to_wakefunction()</dt><dd><p>Return a WakeFunction object from the impedance data.</p>
+</dd>
+<dt>plot()</dt><dd><p>Plot the impedance data.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.Impedance.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">structure_to_add</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta_x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta_y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'zero'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#Impedance.add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.Impedance.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to add two Impedance objects. The two structures are
+compared so that the addition is self-consistent.
+Beta functions can be precised as well.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.Impedance.loss_factor">
+<span class="sig-name descname"><span class="pre">loss_factor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#Impedance.loss_factor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.Impedance.loss_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the loss factor or the kick factor for a Gaussian bunch. 
+Formulas from Eq. (2) p239 and Eq.(7) p240 of [1].</p>
+<dl class="simple">
+<dt>sigma<span class="classifier">float</span></dt><dd><p>RMS bunch length in [s]</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>kloss: float</dt><dd><p>Loss factor in [V/C] or kick factor in [V/C/m] depanding on the 
+impedance type.</p>
+</dd>
+</dl>
+<p>[1] : Handbook of accelerator physics and engineering, 3rd printing.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.Impedance.multiply">
+<span class="sig-name descname"><span class="pre">multiply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#Impedance.multiply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.Impedance.multiply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiply a Impedance object with a float or an int.
+If the multiplication is done with something else, throw a warning.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.Impedance.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#Impedance.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.Impedance.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the impedance data.</p>
+<dl>
+<dt>ax<span class="classifier">class:<cite>matplotlib.axes.Axes</cite></span></dt><dd><p>Impedance data.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.Impedance.to_wakefunction">
+<span class="sig-name descname"><span class="pre">to_wakefunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#Impedance.to_wakefunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.Impedance.to_wakefunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a WakeFunction object from the impedance data.
+The impedance data is assumed to be sampled equally.</p>
+<dl class="simple">
+<dt>nout<span class="classifier">int or float, optional</span></dt><dd><p>Length of the transformed axis of the output. If None, it is taken
+to be 2*(n-1) where n is the length of the input. If nout &gt; n, the
+input is padded with zeros. If nout &lt; n, the input it cropped.
+Note that, for any nout value, nout//2+1 input points are required.</p>
+</dd>
+<dt>trim<span class="classifier">bool or float, optional</span></dt><dd><p>If True, the pseudo wake function is trimmed at time=0 and is forced 
+to zero where time&lt;0. 
+If False, the original result is preserved.
+If a float is given, the pseudo wake function is trimmed from 
+time &lt;= trim to 0.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeField">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.impedance.wakefield.</span></span><span class="sig-name descname"><span class="pre">WakeField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">structure_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#WakeField"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Defines a WakeField which corresponds to a single physical element which 
+produces different types of wakes, represented by their Impedance or 
+WakeFunction objects.</p>
+<dl class="simple">
+<dt>structure_list<span class="classifier">list, optional</span></dt><dd><p>list of Impedance/WakeFunction objects to add to the WakeField.</p>
+</dd>
+</dl>
+<p>name : str, optional</p>
+<dl class="simple">
+<dt>impedance_components<span class="classifier">array of str</span></dt><dd><p>Impedance components present for this element.</p>
+</dd>
+<dt>wake_components<span class="classifier">array of str</span></dt><dd><p>WakeFunction components present for this element.</p>
+</dd>
+<dt>components<span class="classifier">array of str</span></dt><dd><p>Impedance or WakeFunction components present for this element.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>append_to_model(structure_to_add)</dt><dd><p>Add Impedance/WakeFunction to WakeField.</p>
+</dd>
+<dt>list_to_attr(structure_list)</dt><dd><p>Add list of Impedance/WakeFunction to WakeField.</p>
+</dd>
+<dt>add_wakefields(wake1, beta1, wake2, beta2)</dt><dd><p>Add two WakeFields taking into account beta functions.</p>
+</dd>
+<dt>add_several_wakefields(wakefields, beta)</dt><dd><p>Add a list of WakeFields taking into account beta functions.</p>
+</dd>
+<dt>drop(component)</dt><dd><p>Delete a component or a list of component from the WakeField.</p>
+</dd>
+<dt>save(file)</dt><dd><p>Save WakeField element to file.</p>
+</dd>
+<dt>load(file)</dt><dd><p>Load WakeField element from file.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeField.add_several_wakefields">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">add_several_wakefields</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wakefields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#WakeField.add_several_wakefields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeField.add_several_wakefields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a list of WakeFields taking into account beta functions.</p>
+<dl class="simple">
+<dt>wakefields<span class="classifier">list of WakeField</span></dt><dd><p>WakeFields to add.</p>
+</dd>
+<dt>beta<span class="classifier">array of shape (len(wakefields), 2)</span></dt><dd><p>Beta functions at the WakeField postions.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>wake_sum<span class="classifier">WakeField</span></dt><dd><p>WakeField with summed components.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeField.add_wakefields">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">add_wakefields</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wake1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wake2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#WakeField.add_wakefields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeField.add_wakefields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add two WakeFields taking into account beta functions.</p>
+<dl class="simple">
+<dt>wake1<span class="classifier">WakeField</span></dt><dd><p>WakeField to add.</p>
+</dd>
+<dt>beta1<span class="classifier">array of shape (2,)</span></dt><dd><p>Beta functions at wake1 postion.</p>
+</dd>
+<dt>wake2<span class="classifier">WakeField</span></dt><dd><p>WakeField to add.</p>
+</dd>
+<dt>beta2<span class="classifier">array of shape (2,)</span></dt><dd><p>Beta functions at wake2 postion.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>wake_sum<span class="classifier">WakeField</span></dt><dd><p>WakeField with summed components.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeField.append_to_model">
+<span class="sig-name descname"><span class="pre">append_to_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">structure_to_add</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#WakeField.append_to_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeField.append_to_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add Impedance/WakeFunction component to WakeField.</p>
+<p>structure_to_add : Impedance or WakeFunction object</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeField.components">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">components</span></span><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeField.components" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an array of the component names for the element.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeField.drop">
+<span class="sig-name descname"><span class="pre">drop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#WakeField.drop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeField.drop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a component or a list of component from the WakeField.</p>
+<dl class="simple">
+<dt>component<span class="classifier">str or list of str</span></dt><dd><p>Component or list of components to drop.
+If “Z”, drop all impedance components.
+If “W””, drop all wake function components.</p>
+</dd>
+</dl>
+<p>None.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeField.impedance_components">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">impedance_components</span></span><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeField.impedance_components" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an array of the impedance component names for the element.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeField.list_to_attr">
+<span class="sig-name descname"><span class="pre">list_to_attr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">structure_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#WakeField.list_to_attr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeField.list_to_attr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add list of Impedance/WakeFunction components to WakeField.</p>
+<p>structure_list : list of Impedance or WakeFunction objects.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeField.load">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#WakeField.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeField.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load WakeField element from file.</p>
+<p>The same pandas version is needed on both saving and loading computer
+for the pickle to work.</p>
+<dl class="simple">
+<dt>file<span class="classifier">str</span></dt><dd><p>File where the WakeField element is saved.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>wakefield<span class="classifier">WakeField</span></dt><dd><p>Loaded wakefield.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeField.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#WakeField.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeField.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save WakeField element to file.</p>
+<p>The same pandas version is needed on both saving and loading computer
+for the pickle to work.</p>
+<dl class="simple">
+<dt>file<span class="classifier">str</span></dt><dd><p>File where the WakeField element is saved.</p>
+</dd>
+</dl>
+<p>None.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeField.wake_components">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">wake_components</span></span><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeField.wake_components" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an array of the wake function component names for the element.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeFunction">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mbtrack2.impedance.wakefield.</span></span><span class="sig-name descname"><span class="pre">WakeFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([-</span> <span class="pre">1.e+15,</span> <span class="pre">1.e+15])</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([0,</span> <span class="pre">0])</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'long'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#WakeFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mbtrack2.impedance.wakefield.ComplexData" title="mbtrack2.impedance.wakefield.ComplexData"><code class="xref py py-class docutils literal notranslate"><span class="pre">ComplexData</span></code></a></p>
+<p>Define a WakeFunction object based on a ComplexData object.</p>
+<dl class="simple">
+<dt>variable<span class="classifier">array-like</span></dt><dd><p>Time domain structure of the wake function in [s].</p>
+</dd>
+<dt>function<span class="classifier">array-like</span></dt><dd><p>Wake function values in [V/C] for “long” and in [V/C/m] for others.</p>
+</dd>
+<dt>component_type<span class="classifier">str, optinal</span></dt><dd><p>Type of the wake function: “long”, “xdip”, “xquad”, …</p>
+</dd>
+</dl>
+<p>data : DataFrame
+wake_type : str</p>
+<dl class="simple">
+<dt>to_impedance()</dt><dd><p>Return an Impedance object from the WakeFunction data.</p>
+</dd>
+<dt>deconvolution(freq_lim, sigma, mu)</dt><dd><p>Compute a wake function from wake potential data.</p>
+</dd>
+<dt>plot()</dt><dd><p>Plot the wake function data.</p>
+</dd>
+<dt>loss_factor(sigma)</dt><dd><p>Compute the loss factor or the kick factor for a Gaussian bunch.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeFunction.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">structure_to_add</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'zero'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#WakeFunction.add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeFunction.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to add two WakeFunction objects. The two structures are
+compared so that the addition is self-consistent.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeFunction.deconvolution">
+<span class="sig-name descname"><span class="pre">deconvolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freq_lim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#WakeFunction.deconvolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeFunction.deconvolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a wake function from wake potential data.</p>
+<p>The present data loaded into the WakeFunction object is assumed to be 
+an uniformly sampled wake potential from a Gaussian bunch distribution 
+with RMS bunch length sigma and offset mu.</p>
+<dl class="simple">
+<dt>The offset mu depends on the code used to compute the wake potential:</dt><dd><ul class="simple">
+<li><p>for CST, it is the first time sample, so self.data.index[0].</p></li>
+<li><p>for ABCI, it is “-1 * ISIG * SIG / c”.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>freq_lim<span class="classifier">float</span></dt><dd><p>The maximum frequency for calculating the impedance [Hz].</p>
+</dd>
+<dt>sigma<span class="classifier">float</span></dt><dd><p>RMS of the Gaussian distribution in [s].</p>
+</dd>
+<dt>mu<span class="classifier">float</span></dt><dd><p>Offset of the Gaussian distribution in [s].</p>
+</dd>
+<dt>nout<span class="classifier">int or float, optional</span></dt><dd><p>Length of the transformed axis of the output. If None, it is taken
+to be 2*(n-1) where n is the length of the input. If nout &gt; n, the
+input is padded with zeros. If nout &lt; n, the input it cropped.
+Note that, for any nout value, nout//2+1 input points are required.
+The default is None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeFunction.loss_factor">
+<span class="sig-name descname"><span class="pre">loss_factor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#WakeFunction.loss_factor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeFunction.loss_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the loss factor or the kick factor for a Gaussian bunch. 
+Formulas from Eq. (5.6), Eq. (5.12) and Eq. (5.17) of [1].</p>
+<dl class="simple">
+<dt>sigma<span class="classifier">float</span></dt><dd><p>RMS bunch length in [s]</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>kloss: float</dt><dd><p>Loss factor in [V/C] or kick factor in [V/C/m] depanding on the 
+impedance type.</p>
+</dd>
+</dl>
+<p>[1] : Zotter, Bruno W., and Semyon A. Kheifets. Impedances and wakes 
+in high-energy particle accelerators. World Scientific, 1998.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeFunction.multiply">
+<span class="sig-name descname"><span class="pre">multiply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#WakeFunction.multiply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeFunction.multiply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiply a WakeFunction object with a float or an int.
+If the multiplication is done with something else, throw a warning.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeFunction.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#WakeFunction.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeFunction.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the wake function data.</p>
+<dl>
+<dt>ax<span class="classifier">class:<cite>matplotlib.axes.Axes</cite></span></dt><dd><p>Wake function data.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mbtrack2.impedance.wakefield.WakeFunction.to_impedance">
+<span class="sig-name descname"><span class="pre">to_impedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freq_lim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mbtrack2/impedance/wakefield.html#WakeFunction.to_impedance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mbtrack2.impedance.wakefield.WakeFunction.to_impedance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an Impedance object from the WakeFunction data.
+The WakeFunction data is assumed to be sampled equally.</p>
+<p>If both sigma and mu are given, the impedance data is divided by the
+Fourier transform of a Gaussian distribution. It then can be used to go 
+from wake potential data to impedance.</p>
+<dl class="simple">
+<dt>freq_lim<span class="classifier">float</span></dt><dd><p>The maximum frequency for calculating the impedance [Hz].</p>
+</dd>
+<dt>nout<span class="classifier">int or float, optional</span></dt><dd><p>Length of the transformed axis of the output. If None, it is taken
+to be 2*(n-1) where n is the length of the input. If nout &gt; n, the
+input is padded with zeros. If nout &lt; n, the input it cropped.
+Note that, for any nout value, nout//2+1 input points are required.
+The default is None.</p>
+</dd>
+<dt>sigma<span class="classifier">float</span></dt><dd><p>RMS of the Gaussian distribution in [s].
+The default is None.</p>
+</dd>
+<dt>mu<span class="classifier">float</span></dt><dd><p>Offset of the Gaussian distribution in [s].
+The default is None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-mbtrack2.impedance">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mbtrack2.impedance" title="Permalink to this heading">¶</a></h2>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">mbtrack2.impedance package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.impedance.csr">mbtrack2.impedance.csr module</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.impedance.impedance_model">mbtrack2.impedance.impedance_model module</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.impedance.resistive_wall">mbtrack2.impedance.resistive_wall module</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.impedance.resonator">mbtrack2.impedance.resonator module</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.impedance.tapers">mbtrack2.impedance.tapers module</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.impedance.wakefield">mbtrack2.impedance.wakefield module</a></li>
+<li><a class="reference internal" href="#module-mbtrack2.impedance">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/mbtrack2.impedance.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.impedance package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2024, A. Gamelin et al.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,964 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mbtrack2.tracking.wakepotential &#8212; mbtrack2 0.6.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/nature.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.tracking.wakepotential</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mbtrack2.tracking.wakepotential</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module defines the WakePotential and LongRangeResistiveWall classes which </span>
+<span class="sd">deal with the single bunch and multi-bunch wakes.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">signal</span>
+<span class="kn">from</span> <span class="nn">scipy.constants</span> <span class="kn">import</span> <span class="n">c</span><span class="p">,</span> <span class="n">mu_0</span><span class="p">,</span> <span class="n">pi</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">interp1d</span>
+
+<span class="kn">from</span> <span class="nn">mbtrack2.tracking.element</span> <span class="kn">import</span> <span class="n">Element</span>
+<span class="kn">from</span> <span class="nn">mbtrack2.utilities.spectrum</span> <span class="kn">import</span> <span class="n">gaussian_bunch</span>
+
+
+<div class="viewcode-block" id="WakePotential"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.WakePotential">[docs]</a><span class="k">class</span> <span class="nc">WakePotential</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute a wake potential from uniformly sampled wake functions by </span>
+<span class="sd">    performing a convolution with a bunch charge profile.</span>
+<span class="sd">    </span>
+<span class="sd">    Two different time bases are used. The first one is controled by the n_bin</span>
+<span class="sd">    parameter and is used to compute the bunch profile. Then the bunch profile</span>
+<span class="sd">    is interpolated on the wake function time base which is used to perform the</span>
+<span class="sd">    convolution to get the wake potential.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ring : Synchrotron object</span>
+<span class="sd">    wakefield : Wakefield object</span>
+<span class="sd">        Wakefield object which contains the wake functions to be used. The wake</span>
+<span class="sd">        functions must be uniformly sampled!</span>
+<span class="sd">    n_bin : int, optional</span>
+<span class="sd">        Number of bins for constructing the longitudinal bunch profile.</span>
+<span class="sd">    interp_on_postion : bool, optional</span>
+<span class="sd">        If True, the computed wake potential is interpolated on the exact </span>
+<span class="sd">        particle location. If False, the wake potential is interpolated on the </span>
+<span class="sd">        bin center and each particle of the bin get the same value.</span>
+<span class="sd">        Default is True.</span>
+<span class="sd">        </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rho : array of shape (n_bin, )</span>
+<span class="sd">        Bunch charge density profile in the unit [1/s].</span>
+<span class="sd">    Wp : array </span>
+<span class="sd">        Wake potential profile.</span>
+<span class="sd">    Wp_interp : array of shape (mp_number, )</span>
+<span class="sd">        Wake potential, obtained from interpolating Wp, exerted on each macro-particle.</span>
+<span class="sd">    </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    charge_density(bunch)</span>
+<span class="sd">        Compute bunch charge density profile in [1/s].</span>
+<span class="sd">    dipole_moment(bunch, plane, tau0)</span>
+<span class="sd">        Return the dipole moment of the bunch computed on the same time array </span>
+<span class="sd">        as the wake function.</span>
+<span class="sd">    prepare_wakefunction(wake_type)</span>
+<span class="sd">        Prepare the wake function of a given wake_type to be used for the wake</span>
+<span class="sd">        potential computation. </span>
+<span class="sd">    get_wakepotential(bunch, wake_type)</span>
+<span class="sd">        Return the wake potential computed on the wake function time array </span>
+<span class="sd">        limited to the bunch profile.</span>
+<span class="sd">    track(bunch)</span>
+<span class="sd">        Tracking method for the element.</span>
+<span class="sd">    plot_last_wake(wake_type)</span>
+<span class="sd">        Plot the last wake potential of a given type computed during the last</span>
+<span class="sd">        call of the track method.</span>
+<span class="sd">    reference_loss(bunch)</span>
+<span class="sd">        Calculate the loss factor and kick factor from the wake potential and </span>
+<span class="sd">        compare it to a reference value assuming a Gaussian bunch computed in </span>
+<span class="sd">        the frequency domain.</span>
+<span class="sd">    check_sampling()</span>
+<span class="sd">        Check if the wake function sampling is uniform.</span>
+<span class="sd">    reduce_sampling(factor)</span>
+<span class="sd">        Reduce wake function samping by an integer factor.</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ring</span><span class="p">,</span> <span class="n">wakefield</span><span class="p">,</span> <span class="n">n_bin</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">interp_on_postion</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wakefield</span> <span class="o">=</span> <span class="n">wakefield</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">types</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wakefield</span><span class="o">.</span><span class="n">wake_components</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_types</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wakefield</span><span class="o">.</span><span class="n">wake_components</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ring</span> <span class="o">=</span> <span class="n">ring</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_bin</span> <span class="o">=</span> <span class="n">n_bin</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_sampling</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interp_on_postion</span> <span class="o">=</span> <span class="n">interp_on_postion</span>
+
+        <span class="c1"># Suppress numpy warning for floating-point operations.</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">seterr</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="WakePotential.charge_density"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.WakePotential.charge_density">[docs]</a>    <span class="k">def</span> <span class="nf">charge_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bunch</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute bunch charge density profile in [1/s].</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        bunch : Bunch object</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Get binning data</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">bunch</span><span class="o">.</span><span class="n">binning</span><span class="p">(</span><span class="n">n_bin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_bin</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bins</span> <span class="o">=</span> <span class="n">a</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sorted_index</span> <span class="o">=</span> <span class="n">b</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">profile</span> <span class="o">=</span> <span class="n">c</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="n">d</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bin_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bins</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bins</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Compute charge density</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">=</span> <span class="n">bunch</span><span class="o">.</span><span class="n">charge_per_mp</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">profile</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bin_size</span> <span class="o">*</span>
+                                                         <span class="n">bunch</span><span class="o">.</span><span class="n">charge</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="p">)</span>
+
+        <span class="c1"># Compute time array</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dtau</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Add N values before and after rho and tau</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_bin</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtau</span> <span class="o">*</span> <span class="n">N</span><span class="p">,</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtau</span> <span class="o">*</span> <span class="n">N</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtau</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">N</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_bin</span> <span class="o">%</span> <span class="mi">2</span><span class="p">),</span>
+                          <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;constant&quot;</span><span class="p">,</span>
+                          <span class="n">constant_values</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtau</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tau_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau_mean</span></div>
+
+<div class="viewcode-block" id="WakePotential.dipole_moment"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.WakePotential.dipole_moment">[docs]</a>    <span class="k">def</span> <span class="nf">dipole_moment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bunch</span><span class="p">,</span> <span class="n">plane</span><span class="p">,</span> <span class="n">tau0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the dipole moment of the bunch computed on the same time array </span>
+<span class="sd">        as the wake function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        bunch : Bunch object</span>
+<span class="sd">        plane : str</span>
+<span class="sd">            Plane on which the dipole moment is computed, &quot;x&quot; or &quot;y&quot;.</span>
+<span class="sd">        tau0 : array</span>
+<span class="sd">            Time array on which the dipole moment will be interpolated, in [s].</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dipole : array</span>
+<span class="sd">            Dipole moment of the bunch.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dipole</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_bin</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_bin</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">dipole</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">bunch</span><span class="p">[</span><span class="n">plane</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">sorted_index</span> <span class="o">==</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">dipole</span> <span class="o">=</span> <span class="n">dipole</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">profile</span>
+        <span class="n">dipole</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">dipole</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># Add N values to get same size as tau/profile</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_bin</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_bin</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">dipole</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dipole</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">))</span>
+            <span class="n">dipole</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">dipole</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_bin</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="n">dipole</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dipole</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">))</span>
+            <span class="n">dipole</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">dipole</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># Interpole on tau0 to get the same size as W0</span>
+        <span class="n">dipole0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">tau0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">,</span> <span class="n">dipole</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;dipole_&quot;</span> <span class="o">+</span> <span class="n">plane</span><span class="p">,</span> <span class="n">dipole0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dipole0</span></div>
+
+<div class="viewcode-block" id="WakePotential.prepare_wakefunction"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.WakePotential.prepare_wakefunction">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_wakefunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wake_type</span><span class="p">,</span> <span class="n">tau</span><span class="p">,</span> <span class="n">save_data</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prepare the wake function of a given wake_type to be used for the wake</span>
+<span class="sd">        potential computation. </span>
+<span class="sd">        </span>
+<span class="sd">        The new time array keeps the same sampling time as given in the </span>
+<span class="sd">        WakeFunction definition but is restricted to the bunch profile time </span>
+<span class="sd">        array.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        wake_type : str</span>
+<span class="sd">            Type of the wake function to prepare: &quot;Wlong&quot;, &quot;Wxdip&quot;, ...</span>
+<span class="sd">        tau : array</span>
+<span class="sd">            Time domain array of the bunch profile in [s].</span>
+<span class="sd">        save_data : bool, optional</span>
+<span class="sd">            If True, the results are saved as atributes.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tau0 : array</span>
+<span class="sd">            Time base of the wake function in [s].</span>
+<span class="sd">        dtau0 : float</span>
+<span class="sd">            Difference between two points of the wake function time base in </span>
+<span class="sd">            [s].</span>
+<span class="sd">        W0 : array</span>
+<span class="sd">            Wake function array in [V/C] or [V/C/m].</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">tau0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wakefield</span><span class="p">,</span> <span class="n">wake_type</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">dtau0</span> <span class="o">=</span> <span class="n">tau0</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">tau0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">W0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wakefield</span><span class="p">,</span> <span class="n">wake_type</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;real&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Keep only the wake function on the rho window</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">([</span><span class="nb">min</span><span class="p">(</span><span class="n">tau</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tau0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">tau</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">tau0</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">tau0</span> <span class="o">=</span> <span class="n">tau0</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">W0</span> <span class="o">=</span> <span class="n">W0</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+
+        <span class="c1"># Check the wake function window for assymetry</span>
+        <span class="n">assym</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">tau0</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">tau0</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="o">/</span> <span class="n">dtau0</span>
+        <span class="n">n_assym</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">assym</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">assym</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+
+            <span class="c1"># add at head</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">tau0</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">tau0</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">tau0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">tau0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">dtau0</span><span class="o">*</span><span class="n">n_assym</span><span class="p">,</span> <span class="n">tau0</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dtau0</span><span class="p">,</span>
+                                 <span class="n">dtau0</span><span class="p">)</span>
+                <span class="n">n_to_add</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tau0</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">W0</span><span class="p">)</span>
+                <span class="n">W0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_to_add</span><span class="p">),</span> <span class="n">W0</span><span class="p">))</span>
+
+            <span class="c1"># add at tail</span>
+            <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">tau0</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">tau0</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">tau0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">tau0</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tau0</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dtau0</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_assym</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span>
+                                 <span class="n">dtau0</span><span class="p">)</span>
+                <span class="n">n_to_add</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tau0</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">W0</span><span class="p">)</span>
+                <span class="n">W0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_to_add</span><span class="p">),</span> <span class="n">W0</span><span class="p">))</span>
+
+        <span class="c1"># Check is the wf is shorter than rho then add zeros</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">tau0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">tau</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">or</span> <span class="p">(</span><span class="n">tau0</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">tau</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">((</span><span class="n">tau0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">tau</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">dtau0</span><span class="p">)),</span>
+                    <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">((</span><span class="n">tau</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">tau0</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">dtau0</span><span class="p">)))</span>
+
+            <span class="n">tau0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">tau0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">dtau0</span><span class="o">*</span><span class="n">n</span><span class="p">,</span> <span class="n">tau0</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dtau0</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span>
+                             <span class="n">dtau0</span><span class="p">)</span>
+            <span class="n">W0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">W0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+            <span class="n">n_to_add</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tau0</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">W0</span><span class="p">)</span>
+            <span class="n">W0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">W0</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_to_add</span><span class="p">),</span>
+                        <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;constant&quot;</span><span class="p">,</span>
+                        <span class="n">constant_values</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">save_data</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;tau0_&quot;</span> <span class="o">+</span> <span class="n">wake_type</span><span class="p">,</span> <span class="n">tau0</span><span class="p">)</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;dtau0_&quot;</span> <span class="o">+</span> <span class="n">wake_type</span><span class="p">,</span> <span class="n">dtau0</span><span class="p">)</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;W0_&quot;</span> <span class="o">+</span> <span class="n">wake_type</span><span class="p">,</span> <span class="n">W0</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">tau0</span><span class="p">,</span> <span class="n">dtau0</span><span class="p">,</span> <span class="n">W0</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WakePotential.get_wakepotential"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.WakePotential.get_wakepotential">[docs]</a>    <span class="k">def</span> <span class="nf">get_wakepotential</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bunch</span><span class="p">,</span> <span class="n">wake_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the wake potential computed on the wake function time array </span>
+<span class="sd">        limited to the bunch profile.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        bunch : Bunch object</span>
+<span class="sd">        wake_type : str</span>
+<span class="sd">            Wake function type: &quot;Wlong&quot;, &quot;Wxdip&quot;, ...</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Wp : array</span>
+<span class="sd">            Wake potential.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="p">(</span><span class="n">tau0</span><span class="p">,</span> <span class="n">dtau0</span><span class="p">,</span> <span class="n">W0</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepare_wakefunction</span><span class="p">(</span><span class="n">wake_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">)</span>
+
+        <span class="n">profile0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">tau0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wlong&quot;</span> <span class="ow">or</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wxquad&quot;</span> <span class="ow">or</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wyquad&quot;</span> <span class="ow">or</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wxcst&quot;</span> <span class="ow">or</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wycst&quot;</span><span class="p">:</span>
+            <span class="n">Wp</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">profile0</span><span class="p">,</span> <span class="n">W0</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)</span> <span class="o">*</span> <span class="n">dtau0</span>
+        <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wxdip&quot;</span><span class="p">:</span>
+            <span class="n">dipole0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dipole_moment</span><span class="p">(</span><span class="n">bunch</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">tau0</span><span class="p">)</span>
+            <span class="n">Wp</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">profile0</span> <span class="o">*</span> <span class="n">dipole0</span><span class="p">,</span> <span class="n">W0</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)</span> <span class="o">*</span> <span class="n">dtau0</span>
+        <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wydip&quot;</span><span class="p">:</span>
+            <span class="n">dipole0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dipole_moment</span><span class="p">(</span><span class="n">bunch</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">tau0</span><span class="p">)</span>
+            <span class="n">Wp</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">profile0</span> <span class="o">*</span> <span class="n">dipole0</span><span class="p">,</span> <span class="n">W0</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)</span> <span class="o">*</span> <span class="n">dtau0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This type of wake is not taken into account.&quot;</span><span class="p">)</span>
+
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;profile0_&quot;</span> <span class="o">+</span> <span class="n">wake_type</span><span class="p">,</span> <span class="n">profile0</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wake_type</span><span class="p">,</span> <span class="n">Wp</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tau0</span><span class="p">,</span> <span class="n">Wp</span></div>
+
+<div class="viewcode-block" id="WakePotential.track"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.WakePotential.track">[docs]</a>    <span class="nd">@Element</span><span class="o">.</span><span class="n">parallel</span>
+    <span class="k">def</span> <span class="nf">track</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bunch</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tracking method for the element.</span>
+<span class="sd">        No bunch to bunch interaction, so written for Bunch objects and</span>
+<span class="sd">        @Element.parallel is used to handle Beam objects.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        bunch : Bunch or Beam object.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bunch</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">charge_density</span><span class="p">(</span><span class="n">bunch</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">wake_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">types</span><span class="p">:</span>
+                <span class="n">tau0</span><span class="p">,</span> <span class="n">Wp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_wakepotential</span><span class="p">(</span><span class="n">bunch</span><span class="p">,</span> <span class="n">wake_type</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp_on_postion</span><span class="p">:</span>
+                    <span class="n">Wp_interp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;tau&quot;</span><span class="p">],</span> <span class="n">tau0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau_mean</span><span class="p">,</span>
+                                          <span class="n">Wp</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">Wp_interp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">,</span> <span class="n">tau0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau_mean</span><span class="p">,</span>
+                                          <span class="n">Wp</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="n">Wp_interp</span> <span class="o">=</span> <span class="n">Wp_interp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sorted_index</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wlong&quot;</span><span class="p">:</span>
+                    <span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;delta&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">Wp_interp</span> <span class="o">*</span> <span class="n">bunch</span><span class="o">.</span><span class="n">charge</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">E0</span>
+                <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wxdip&quot;</span><span class="p">:</span>
+                    <span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;xp&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">Wp_interp</span> <span class="o">*</span> <span class="n">bunch</span><span class="o">.</span><span class="n">charge</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">E0</span>
+                <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wydip&quot;</span><span class="p">:</span>
+                    <span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;yp&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">Wp_interp</span> <span class="o">*</span> <span class="n">bunch</span><span class="o">.</span><span class="n">charge</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">E0</span>
+                <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wxquad&quot;</span><span class="p">:</span>
+                    <span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;xp&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">Wp_interp</span> <span class="o">*</span> <span class="n">bunch</span><span class="o">.</span><span class="n">charge</span> <span class="o">/</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">E0</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wyquad&quot;</span><span class="p">:</span>
+                    <span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;yp&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">Wp_interp</span> <span class="o">*</span> <span class="n">bunch</span><span class="o">.</span><span class="n">charge</span> <span class="o">/</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">E0</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wxcst&quot;</span><span class="p">:</span>
+                    <span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;xp&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">Wp_interp</span> <span class="o">*</span> <span class="n">bunch</span><span class="o">.</span><span class="n">charge</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">E0</span>
+                <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wycst&quot;</span><span class="p">:</span>
+                    <span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;yp&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">Wp_interp</span> <span class="o">*</span> <span class="n">bunch</span><span class="o">.</span><span class="n">charge</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">E0</span></div>
+
+<div class="viewcode-block" id="WakePotential.plot_last_wake"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.WakePotential.plot_last_wake">[docs]</a>    <span class="k">def</span> <span class="nf">plot_last_wake</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                       <span class="n">wake_type</span><span class="p">,</span>
+                       <span class="n">plot_rho</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                       <span class="n">plot_dipole</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="n">plot_wake_function</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot the last wake potential of a given type computed during the last</span>
+<span class="sd">        call of the track method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        wake_type : str</span>
+<span class="sd">            Type of the wake to plot: &quot;Wlong&quot;, &quot;Wxdip&quot;, ...</span>
+<span class="sd">        plot_rho : bool, optional</span>
+<span class="sd">            Plot the normalised bunch profile. The default is True.</span>
+<span class="sd">        plot_dipole : bool, optional</span>
+<span class="sd">            Plot the normalised dipole moment. The default is False.</span>
+<span class="sd">        plot_wake_function : bool, optional</span>
+<span class="sd">            Plot the normalised wake function. The default is True.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        fig : figure</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Wlong&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;$W_{p,long}$ (V/pC)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Wxdip&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;$W_{p,x}^</span><span class="si">{D}</span><span class="s2"> (V/pC)$&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Wydip&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;$W_{p,y}^</span><span class="si">{D}</span><span class="s2"> (V/pC)$&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Wxquad&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;$W_{p,x}^</span><span class="si">{Q}</span><span class="s2"> (V/pC/m)$&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Wyquad&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;$W_{p,y}^</span><span class="si">{Q}</span><span class="s2"> (V/pC/m)$&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Wxcst&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;$W_{p,x}^</span><span class="si">{M}</span><span class="s2">$ (V/pC)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Wycst&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;$W_{p,y}^</span><span class="si">{M}</span><span class="s2">$ (V/pC)&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">Wp</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wake_type</span><span class="p">)</span>
+        <span class="n">tau0</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;tau0_&quot;</span> <span class="o">+</span> <span class="n">wake_type</span><span class="p">)</span>
+
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tau0</span> <span class="o">*</span> <span class="mf">1e12</span><span class="p">,</span> <span class="n">Wp</span> <span class="o">*</span> <span class="mf">1e-12</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">labels</span><span class="p">[</span><span class="n">wake_type</span><span class="p">])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;$</span><span class="se">\\</span><span class="s2">tau$ (ps)&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">labels</span><span class="p">[</span><span class="n">wake_type</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">plot_rho</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">profile0</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;profile0_&quot;</span> <span class="o">+</span> <span class="n">wake_type</span><span class="p">)</span>
+            <span class="n">profile_rescaled</span> <span class="o">=</span> <span class="n">profile0</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">profile0</span><span class="p">)</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">Wp</span><span class="p">))</span>
+            <span class="n">rho_rescaled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="p">)</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">Wp</span><span class="p">))</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tau0</span> <span class="o">*</span> <span class="mf">1e12</span><span class="p">,</span>
+                    <span class="n">profile_rescaled</span> <span class="o">*</span> <span class="mf">1e-12</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\rho$ interpolated (a.u.)&quot;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau_mean</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e12</span><span class="p">,</span>
+                    <span class="n">rho_rescaled</span> <span class="o">*</span> <span class="mf">1e-12</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\rho$ (a.u.)&quot;</span><span class="p">,</span>
+                    <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;dashed&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">plot_wake_function</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">W0</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;W0_&quot;</span> <span class="o">+</span> <span class="n">wake_type</span><span class="p">)</span>
+            <span class="n">W0_rescaled</span> <span class="o">=</span> <span class="n">W0</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">W0</span><span class="p">)</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">Wp</span><span class="p">))</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tau0</span> <span class="o">*</span> <span class="mf">1e12</span><span class="p">,</span>
+                    <span class="n">W0_rescaled</span> <span class="o">*</span> <span class="mf">1e-12</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$W_</span><span class="si">{function}</span><span class="s2">$ (a.u.)&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">plot_dipole</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">dipole</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;dipole_&quot;</span> <span class="o">+</span> <span class="n">wake_type</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">dipole_rescaled</span> <span class="o">=</span> <span class="n">dipole</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">dipole</span><span class="p">)</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">Wp</span><span class="p">))</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tau0</span> <span class="o">*</span> <span class="mf">1e12</span><span class="p">,</span>
+                    <span class="n">dipole_rescaled</span> <span class="o">*</span> <span class="mf">1e-12</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;Dipole moment (a.u.)&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+<div class="viewcode-block" id="WakePotential.get_gaussian_wakepotential"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.WakePotential.get_gaussian_wakepotential">[docs]</a>    <span class="k">def</span> <span class="nf">get_gaussian_wakepotential</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">wake_type</span><span class="p">,</span> <span class="n">dipole</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the wake potential computed using a perfect gaussian profile.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sigma : float</span>
+<span class="sd">            RMS bunch length in [s].</span>
+<span class="sd">        wake_type : str</span>
+<span class="sd">            Wake function type: &quot;Wlong&quot;, &quot;Wxdip&quot;, ...</span>
+<span class="sd">        dipole : float, optional</span>
+<span class="sd">            Dipole moment to consider in [m], (uniform dipole moment).</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tau0 : array</span>
+<span class="sd">            Time base in [s].</span>
+<span class="sd">        W0 : array</span>
+<span class="sd">            Wake function.</span>
+<span class="sd">        Wp : array</span>
+<span class="sd">            Wake potential.</span>
+<span class="sd">        profile0 : array</span>
+<span class="sd">            Gaussian bunch profile.</span>
+<span class="sd">        dipole0 : array</span>
+<span class="sd">            Dipole moment.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span> <span class="o">*</span> <span class="n">sigma</span><span class="p">,</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">sigma</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e3</span><span class="p">))</span>
+        <span class="p">(</span><span class="n">tau0</span><span class="p">,</span> <span class="n">dtau0</span><span class="p">,</span> <span class="n">W0</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepare_wakefunction</span><span class="p">(</span><span class="n">wake_type</span><span class="p">,</span> <span class="n">tau</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">profile0</span> <span class="o">=</span> <span class="n">gaussian_bunch</span><span class="p">(</span><span class="n">tau0</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+        <span class="n">dipole0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">profile0</span><span class="p">)</span> <span class="o">*</span> <span class="n">dipole</span>
+
+        <span class="k">if</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wlong&quot;</span> <span class="ow">or</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wxquad&quot;</span> <span class="ow">or</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wyquad&quot;</span><span class="p">:</span>
+            <span class="n">Wp</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">profile0</span><span class="p">,</span> <span class="n">W0</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)</span> <span class="o">*</span> <span class="n">dtau0</span>
+        <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wxdip&quot;</span><span class="p">:</span>
+            <span class="n">Wp</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">profile0</span> <span class="o">*</span> <span class="n">dipole0</span><span class="p">,</span> <span class="n">W0</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)</span> <span class="o">*</span> <span class="n">dtau0</span>
+        <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wydip&quot;</span><span class="p">:</span>
+            <span class="n">Wp</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">profile0</span> <span class="o">*</span> <span class="n">dipole0</span><span class="p">,</span> <span class="n">W0</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)</span> <span class="o">*</span> <span class="n">dtau0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This type of wake is not taken into account.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">tau0</span><span class="p">,</span> <span class="n">W0</span><span class="p">,</span> <span class="n">Wp</span><span class="p">,</span> <span class="n">profile0</span><span class="p">,</span> <span class="n">dipole0</span></div>
+
+<div class="viewcode-block" id="WakePotential.plot_gaussian_wake"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.WakePotential.plot_gaussian_wake">[docs]</a>    <span class="k">def</span> <span class="nf">plot_gaussian_wake</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                           <span class="n">sigma</span><span class="p">,</span>
+                           <span class="n">wake_type</span><span class="p">,</span>
+                           <span class="n">dipole</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+                           <span class="n">plot_rho</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                           <span class="n">plot_dipole</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                           <span class="n">plot_wake_function</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot the wake potential of a given type for a perfect gaussian bunch.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sigma : float</span>
+<span class="sd">            RMS bunch length in [s].</span>
+<span class="sd">        wake_type : str</span>
+<span class="sd">            Type of the wake to plot: &quot;Wlong&quot;, &quot;Wxdip&quot;, ...</span>
+<span class="sd">        dipole : float, optional</span>
+<span class="sd">            Dipole moment to consider in [m], (uniform dipole moment).</span>
+<span class="sd">        plot_rho : bool, optional</span>
+<span class="sd">            Plot the normalised bunch profile. The default is True.</span>
+<span class="sd">        plot_dipole : bool, optional</span>
+<span class="sd">            Plot the normalised dipole moment. The default is False.</span>
+<span class="sd">        plot_wake_function : bool, optional</span>
+<span class="sd">            Plot the normalised wake function. The default is True.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        fig : figure</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Wlong&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;$W_{p,long}$ (V/pC)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Wxdip&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;$W_{p,x}^</span><span class="si">{D}</span><span class="s2"> (V/pC)$&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Wydip&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;$W_{p,y}^</span><span class="si">{D}</span><span class="s2"> (V/pC)$&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Wxquad&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;$W_{p,x}^</span><span class="si">{Q}</span><span class="s2"> (V/pC/m)$&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Wyquad&quot;</span><span class="p">:</span> <span class="sa">r</span><span class="s2">&quot;$W_{p,y}^</span><span class="si">{Q}</span><span class="s2"> (V/pC/m)$&quot;</span>
+        <span class="p">}</span>
+
+        <span class="n">tau0</span><span class="p">,</span> <span class="n">W0</span><span class="p">,</span> <span class="n">Wp</span><span class="p">,</span> <span class="n">profile0</span><span class="p">,</span> <span class="n">dipole0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_gaussian_wakepotential</span><span class="p">(</span>
+            <span class="n">sigma</span><span class="p">,</span> <span class="n">wake_type</span><span class="p">,</span> <span class="n">dipole</span><span class="p">)</span>
+
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tau0</span> <span class="o">*</span> <span class="mf">1e12</span><span class="p">,</span> <span class="n">Wp</span> <span class="o">*</span> <span class="mf">1e-12</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">labels</span><span class="p">[</span><span class="n">wake_type</span><span class="p">])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;$</span><span class="se">\\</span><span class="s2">tau$ (ps)&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">labels</span><span class="p">[</span><span class="n">wake_type</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">plot_rho</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">profile_rescaled</span> <span class="o">=</span> <span class="n">profile0</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">profile0</span><span class="p">)</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">Wp</span><span class="p">))</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tau0</span> <span class="o">*</span> <span class="mf">1e12</span><span class="p">,</span>
+                    <span class="n">profile_rescaled</span> <span class="o">*</span> <span class="mf">1e-12</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\rho$ (a.u.)&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">plot_wake_function</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">W0_rescaled</span> <span class="o">=</span> <span class="n">W0</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">W0</span><span class="p">)</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">Wp</span><span class="p">))</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tau0</span> <span class="o">*</span> <span class="mf">1e12</span><span class="p">,</span>
+                    <span class="n">W0_rescaled</span> <span class="o">*</span> <span class="mf">1e-12</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$W_</span><span class="si">{function}</span><span class="s2">$ (a.u.)&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">plot_dipole</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">dipole_rescaled</span> <span class="o">=</span> <span class="n">dipole0</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">dipole0</span><span class="p">)</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">Wp</span><span class="p">))</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tau0</span> <span class="o">*</span> <span class="mf">1e12</span><span class="p">,</span>
+                    <span class="n">dipole_rescaled</span> <span class="o">*</span> <span class="mf">1e-12</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;Dipole moment (a.u.)&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+<div class="viewcode-block" id="WakePotential.reference_loss"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.WakePotential.reference_loss">[docs]</a>    <span class="k">def</span> <span class="nf">reference_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bunch</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate the loss factor and kick factor from the wake potential and </span>
+<span class="sd">        compare it to a reference value assuming a Gaussian bunch computed in </span>
+<span class="sd">        the frequency domain.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        bunch : Bunch object</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        loss_data : DataFrame</span>
+<span class="sd">            An output showing the loss/kick factors compared to the reference </span>
+<span class="sd">            values.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">loss_0</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">delta_loss</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">wake_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">types</span><span class="p">:</span>
+            <span class="n">tau0</span><span class="p">,</span> <span class="n">Wp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_wakepotential</span><span class="p">(</span><span class="n">bunch</span><span class="p">,</span> <span class="n">wake_type</span><span class="p">)</span>
+            <span class="n">profile0</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;profile0_&quot;</span> <span class="o">+</span> <span class="n">wake_type</span><span class="p">)</span>
+            <span class="n">factorTD</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">Wp</span> <span class="o">*</span> <span class="n">profile0</span><span class="p">,</span> <span class="n">tau0</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wlong&quot;</span><span class="p">:</span>
+                <span class="n">factorTD</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wxdip&quot;</span><span class="p">:</span>
+                <span class="n">factorTD</span> <span class="o">/=</span> <span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wydip&quot;</span><span class="p">:</span>
+                <span class="n">factorTD</span> <span class="o">/=</span> <span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+            <span class="n">Z</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wakefield</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span> <span class="o">+</span> <span class="n">wake_type</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="n">sigma</span> <span class="o">=</span> <span class="n">bunch</span><span class="p">[</span><span class="s1">&#39;tau&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+            <span class="n">factorFD</span> <span class="o">=</span> <span class="n">Z</span><span class="o">.</span><span class="n">loss_factor</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span>
+
+            <span class="n">loss</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">factorTD</span><span class="p">)</span>
+            <span class="n">loss_0</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">factorFD</span><span class="p">)</span>
+            <span class="n">delta_loss</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">factorTD</span><span class="o">-</span><span class="n">factorFD</span><span class="p">)</span> <span class="o">/</span> <span class="n">factorFD</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wlong&quot;</span><span class="p">:</span>
+                <span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Wlong [V/C]&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">wake_type</span> <span class="o">+</span> <span class="s2">&quot; [V/C/m]&quot;</span><span class="p">)</span>
+
+            <span class="n">column</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;TD factor&#39;</span><span class="p">,</span> <span class="s1">&#39;FD factor&#39;</span><span class="p">,</span> <span class="s1">&#39;Relative error [%]&#39;</span><span class="p">]</span>
+
+        <span class="n">loss_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">loss</span><span class="p">,</span> <span class="n">loss_0</span><span class="p">,</span> <span class="n">delta_loss</span><span class="p">])</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+                                 <span class="n">columns</span><span class="o">=</span><span class="n">column</span><span class="p">,</span>
+                                 <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">loss_data</span></div>
+
+<div class="viewcode-block" id="WakePotential.check_sampling"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.WakePotential.check_sampling">[docs]</a>    <span class="k">def</span> <span class="nf">check_sampling</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if the wake function sampling is uniform.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">wake_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">types</span><span class="p">:</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wakefield</span><span class="p">,</span> <span class="n">wake_type</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">diff</span> <span class="o">=</span> <span class="n">idx</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">idx</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="n">diff</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-15</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;The wake function must be uniformly sampled.&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WakePotential.reduce_sampling"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.WakePotential.reduce_sampling">[docs]</a>    <span class="k">def</span> <span class="nf">reduce_sampling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reduce wake function samping by an integer factor.</span>
+<span class="sd">        </span>
+<span class="sd">        Used to reduce computation time for long bunches.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        factor : int</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">wake_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">types</span><span class="p">:</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wakefield</span><span class="p">,</span> <span class="n">wake_type</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">[::</span><span class="n">factor</span><span class="p">]</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wakefield</span><span class="p">,</span>
+                    <span class="n">wake_type</span><span class="p">)</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wakefield</span><span class="p">,</span>
+                                              <span class="n">wake_type</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_sampling</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="LongRangeResistiveWall"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.LongRangeResistiveWall">[docs]</a><span class="k">class</span> <span class="nc">LongRangeResistiveWall</span><span class="p">(</span><span class="n">Element</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Element to deal with multi-bunch and multi-turn wakes from resistive wall </span>
+<span class="sd">    using the algorithm defined in [1].</span>
+<span class="sd">    </span>
+<span class="sd">    Main approximations:</span>
+<span class="sd">        - Bunches are treated as point charge.</span>
+<span class="sd">        - Assymptotic expression for the resistive wall wake functions are </span>
+<span class="sd">        used.</span>
+<span class="sd">        - Multi-turn wakes are limited to nt turns.</span>
+<span class="sd">    </span>
+<span class="sd">    Self-bunch interaction is not included in this element and should be dealed</span>
+<span class="sd">    with the WakePotential class.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ring : Synchrotron object</span>
+<span class="sd">    beam : Beam object</span>
+<span class="sd">    length : float</span>
+<span class="sd">        Length of the resistive pipe to consider in [m].</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Effective resistivity to consider in [ohm.m] as in [1].</span>
+<span class="sd">    radius : float</span>
+<span class="sd">        Beam pipe radius to consider in [m].</span>
+<span class="sd">    types : str or list, optional</span>
+<span class="sd">        Wake types to consider. </span>
+<span class="sd">        The default is [&quot;Wlong&quot;,&quot;Wxdip&quot;,&quot;Wydip&quot;].</span>
+<span class="sd">    nt : int or float, optional</span>
+<span class="sd">        Number of turns to consider for the long range wakes. </span>
+<span class="sd">        The default is 50.</span>
+<span class="sd">    x3 : float, optional</span>
+<span class="sd">        Horizontal effective radius of the 3rd power in [m], as Eq.27 in [1].</span>
+<span class="sd">        The default is radius.</span>
+<span class="sd">    y3 : float, optional</span>
+<span class="sd">        Vertical effective radius of the 3rd power in [m], as Eq.27 in [1].</span>
+<span class="sd">        The default is radius.</span>
+<span class="sd">    </span>
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] : Skripka, Galina, et al. &quot;Simultaneous computation of intrabunch and </span>
+<span class="sd">    interbunch collective beam motions in storage rings.&quot; NIM.A (2016).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">ring</span><span class="p">,</span>
+                 <span class="n">beam</span><span class="p">,</span>
+                 <span class="n">length</span><span class="p">,</span>
+                 <span class="n">rho</span><span class="p">,</span>
+                 <span class="n">radius</span><span class="p">,</span>
+                 <span class="n">types</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Wlong&quot;</span><span class="p">,</span> <span class="s2">&quot;Wxdip&quot;</span><span class="p">,</span> <span class="s2">&quot;Wydip&quot;</span><span class="p">],</span>
+                 <span class="n">nt</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+                 <span class="n">x3</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">y3</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ring</span> <span class="o">=</span> <span class="n">ring</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">=</span> <span class="n">rho</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nb</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">beam</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">types</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">types</span> <span class="o">=</span> <span class="p">[</span><span class="n">types</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">types</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">types</span> <span class="o">=</span> <span class="n">types</span>
+
+        <span class="c1"># effective radius for RW</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="n">radius</span>
+        <span class="k">if</span> <span class="n">x3</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">x3</span> <span class="o">=</span> <span class="n">x3</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">x3</span> <span class="o">=</span> <span class="n">radius</span>
+        <span class="k">if</span> <span class="n">y3</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">y3</span> <span class="o">=</span> <span class="n">y3</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">y3</span> <span class="o">=</span> <span class="n">radius</span>
+
+        <span class="c1"># constants</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Z0</span> <span class="o">=</span> <span class="n">mu_0</span> <span class="o">*</span> <span class="n">c</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t0</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">Z0</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">/</span> <span class="n">c</span>
+
+        <span class="c1"># check approximation</span>
+        <span class="k">if</span> <span class="mi">20</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">t0</span> <span class="o">&gt;</span> <span class="n">ring</span><span class="o">.</span><span class="n">T1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The approximated wake functions are not valid.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># init tables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nt</span><span class="p">))</span> <span class="o">*</span> <span class="mf">1e100</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nt</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nt</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nt</span><span class="p">))</span>
+
+<div class="viewcode-block" id="LongRangeResistiveWall.Wlong"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.LongRangeResistiveWall.Wlong">[docs]</a>    <span class="k">def</span> <span class="nf">Wlong</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Approxmiate expression for the longitudinal resistive wall wake </span>
+<span class="sd">        function - Eq.24 of [1].</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        t : float</span>
+<span class="sd">            Time in [s].</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        wl : float</span>
+<span class="sd">            Wake function in [V/C].</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">wl</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">pi</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Z0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">/</span>
+                                                   <span class="p">(</span><span class="n">c</span><span class="o">*</span><span class="n">pi</span><span class="p">))</span> <span class="o">/</span>
+              <span class="n">t</span><span class="o">**</span><span class="p">(</span><span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">return</span> <span class="n">wl</span></div>
+
+<div class="viewcode-block" id="LongRangeResistiveWall.Wdip"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.LongRangeResistiveWall.Wdip">[docs]</a>    <span class="k">def</span> <span class="nf">Wdip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">plane</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Approxmiate expression for the transverse resistive wall wake </span>
+<span class="sd">        function - Eq.26 of [1].</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        t : float</span>
+<span class="sd">            Time in [s].</span>
+<span class="sd">        plane : str</span>
+<span class="sd">            &quot;x&quot; or &quot;y&quot;.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        wdip : float</span>
+<span class="sd">            Wake function in [V/C/m].</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">plane</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span>
+            <span class="n">r3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x3</span>
+        <span class="k">elif</span> <span class="n">plane</span> <span class="o">==</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span>
+            <span class="n">r3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">y3</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">()</span>
+
+        <span class="n">wdip</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">pi</span> <span class="o">*</span> <span class="n">r3</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Z0</span> <span class="o">*</span> <span class="n">c</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">/</span> <span class="n">pi</span><span class="p">)</span> <span class="o">/</span>
+                <span class="n">t</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">wdip</span></div>
+
+<div class="viewcode-block" id="LongRangeResistiveWall.update_tables"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.LongRangeResistiveWall.update_tables">[docs]</a>    <span class="k">def</span> <span class="nf">update_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beam</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update tables.</span>
+<span class="sd">        </span>
+<span class="sd">        Table tau[i,j] is defined as the time difference of the bunch i center </span>
+<span class="sd">        of mass with respect to center of the RF bucket number 0 at turn j.</span>
+<span class="sd">        Turn 0 corresponds to the tracked turn.</span>
+<span class="sd">        </span>
+<span class="sd">        Positive time corresponds to past events and negative time to future </span>
+<span class="sd">        events.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        beam : Beam object</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># shift tables to next turn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">T0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">,</span> <span class="n">shift</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">shift</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">shift</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="n">shift</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># update tables</span>
+        <span class="k">if</span> <span class="n">beam</span><span class="o">.</span><span class="n">mpi_switch</span><span class="p">:</span>
+            <span class="n">beam</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">share_means</span><span class="p">(</span><span class="n">beam</span><span class="p">)</span>
+            <span class="c1"># negative sign as when bunch 0 is tracked, the others are not yet passed</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">[:,</span>
+                     <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">beam</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">mean_all</span><span class="p">[:,</span>
+                                            <span class="mi">4</span><span class="p">]</span> <span class="o">-</span> <span class="n">beam</span><span class="o">.</span><span class="n">bunch_index</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">T1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">beam</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">mean_all</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">beam</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">mean_all</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">beam</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">charge_all</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mean_all</span> <span class="o">=</span> <span class="n">beam</span><span class="o">.</span><span class="n">bunch_mean</span>
+            <span class="n">charge_all</span> <span class="o">=</span> <span class="n">beam</span><span class="o">.</span><span class="n">bunch_charge</span>
+            <span class="c1"># negative sign as when bunch 0 is tracked, the others are not yet passed</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_all</span><span class="p">[</span>
+                <span class="mi">4</span><span class="p">,</span> <span class="n">beam</span><span class="o">.</span><span class="n">filling_pattern</span><span class="p">]</span> <span class="o">-</span> <span class="n">beam</span><span class="o">.</span><span class="n">bunch_index</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">T1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_all</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">beam</span><span class="o">.</span><span class="n">filling_pattern</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_all</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="n">beam</span><span class="o">.</span><span class="n">filling_pattern</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">charge_all</span><span class="p">[</span><span class="n">beam</span><span class="o">.</span><span class="n">filling_pattern</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="LongRangeResistiveWall.get_kick"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.LongRangeResistiveWall.get_kick">[docs]</a>    <span class="k">def</span> <span class="nf">get_kick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">wake_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the wake kick to apply.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        rank : int</span>
+<span class="sd">            Rank of the bunch, as defined in Mpi class.</span>
+<span class="sd">        wake_type : float</span>
+<span class="sd">            Type of the wake to compute.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        sum_kick : float</span>
+<span class="sd">            Sum of the kicks from the different bunches at different turns.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sum_kick</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nt</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nb</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">rank</span> <span class="o">&lt;=</span> <span class="n">i</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="n">deltaT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">[</span><span class="n">rank</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wlong&quot;</span><span class="p">:</span>
+                    <span class="n">sum_kick</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Wlong</span><span class="p">(</span><span class="n">deltaT</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wxdip&quot;</span><span class="p">:</span>
+                    <span class="n">sum_kick</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Wdip</span><span class="p">(</span>
+                        <span class="n">deltaT</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wydip&quot;</span><span class="p">:</span>
+                    <span class="n">sum_kick</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Wdip</span><span class="p">(</span>
+                        <span class="n">deltaT</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wxquad&quot;</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wyquad&quot;</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">sum_kick</span></div>
+
+<div class="viewcode-block" id="LongRangeResistiveWall.track_bunch"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.LongRangeResistiveWall.track_bunch">[docs]</a>    <span class="k">def</span> <span class="nf">track_bunch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bunch</span><span class="p">,</span> <span class="n">rank</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Track a bunch.</span>
+<span class="sd">        </span>
+<span class="sd">        Should only be used within the track method and not standalone.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        bunch : Bunch object</span>
+<span class="sd">        rank : int</span>
+<span class="sd">            Rank of the bunch, as defined in Mpi class.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">wake_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">types</span><span class="p">:</span>
+            <span class="n">kick</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_kick</span><span class="p">(</span><span class="n">rank</span><span class="p">,</span> <span class="n">wake_type</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wlong&quot;</span><span class="p">:</span>
+                <span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;delta&quot;</span><span class="p">]</span> <span class="o">-=</span> <span class="n">kick</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">E0</span>
+            <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wxdip&quot;</span><span class="p">:</span>
+                <span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;xp&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">kick</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">E0</span>
+            <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wydip&quot;</span><span class="p">:</span>
+                <span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;yp&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">kick</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">E0</span>
+            <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wxquad&quot;</span><span class="p">:</span>
+                <span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;xp&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">kick</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">E0</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">wake_type</span> <span class="o">==</span> <span class="s2">&quot;Wyquad&quot;</span><span class="p">:</span>
+                <span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;yp&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">bunch</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">kick</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring</span><span class="o">.</span><span class="n">E0</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LongRangeResistiveWall.track"><a class="viewcode-back" href="../../../mbtrack2.tracking.html#mbtrack2.tracking.wakepotential.LongRangeResistiveWall.track">[docs]</a>    <span class="k">def</span> <span class="nf">track</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beam</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Track a beam.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        beam : Beam object</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_tables</span><span class="p">(</span><span class="n">beam</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">beam</span><span class="o">.</span><span class="n">mpi_switch</span><span class="p">:</span>
+            <span class="n">rank</span> <span class="o">=</span> <span class="n">beam</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">rank</span>
+            <span class="n">bunch_index</span> <span class="o">=</span> <span class="n">beam</span><span class="o">.</span><span class="n">mpi</span><span class="o">.</span><span class="n">bunch_num</span>  <span class="c1"># Number of the tracked bunch in this processor</span>
+            <span class="n">bunch</span> <span class="o">=</span> <span class="n">beam</span><span class="p">[</span><span class="n">bunch_index</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">track_bunch</span><span class="p">(</span><span class="n">bunch</span><span class="p">,</span> <span class="n">rank</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">rank</span><span class="p">,</span> <span class="n">bunch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">beam</span><span class="o">.</span><span class="n">not_empty</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">track_bunch</span><span class="p">(</span><span class="n">bunch</span><span class="p">,</span> <span class="n">rank</span><span class="p">)</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.tracking.wakepotential</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2024, A. Gamelin et al.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

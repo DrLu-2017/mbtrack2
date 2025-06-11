@@ -1,0 +1,511 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mbtrack2.instability.instabilities &#8212; mbtrack2 0.6.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/nature.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.instability.instabilities</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mbtrack2.instability.instabilities</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">General calculations about instability thresholds.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.constants</span> <span class="kn">import</span> <span class="n">c</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">epsilon_0</span><span class="p">,</span> <span class="n">m_e</span><span class="p">,</span> <span class="n">mu_0</span><span class="p">,</span> <span class="n">pi</span>
+
+
+<div class="viewcode-block" id="mbi_threshold"><a class="viewcode-back" href="../../../mbtrack2.instability.html#mbtrack2.instability.instabilities.mbi_threshold">[docs]</a><span class="k">def</span> <span class="nf">mbi_threshold</span><span class="p">(</span><span class="n">ring</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the microbunching instability (MBI) threshold for a bunched beam</span>
+<span class="sd">    considering the steady-state parallel plate model [1][2].</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ring : Synchrotron object</span>
+<span class="sd">    sigma : float</span>
+<span class="sd">        RMS bunch length in [s]</span>
+<span class="sd">    R : float</span>
+<span class="sd">        dipole bending radius in [m]</span>
+<span class="sd">    b : float</span>
+<span class="sd">        vertical distance between the conducting parallel plates in [m]</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    I : float</span>
+<span class="sd">        MBI current threshold in [A]</span>
+<span class="sd">        </span>
+<span class="sd">    [1] : Y. Cai, &quot;Theory of microwave instability and coherent synchrotron </span>
+<span class="sd">    radiation in electron storage rings&quot;, SLAC-PUB-14561</span>
+<span class="sd">    [2] : D. Zhou, &quot;Coherent synchrotron radiation and microwave instability in </span>
+<span class="sd">    electron storage rings&quot;, PhD thesis, p112</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">sigma</span> <span class="o">*</span> <span class="n">c</span>
+    <span class="n">Ia</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">pi</span> <span class="o">*</span> <span class="n">epsilon_0</span> <span class="o">*</span> <span class="n">m_e</span> <span class="o">*</span> <span class="n">c</span><span class="o">**</span><span class="mi">3</span> <span class="o">/</span> <span class="n">e</span>  <span class="c1"># Alfven current</span>
+    <span class="n">chi</span> <span class="o">=</span> <span class="n">sigma</span> <span class="o">*</span> <span class="p">(</span><span class="n">R</span> <span class="o">/</span> <span class="n">b</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># Shielding paramter</span>
+    <span class="n">xi</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="mf">0.34</span><span class="o">*</span><span class="n">chi</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="p">(</span><span class="n">ring</span><span class="o">.</span><span class="n">L</span> <span class="o">*</span> <span class="n">Ia</span> <span class="o">*</span> <span class="n">ring</span><span class="o">.</span><span class="n">ac</span> <span class="o">*</span> <span class="n">ring</span><span class="o">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">ring</span><span class="o">.</span><span class="n">sigma_delta</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">xi</span> <span class="o">*</span>
+         <span class="n">sigma</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">c</span> <span class="o">*</span> <span class="n">e</span> <span class="o">*</span> <span class="n">R</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)))</span>
+    <span class="n">I</span> <span class="o">=</span> <span class="n">N</span> <span class="o">*</span> <span class="n">e</span> <span class="o">/</span> <span class="n">ring</span><span class="o">.</span><span class="n">T0</span>
+
+    <span class="k">return</span> <span class="n">I</span></div>
+
+
+<div class="viewcode-block" id="cbi_threshold"><a class="viewcode-back" href="../../../mbtrack2.instability.html#mbtrack2.instability.instabilities.cbi_threshold">[docs]</a><span class="k">def</span> <span class="nf">cbi_threshold</span><span class="p">(</span><span class="n">ring</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">Vrf</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">Ncav</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the longitudinal and transverse coupled bunch instability </span>
+<span class="sd">    thresolds driven by HOMs [1].</span>
+<span class="sd">    </span>
+<span class="sd">    Approximate formula, does not take into account variation with Q.</span>
+<span class="sd">    For better estimate use lcbi_growth_rate.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ring : Synchrotron object</span>
+<span class="sd">    I : float</span>
+<span class="sd">        Total beam current in [A].</span>
+<span class="sd">    Vrf : float</span>
+<span class="sd">        Total RF voltage in [V].</span>
+<span class="sd">    f : float</span>
+<span class="sd">        Frequency of the HOM in [Hz].</span>
+<span class="sd">    beta : array-like of shape (2,)</span>
+<span class="sd">        Horizontal and vertical beta function at the HOM position in [m].</span>
+<span class="sd">    Ncav : int, optional</span>
+<span class="sd">        Number of RF cavity.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Zlong : float</span>
+<span class="sd">        Maximum longitudinal impedance of the HOM in [ohm].</span>
+<span class="sd">    Zxdip : float</span>
+<span class="sd">        Maximum horizontal dipolar impedance of the HOM in [ohm/m].</span>
+<span class="sd">    Zydip : float</span>
+<span class="sd">        Maximum vertical dipolar impedance of the HOM in [ohm/m].</span>
+<span class="sd">        </span>
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] : Ruprecht, Martin, et al. &quot;Calculation of Transverse Coupled Bunch </span>
+<span class="sd">    Instabilities in Electron Storage Rings Driven By Quadrupole Higher Order </span>
+<span class="sd">    Modes.&quot; 7th Int. Particle Accelerator Conf.(IPAC&#39;16), Busan, Korea. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">fs</span> <span class="o">=</span> <span class="n">ring</span><span class="o">.</span><span class="n">synchrotron_tune</span><span class="p">(</span><span class="n">Vrf</span><span class="p">)</span> <span class="o">*</span> <span class="n">ring</span><span class="o">.</span><span class="n">f0</span>
+    <span class="n">Zlong</span> <span class="o">=</span> <span class="n">fs</span> <span class="o">/</span> <span class="p">(</span><span class="n">f</span> <span class="o">*</span> <span class="n">ring</span><span class="o">.</span><span class="n">ac</span> <span class="o">*</span> <span class="n">ring</span><span class="o">.</span><span class="n">tau</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">ring</span><span class="o">.</span><span class="n">E0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">ring</span><span class="o">.</span><span class="n">f0</span> <span class="o">*</span> <span class="n">I</span> <span class="o">*</span>
+                                                                <span class="n">Ncav</span><span class="p">)</span>
+    <span class="n">Zxdip</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">ring</span><span class="o">.</span><span class="n">tau</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">beta</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">ring</span><span class="o">.</span><span class="n">E0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">ring</span><span class="o">.</span><span class="n">f0</span> <span class="o">*</span> <span class="n">I</span> <span class="o">*</span> <span class="n">Ncav</span><span class="p">)</span>
+    <span class="n">Zydip</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">ring</span><span class="o">.</span><span class="n">tau</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">beta</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">ring</span><span class="o">.</span><span class="n">E0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">ring</span><span class="o">.</span><span class="n">f0</span> <span class="o">*</span> <span class="n">I</span> <span class="o">*</span> <span class="n">Ncav</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">Zlong</span><span class="p">,</span> <span class="n">Zxdip</span><span class="p">,</span> <span class="n">Zydip</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="lcbi_growth_rate_mode"><a class="viewcode-back" href="../../../mbtrack2.instability.html#mbtrack2.instability.instabilities.lcbi_growth_rate_mode">[docs]</a><span class="k">def</span> <span class="nf">lcbi_growth_rate_mode</span><span class="p">(</span><span class="n">ring</span><span class="p">,</span>
+                          <span class="n">I</span><span class="p">,</span>
+                          <span class="n">M</span><span class="p">,</span>
+                          <span class="n">mu</span><span class="p">,</span>
+                          <span class="n">synchrotron_tune</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                          <span class="n">Vrf</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                          <span class="n">fr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                          <span class="n">RL</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                          <span class="n">QL</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                          <span class="n">Z</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the longitudinal coupled bunch instability growth rate driven by</span>
+<span class="sd">    an impedance for a given coupled bunch mode mu [1].</span>
+<span class="sd">    </span>
+<span class="sd">    Use either a list of resonators (fr, RL, QL) or an Impedance object (Z).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ring : Synchrotron object</span>
+<span class="sd">    I : float</span>
+<span class="sd">        Total beam current in [A].</span>
+<span class="sd">    M : int</span>
+<span class="sd">        Nomber of bunches in the beam.</span>
+<span class="sd">    mu : int</span>
+<span class="sd">        Coupled bunch mode number (= 0, ..., M-1).</span>
+<span class="sd">    synchrotron_tune : float, optional</span>
+<span class="sd">        Synchrotron tune.</span>
+<span class="sd">    Vrf : float, optinal</span>
+<span class="sd">        Total RF voltage in [V] used to compute synchrotron tune if not given.</span>
+<span class="sd">    fr : float or list, optional</span>
+<span class="sd">        Frequency of the resonator in [Hz].</span>
+<span class="sd">    RL : float or list, optional</span>
+<span class="sd">        Loaded shunt impedance of the resonator in [Ohm].</span>
+<span class="sd">    QL : float or list, optional</span>
+<span class="sd">        Loaded quality factor of the resonator.</span>
+<span class="sd">    Z : Impedance, optional</span>
+<span class="sd">        Longitunial impedance to consider.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Coupled bunch instability growth rate for the mode mu in [s-1].</span>
+<span class="sd">        </span>
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] : Eq. 51 p139 of Akai, Kazunori. &quot;RF System for Electron Storage </span>
+<span class="sd">    Rings.&quot; Physics And Engineering Of High Performance Electron Storage Rings </span>
+<span class="sd">    And Application Of Superconducting Technology. 2002. 118-149.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">synchrotron_tune</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">Vrf</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Either synchrotron_tune or Vrf is needed.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">synchrotron_tune</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">nu_s</span> <span class="o">=</span> <span class="n">ring</span><span class="o">.</span><span class="n">synchrotron_tune</span><span class="p">(</span><span class="n">Vrf</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">nu_s</span> <span class="o">=</span> <span class="n">synchrotron_tune</span>
+    <span class="n">factor</span> <span class="o">=</span> <span class="n">ring</span><span class="o">.</span><span class="n">eta</span><span class="p">()</span> <span class="o">*</span> <span class="n">I</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">ring</span><span class="o">.</span><span class="n">E0</span> <span class="o">*</span> <span class="n">nu_s</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fr</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+        <span class="n">fr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">fr</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fr</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">fr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fr</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">RL</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+        <span class="n">RL</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">RL</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">RL</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">RL</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">RL</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">QL</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+        <span class="n">QL</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">QL</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">QL</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">QL</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">QL</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">Z</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">omega_r</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">fr</span>
+        <span class="n">n_max</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">omega_r</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="n">ring</span><span class="o">.</span><span class="n">omega0</span> <span class="o">*</span> <span class="n">M</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">Zr</span><span class="p">(</span><span class="n">omega</span><span class="p">):</span>
+            <span class="n">Z</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fr</span><span class="p">)):</span>
+                <span class="n">Z</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">RL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span>
+                             <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">QL</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span>
+                              <span class="p">(</span><span class="n">omega_r</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">omega</span> <span class="o">-</span> <span class="n">omega</span> <span class="o">/</span> <span class="n">omega_r</span><span class="p">[</span><span class="n">i</span><span class="p">])))</span>
+            <span class="k">return</span> <span class="n">Z</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fmax</span> <span class="o">=</span> <span class="n">Z</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">n_max</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">fmax</span> <span class="o">/</span> <span class="p">(</span><span class="n">ring</span><span class="o">.</span><span class="n">omega0</span> <span class="o">*</span> <span class="n">M</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">Zr</span><span class="p">(</span><span class="n">omega</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">Z</span><span class="p">(</span><span class="n">omega</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)))</span>
+
+    <span class="n">n0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_max</span><span class="p">)</span>
+    <span class="n">n1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_max</span><span class="p">)</span>
+    <span class="n">omega_p</span> <span class="o">=</span> <span class="n">ring</span><span class="o">.</span><span class="n">omega0</span> <span class="o">*</span> <span class="p">(</span><span class="n">n0</span><span class="o">*</span><span class="n">M</span> <span class="o">+</span> <span class="n">mu</span> <span class="o">+</span> <span class="n">nu_s</span><span class="p">)</span>
+    <span class="n">omega_m</span> <span class="o">=</span> <span class="n">ring</span><span class="o">.</span><span class="n">omega0</span> <span class="o">*</span> <span class="p">(</span><span class="n">n1</span><span class="o">*</span><span class="n">M</span> <span class="o">-</span> <span class="n">mu</span> <span class="o">-</span> <span class="n">nu_s</span><span class="p">)</span>
+
+    <span class="n">sum_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">omega_p</span> <span class="o">*</span> <span class="n">Zr</span><span class="p">(</span><span class="n">omega_p</span><span class="p">))</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">omega_m</span> <span class="o">*</span> <span class="n">Zr</span><span class="p">(</span><span class="n">omega_m</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">factor</span> <span class="o">*</span> <span class="n">sum_val</span></div>
+
+
+<div class="viewcode-block" id="lcbi_growth_rate"><a class="viewcode-back" href="../../../mbtrack2.instability.html#mbtrack2.instability.instabilities.lcbi_growth_rate">[docs]</a><span class="k">def</span> <span class="nf">lcbi_growth_rate</span><span class="p">(</span><span class="n">ring</span><span class="p">,</span>
+                     <span class="n">I</span><span class="p">,</span>
+                     <span class="n">M</span><span class="p">,</span>
+                     <span class="n">synchrotron_tune</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">Vrf</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">fr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">RL</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">QL</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">Z</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the maximum growth rate for longitudinal coupled bunch instability </span>
+<span class="sd">    driven an impedance [1].</span>
+<span class="sd">    </span>
+<span class="sd">    Use either a list of resonators (fr, RL, QL) or an Impedance object (Z).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ring : Synchrotron object</span>
+<span class="sd">    I : float</span>
+<span class="sd">        Total beam current in [A].</span>
+<span class="sd">    M : int</span>
+<span class="sd">        Nomber of bunches in the beam.</span>
+<span class="sd">    synchrotron_tune : float, optional</span>
+<span class="sd">        Synchrotron tune.</span>
+<span class="sd">    Vrf : float, optinal</span>
+<span class="sd">        Total RF voltage in [V] used to compute synchrotron tune if not given.</span>
+<span class="sd">    fr : float or list, optional</span>
+<span class="sd">        Frequency of the HOM in [Hz].</span>
+<span class="sd">    RL : float or list, optional</span>
+<span class="sd">        Loaded shunt impedance of the HOM in [Ohm].</span>
+<span class="sd">    QL : float or list, optional</span>
+<span class="sd">        Loaded quality factor of the HOM.</span>
+<span class="sd">    Z : Impedance, optional</span>
+<span class="sd">        Longitunial impedance to consider.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    growth_rate : float</span>
+<span class="sd">        Maximum coupled bunch instability growth rate in [s-1].</span>
+<span class="sd">    mu : int</span>
+<span class="sd">        Coupled bunch mode number corresponding to the maximum coupled bunch </span>
+<span class="sd">        instability growth rate.</span>
+<span class="sd">    growth_rates : array</span>
+<span class="sd">        Coupled bunch instability growth rates for the different mode numbers </span>
+<span class="sd">        in [s-1].</span>
+<span class="sd">        </span>
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] : Eq. 51 p139 of Akai, Kazunori. &quot;RF System for Electron Storage </span>
+<span class="sd">    Rings.&quot; Physics And Engineering Of High Performance Electron Storage Rings </span>
+<span class="sd">    And Application Of Superconducting Technology. 2002. 118-149.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">growth_rates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+        <span class="n">growth_rates</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">lcbi_growth_rate_mode</span><span class="p">(</span>
+            <span class="n">ring</span><span class="p">,</span>
+            <span class="n">I</span><span class="p">,</span>
+            <span class="n">M</span><span class="p">,</span>
+            <span class="n">i</span><span class="p">,</span>
+            <span class="n">synchrotron_tune</span><span class="o">=</span><span class="n">synchrotron_tune</span><span class="p">,</span>
+            <span class="n">Vrf</span><span class="o">=</span><span class="n">Vrf</span><span class="p">,</span>
+            <span class="n">fr</span><span class="o">=</span><span class="n">fr</span><span class="p">,</span>
+            <span class="n">RL</span><span class="o">=</span><span class="n">RL</span><span class="p">,</span>
+            <span class="n">QL</span><span class="o">=</span><span class="n">QL</span><span class="p">,</span>
+            <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span>
+
+    <span class="n">growth_rate</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">growth_rates</span><span class="p">)</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">growth_rates</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">growth_rate</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">growth_rates</span></div>
+
+
+<div class="viewcode-block" id="lcbi_stability_diagram"><a class="viewcode-back" href="../../../mbtrack2.instability.html#mbtrack2.instability.instabilities.lcbi_stability_diagram">[docs]</a><span class="k">def</span> <span class="nf">lcbi_stability_diagram</span><span class="p">(</span><span class="n">ring</span><span class="p">,</span>
+                           <span class="n">I</span><span class="p">,</span>
+                           <span class="n">M</span><span class="p">,</span>
+                           <span class="n">modes</span><span class="p">,</span>
+                           <span class="n">cavity_list</span><span class="p">,</span>
+                           <span class="n">detune_range</span><span class="p">,</span>
+                           <span class="n">synchrotron_tune</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">Vrf</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot longitudinal coupled bunch instability stability diagram for a </span>
+<span class="sd">    arbitrary list of CavityResonator objects around a detuning range.</span>
+<span class="sd">    </span>
+<span class="sd">    Last object in the cavity_list is assumed to be the one with the variable </span>
+<span class="sd">    detuning.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ring : Synchrotron object</span>
+<span class="sd">        Ring parameters.</span>
+<span class="sd">    I : float</span>
+<span class="sd">        Total beam current in [A].</span>
+<span class="sd">    M : int</span>
+<span class="sd">        Nomber of bunches in the beam.</span>
+<span class="sd">    modes : list</span>
+<span class="sd">        Coupled bunch mode numbers to consider.</span>
+<span class="sd">    cavity_list : list</span>
+<span class="sd">        List of CavityResonator objects to consider, which can be:</span>
+<span class="sd">            - active cavities</span>
+<span class="sd">            - passive cavities</span>
+<span class="sd">            - HOMs</span>
+<span class="sd">            - mode dampers</span>
+<span class="sd">    detune_range : array</span>
+<span class="sd">        Detuning range (list of points) of the last CavityResonator object.</span>
+<span class="sd">    synchrotron_tune : float, optional</span>
+<span class="sd">        Synchrotron tune.</span>
+<span class="sd">    Vrf : float, optinal</span>
+<span class="sd">        Total RF voltage in [V] used to compute synchrotron tune if not given.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    fig : Figure</span>
+<span class="sd">        Show the shunt impedance threshold for different coupled bunch modes.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">Rth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">detune_range</span><span class="p">)</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">mu</span> <span class="ow">in</span> <span class="n">modes</span><span class="p">:</span>
+        <span class="n">fixed_gr</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">cav</span> <span class="ow">in</span> <span class="n">cavity_list</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">fixed_gr</span> <span class="o">+=</span> <span class="n">lcbi_growth_rate_mode</span><span class="p">(</span>
+                <span class="n">ring</span><span class="p">,</span>
+                <span class="n">I</span><span class="o">=</span><span class="n">I</span><span class="p">,</span>
+                <span class="n">mu</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span>
+                <span class="n">fr</span><span class="o">=</span><span class="n">cav</span><span class="o">.</span><span class="n">fr</span><span class="p">,</span>
+                <span class="n">RL</span><span class="o">=</span><span class="n">cav</span><span class="o">.</span><span class="n">RL</span><span class="p">,</span>
+                <span class="n">QL</span><span class="o">=</span><span class="n">cav</span><span class="o">.</span><span class="n">QL</span><span class="p">,</span>
+                <span class="n">M</span><span class="o">=</span><span class="n">M</span><span class="p">,</span>
+                <span class="n">synchrotron_tune</span><span class="o">=</span><span class="n">synchrotron_tune</span><span class="p">,</span>
+                <span class="n">Vrf</span><span class="o">=</span><span class="n">Vrf</span><span class="p">)</span>
+
+        <span class="n">cav</span> <span class="o">=</span> <span class="n">cavity_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">det</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">detune_range</span><span class="p">):</span>
+            <span class="n">gr</span> <span class="o">=</span> <span class="n">lcbi_growth_rate_mode</span><span class="p">(</span><span class="n">ring</span><span class="p">,</span>
+                                       <span class="n">I</span><span class="o">=</span><span class="n">I</span><span class="p">,</span>
+                                       <span class="n">mu</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span>
+                                       <span class="n">fr</span><span class="o">=</span><span class="n">cav</span><span class="o">.</span><span class="n">m</span> <span class="o">*</span> <span class="n">ring</span><span class="o">.</span><span class="n">f1</span> <span class="o">+</span> <span class="n">det</span><span class="p">,</span>
+                                       <span class="n">RL</span><span class="o">=</span><span class="n">cav</span><span class="o">.</span><span class="n">RL</span><span class="p">,</span>
+                                       <span class="n">QL</span><span class="o">=</span><span class="n">cav</span><span class="o">.</span><span class="n">QL</span><span class="p">,</span>
+                                       <span class="n">M</span><span class="o">=</span><span class="n">M</span><span class="p">,</span>
+                                       <span class="n">synchrotron_tune</span><span class="o">=</span><span class="n">synchrotron_tune</span><span class="p">,</span>
+                                       <span class="n">Vrf</span><span class="o">=</span><span class="n">Vrf</span><span class="p">)</span>
+            <span class="n">Rth</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">ring</span><span class="o">.</span><span class="n">tau</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">fixed_gr</span><span class="p">)</span> <span class="o">*</span> <span class="n">cav</span><span class="o">.</span><span class="n">Rs</span> <span class="o">/</span> <span class="n">gr</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">detune_range</span> <span class="o">*</span> <span class="mf">1e-3</span><span class="p">,</span>
+                <span class="n">Rth</span> <span class="o">*</span> <span class="mf">1e-6</span><span class="p">,</span>
+                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;$\mu$ = &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">mu</span><span class="p">)))</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\Delta f$ [kHz]&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$R_{s,max}$ $[M\Omega]$&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">yscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+<div class="viewcode-block" id="rwmbi_growth_rate"><a class="viewcode-back" href="../../../mbtrack2.instability.html#mbtrack2.instability.instabilities.rwmbi_growth_rate">[docs]</a><span class="k">def</span> <span class="nf">rwmbi_growth_rate</span><span class="p">(</span><span class="n">ring</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="n">beff</span><span class="p">,</span> <span class="n">rho_material</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the growth rate of the transverse coupled-bunch instability induced</span>
+<span class="sd">    by resistive wall impedance [1].</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ring : Synchrotron object</span>
+<span class="sd">    current : float</span>
+<span class="sd">        Total beam current in [A].</span>
+<span class="sd">    beff : float</span>
+<span class="sd">        Effective radius of the vacuum chamber in [m].</span>
+<span class="sd">    rho_material : float</span>
+<span class="sd">        Resistivity of the chamber&#39;s wall material in [Ohm.m].</span>
+<span class="sd">    plane : str, optional</span>
+<span class="sd">        The plane in which the instability will be computed. Use &#39;x&#39; for the </span>
+<span class="sd">        horizontal plane, and &#39;y&#39; for the vertical.</span>
+
+<span class="sd">    Reference</span>
+<span class="sd">    ---------</span>
+<span class="sd">    [1] Eq. (31) in R. Nagaoka and K. L. F. Bane, &quot;Collective effects in a</span>
+<span class="sd">    diffraction-limited storage ring&quot;, J. Synchrotron Rad. Vol 21, 2014. pp.937-960 </span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">plane_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">plane_dict</span><span class="p">[</span><span class="n">plane</span><span class="p">]</span>
+    <span class="n">beta0</span> <span class="o">=</span> <span class="n">ring</span><span class="o">.</span><span class="n">optics</span><span class="o">.</span><span class="n">local_beta</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+    <span class="n">omega0</span> <span class="o">=</span> <span class="n">ring</span><span class="o">.</span><span class="n">omega0</span>
+    <span class="n">E0</span> <span class="o">=</span> <span class="n">ring</span><span class="o">.</span><span class="n">E0</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="n">ring</span><span class="o">.</span><span class="n">L</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="n">frac_tune</span><span class="p">,</span> <span class="n">int_tune</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">modf</span><span class="p">(</span><span class="n">ring</span><span class="o">.</span><span class="n">tune</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+    <span class="n">Z0</span> <span class="o">=</span> <span class="n">mu_0</span> <span class="o">*</span> <span class="n">c</span>
+
+    <span class="n">gr</span> <span class="o">=</span> <span class="p">(</span><span class="n">beta0</span><span class="o">*</span><span class="n">omega0</span><span class="o">*</span><span class="n">current</span><span class="o">*</span><span class="n">R</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">E0</span> <span class="o">*</span> <span class="n">beff</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+        <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">c</span><span class="o">*</span><span class="n">Z0</span><span class="o">*</span><span class="n">rho_material</span><span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="mi">1</span><span class="o">-</span><span class="n">frac_tune</span><span class="p">)</span> <span class="o">*</span> <span class="n">omega0</span><span class="p">))</span><span class="o">**</span><span class="mf">0.5</span>
+
+    <span class="k">return</span> <span class="n">gr</span></div>
+
+
+<div class="viewcode-block" id="rwmbi_threshold"><a class="viewcode-back" href="../../../mbtrack2.instability.html#mbtrack2.instability.instabilities.rwmbi_threshold">[docs]</a><span class="k">def</span> <span class="nf">rwmbi_threshold</span><span class="p">(</span><span class="n">ring</span><span class="p">,</span> <span class="n">beff</span><span class="p">,</span> <span class="n">rho_material</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the threshold current of the transverse coupled-bunch instability </span>
+<span class="sd">    induced by resistive wall impedance [1].</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ring : Synchrotron object</span>
+<span class="sd">    beff : float</span>
+<span class="sd">        Effective radius of the vacuum chamber in [m].</span>
+<span class="sd">    rho_material : float</span>
+<span class="sd">        Resistivity of the chamber&#39;s wall material in [Ohm.m].</span>
+<span class="sd">    plane : str, optional</span>
+<span class="sd">        The plane in which the instability will be computed. Use &#39;x&#39; for the </span>
+<span class="sd">        horizontal plane, and &#39;y&#39; for the vertical.</span>
+
+<span class="sd">    Reference</span>
+<span class="sd">    ---------</span>
+<span class="sd">    [1] Eq. (32) in R. Nagaoka and K. L. F. Bane, &quot;Collective effects in a</span>
+<span class="sd">    diffraction-limited storage ring&quot;, J. Synchrotron Rad. Vol 21, 2014. pp.937-960 </span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">plane_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">plane_dict</span><span class="p">[</span><span class="n">plane</span><span class="p">]</span>
+    <span class="n">beta0</span> <span class="o">=</span> <span class="n">ring</span><span class="o">.</span><span class="n">optics</span><span class="o">.</span><span class="n">local_beta</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+    <span class="n">omega0</span> <span class="o">=</span> <span class="n">ring</span><span class="o">.</span><span class="n">omega0</span>
+    <span class="n">E0</span> <span class="o">=</span> <span class="n">ring</span><span class="o">.</span><span class="n">E0</span>
+    <span class="n">tau_rad</span> <span class="o">=</span> <span class="n">ring</span><span class="o">.</span><span class="n">tau</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+    <span class="n">frac_tune</span><span class="p">,</span> <span class="n">int_tune</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">modf</span><span class="p">(</span><span class="n">ring</span><span class="o">.</span><span class="n">tune</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+    <span class="n">Z0</span> <span class="o">=</span> <span class="n">mu_0</span> <span class="o">*</span> <span class="n">c</span>
+
+    <span class="n">Ith</span> <span class="o">=</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">E0</span> <span class="o">*</span> <span class="n">beff</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">c</span><span class="o">*</span><span class="n">beta0</span><span class="o">*</span><span class="n">tau_rad</span><span class="p">)</span> <span class="o">*</span> <span class="p">((</span>
+        <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">frac_tune</span><span class="p">)</span> <span class="o">*</span> <span class="n">omega0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">c</span><span class="o">*</span><span class="n">Z0</span><span class="o">*</span><span class="n">rho_material</span><span class="p">))</span><span class="o">**</span><span class="mf">0.5</span>
+
+    <span class="k">return</span> <span class="n">Ith</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">mbtrack2 0.6.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">mbtrack2.instability.instabilities</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2024, A. Gamelin et al.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>
