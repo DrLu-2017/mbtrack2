@@ -496,6 +496,8 @@ class CavityResonator():
         """
         Initialize the beam phasor for a given beam distribution using an
         analytic formula [1].
+        Also sets the generator phasor such that the total cavity voltage
+        matches self.Vc and self.theta immediately after this method.
 
         No modifications on the Beam object.
 
@@ -509,63 +511,128 @@ class CavityResonator():
 
         """
 
-        # Initialization
         if self.tracking is False:
             self.init_tracking(beam)
 
+        self.beam_phasor = 0 + 0j
+        self.beam_phasor_record = np.zeros((self.ring.h), dtype=complex)
+
+        if len(self.valid_bunch_index) == 0:
+            target_cavity_phasor = self.Vc * np.exp(1j * self.theta)
+            self.Vg = np.abs(target_cavity_phasor)
+            self.theta_g = np.angle(target_cavity_phasor)
+            current_generator_phasor = self.Vg * np.exp(1j * self.theta_g)
+            self.generator_phasor_record = np.ones(self.ring.h, dtype=complex) * current_generator_phasor
+            return
+
         N = self.n_bin
-        delta = (self.wr - self.m * self.ring.omega1)
-        n_turn = int(self.filling_time / self.ring.T0 * 10)
+        delta_freq_term = (self.wr - self.m * self.ring.omega1)
 
-        T = np.ones(self.ring.h) * self.ring.T1
-        bin_length = np.zeros(self.ring.h)
-        charge_per_mp = np.zeros(self.ring.h)
-        bins = np.zeros((N + 1, self.ring.h))
-        profile = np.zeros((N, self.ring.h))
-        center = np.zeros((N, self.ring.h))
+        n_turn = 1
+        if self.ring.T0 > 1e-15 and self.filling_time > 1e-15:
+            n_turn = max(1, int(self.filling_time / self.ring.T0 * 10))
 
-        # Gather beam distribution data
-        for j, bunch in enumerate(beam.not_empty):
-            index = self.valid_bunch_index[j]
+        profile_all_buckets = np.zeros((N, self.ring.h))
+        bin_length_all_buckets = np.zeros(self.ring.h)
+        charge_per_mp_all_buckets = np.zeros(self.ring.h)
+
+        for ring_idx in self.valid_bunch_index:
+            bunch = beam[ring_idx] # CORRECTED LINE
+
+            if bunch is None:
+                bin_length_all_buckets[ring_idx] = 0.0; charge_per_mp_all_buckets[ring_idx] = 0.0; continue
+
             if beam.mpi_switch:
-                beam.mpi.share_distributions(beam, n_bin=self.n_bin)
-                center[:, index] = beam.mpi.tau_center[j]
-                profile[:, index] = beam.mpi.tau_profile[j]
-                bin_length[index] = float(beam.mpi.tau_bin_length[j][0])
-                charge_per_mp[index] = float(beam.mpi.charge_per_mp_all[j])
+                try:
+                    mpi_local_idx = list(self.valid_bunch_index).index(ring_idx)
+                except ValueError:
+                    bin_length_all_buckets[ring_idx] = 0.0; charge_per_mp_all_buckets[ring_idx] = 0.0; continue
+
+                mpi_attrs_present = hasattr(beam.mpi, 'tau_center') and beam.mpi.tau_center is not None and \
+                                  hasattr(beam.mpi, 'tau_profile') and beam.mpi.tau_profile is not None and \
+                                  hasattr(beam.mpi, 'tau_bin_length') and beam.mpi.tau_bin_length is not None and \
+                                  hasattr(beam.mpi, 'charge_per_mp_all') and beam.mpi.charge_per_mp_all is not None
+
+                needs_share = not mpi_attrs_present or \
+                              mpi_local_idx >= len(beam.mpi.tau_center) or \
+                              mpi_local_idx >= len(beam.mpi.tau_profile) or \
+                              mpi_local_idx >= len(beam.mpi.tau_bin_length) or \
+                              mpi_local_idx >= len(beam.mpi.charge_per_mp_all)
+
+                if needs_share:
+                     beam.mpi.share_distributions(beam, n_bin=self.n_bin)
+
+                if hasattr(beam.mpi, 'tau_profile') and beam.mpi.tau_profile is not None and mpi_local_idx < len(beam.mpi.tau_profile) and \
+                   hasattr(beam.mpi, 'tau_bin_length') and beam.mpi.tau_bin_length is not None and mpi_local_idx < len(beam.mpi.tau_bin_length) and \
+                   hasattr(beam.mpi, 'charge_per_mp_all') and beam.mpi.charge_per_mp_all is not None and mpi_local_idx < len(beam.mpi.charge_per_mp_all):
+                    profile_all_buckets[:, ring_idx] = beam.mpi.tau_profile[mpi_local_idx]
+                    bin_length_all_buckets[ring_idx] = float(beam.mpi.tau_bin_length[mpi_local_idx][0])
+                    charge_per_mp_all_buckets[ring_idx] = float(beam.mpi.charge_per_mp_all[mpi_local_idx])
+                else:
+                    bin_length_all_buckets[ring_idx] = 0.0; charge_per_mp_all_buckets[ring_idx] = 0.0; continue
             else:
-                (bins[:, index], sorted_index, profile[:, index],
-                 center[:, index]) = bunch.binning(n_bin=self.n_bin)
-                bin_length[index] = bins[1, index] - bins[0, index]
-                charge_per_mp[index] = bunch.charge_per_mp
-            T[index] -= (center[-1, index] + bin_length[index] / 2)
-            if index != 0:
-                T[index - 1] += (center[0, index] - bin_length[index] / 2)
-        T[self.ring.h - 1] += (center[0, 0] - bin_length[0] / 2)
+                current_bins_1d, _, current_profile_1d, _ = bunch.binning(n_bin=self.n_bin)
+                profile_all_buckets[:, ring_idx] = current_profile_1d
+                bin_length_all_buckets[ring_idx] = (current_bins_1d[1] - current_bins_1d[0]) if len(current_bins_1d) > 1 else 0.0
+                charge_per_mp_all_buckets[ring_idx] = bunch.charge_per_mp
 
-        # Compute matrix coefficients
-        k = np.arange(0, N)
-        Tkj = np.zeros((N, self.ring.h))
-        for j in range(self.ring.h):
-            sum_t = np.array(
-                [T[n] + N * bin_length[n] for n in range(j + 1, self.ring.h)])
-            Tkj[:, j] = (N-k) * bin_length[j] + T[j] + np.sum(sum_t)
+        k_indices = np.arange(0, N)
+        Tkj_eff = np.zeros((N, len(self.valid_bunch_index)))
 
-        var = np.exp((-1 / self.filling_time + 1j*delta) * Tkj)
-        sum_tot = np.sum((profile*charge_per_mp) * var)
+        for i, current_ring_idx in enumerate(self.valid_bunch_index):
+            if bin_length_all_buckets[current_ring_idx] < 1e-15:
+                Tkj_eff[:, i] = 0.0
+                continue
 
-        # Use the formula n_turn times
-        for i in range(n_turn):
-            # Phasor decay during one turn
+            time_from_slice_k_to_bunch_end = (N - 1.0 - k_indices) * bin_length_all_buckets[current_ring_idx]
+            time_after_current_bunch_to_eot_ref = 0.0
+
+            if len(self.valid_bunch_index) > 1:
+                temp_sum_ring_idx = current_ring_idx
+                current_enumerated_idx_in_valid = i
+                for _iteration_count in range(len(self.valid_bunch_index) - 1):
+                    time_to_next_active_bunch_start = self.distance[temp_sum_ring_idx] * self.ring.T1
+                    time_after_current_bunch_to_eot_ref += time_to_next_active_bunch_start
+
+                    current_enumerated_idx_in_valid = (current_enumerated_idx_in_valid + 1) % len(self.valid_bunch_index)
+                    next_active_ring_idx_in_sum = self.valid_bunch_index[current_enumerated_idx_in_valid]
+
+                    if next_active_ring_idx_in_sum == current_ring_idx:
+                        break
+
+                    if bin_length_all_buckets[next_active_ring_idx_in_sum] > 1e-15:
+                        time_after_current_bunch_to_eot_ref += N * bin_length_all_buckets[next_active_ring_idx_in_sum]
+                    temp_sum_ring_idx = next_active_ring_idx_in_sum
+
+            Tkj_eff[:, i] = time_from_slice_k_to_bunch_end + time_after_current_bunch_to_eot_ref
+
+        active_profile = profile_all_buckets[:, self.valid_bunch_index]
+        active_charge_per_mp = charge_per_mp_all_buckets[self.valid_bunch_index]
+
+        exp_decay_part = -1.0 / self.filling_time if abs(self.filling_time) > 1e-15 else 0.0
+
+        exp_factor_complex = exp_decay_part + 1j * delta_freq_term
+        var = np.exp(exp_factor_complex * Tkj_eff)
+
+        term_to_sum = (active_profile * active_charge_per_mp[np.newaxis, :]) * var
+        sum_tot = np.sum(term_to_sum)
+
+        self.beam_phasor = 0j
+        for _ in range(n_turn):
             self.phasor_decay(self.ring.T0, ref_frame="rf")
-            # Phasor evolution due to induced voltage by marco-particles during one turn
-            sum_val = -2 * sum_tot * self.loss_factor
+            sum_val = -2.0 * sum_tot * self.loss_factor
             self.beam_phasor += sum_val
 
-        # Replace phasor at t=0 (synchronous particle) of the first non empty bunch.
-        idx0 = self.valid_bunch_index[0]
-        self.phasor_decay(center[-1, idx0] + bin_length[idx0] / 2,
-                          ref_frame="rf")
+        self.beam_phasor_record.fill(self.beam_phasor)
+
+        target_cavity_phasor = self.Vc * np.exp(1j * self.theta)
+        required_generator_phasor = target_cavity_phasor - self.beam_phasor
+
+        self.Vg = np.abs(required_generator_phasor)
+        self.theta_g = np.angle(required_generator_phasor)
+
+        current_generator_phasor = self.Vg * np.exp(1j * self.theta_g)
+        self.generator_phasor_record = np.ones(self.ring.h, dtype=complex) * current_generator_phasor
 
     @property
     def generator_phasor(self):
