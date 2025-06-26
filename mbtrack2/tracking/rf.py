@@ -586,8 +586,14 @@ class CavityResonator():
     def ig_phasor_record(self):
         """Last current generator phasor of each bunch in [A]"""
         for FB in self.feedback:
-            if isinstance(FB, (ProportionalIntegralLoop, DirectFeedback)):
-                return FB.ig_phasor_record
+            if isinstance(FB, ProportionalIntegralIQLoopMode0Damper):
+                # Access the ig_phasor_record from the nested pi_loop
+                if hasattr(FB, 'pi_loop') and hasattr(FB.pi_loop, 'ig_phasor_record'):
+                    return FB.pi_loop.ig_phasor_record
+            elif isinstance(FB, (ProportionalIntegralLoop, DirectFeedback)):
+                # Direct access for ProportionalIntegralLoop or DirectFeedback
+                if hasattr(FB, 'ig_phasor_record'):
+                    return FB.ig_phasor_record
         return np.zeros(self.ring.h)
 
     @property
