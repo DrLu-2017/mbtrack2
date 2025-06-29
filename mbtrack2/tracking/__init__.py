@@ -54,3 +54,12 @@ from mbtrack2.tracking.wakepotential import (
     LongRangeResistiveWall,
     WakePotential,
 )
+from mbtrack2.tracking.proportional_integral_iq_features import (
+    ProportionalIntegralIQFeatures,
+    SimpleIIRFilter,
+    CavityResonatorAdapter,
+)
+from mbtrack2.tracking.mode0_damper_features import (
+    Mode0DamperFeatures,
+    BeamAdapter,
+)
