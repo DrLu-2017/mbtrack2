@@ -12,7 +12,8 @@ import numpy as np
 
 # Assuming mbtrack2 is installed or PYTHONPATH is set up correctly
 from mbtrack2.tracking.synchrotron import Synchrotron
-from mbtrack2.tracking.particles import Beam, Bunch, Proton
+from mbtrack2.tracking.particles import Beam, Bunch, Electron
+from mbtrack2 import Synchrotron, Electron, Optics, LongitudinalMap, SynchrotronRadiation
 from mbtrack2.tracking.rf import (
     CavityResonator,
     ProportionalIntegralIQLoopMode0Damper,
@@ -23,42 +24,55 @@ from mbtrack2.tracking.rf import (
 )
 
 # --- 1. Setup Synchrotron Parameters (Illustrative) ---
-ring_params = {
-    "ACO": 6.0 * np.pi / 180.0,
-    "E0": 2.5e9,
-    "N": 1,
-    "h": 312,
-    "atomic_A": 1,
-    "charge_q": 1,
-    "U0": 0.0,
-    "tau": np.array([1e-3, 1e-3, 1e-3]),
-    "tune": np.array([0.18, 0.28, 0.005]),
-    "chromaticity": np.array([0.0, 0.0]),
-}
-ring = Synchrotron(**ring_params)
-ring.particle = Proton()
+h = 20 # Harmonic number of the accelerator.
+L = 100 # Ring circumference in [m].
+E0 = 1.5e9 # Nominal (total) energy of the ring in [eV].
+particle = Electron() # Particle considered.
+ac = 1e-3 # Momentum compaction factor.
+U0 = 200e3 # Energy loss per turn in [eV].
+tau = np.array([1e-3, 1e-3, 2e-3]) # Horizontal, vertical and longitudinal damping times in [s].
+tune = np.array([12.2, 15.3]) # Horizontal and vertical tunes.
+emit = np.array([10e-9, 10e-12]) # Horizontal and vertical equilibrium emittance in [m.rad].
+sigma_0 = 15e-12 # Natural bunch length in [s].
+sigma_delta = 1e-3 # Equilibrium energy spread.
+chro = [2.0, 3.0] # Horizontal and vertical (non-normalized) chromaticities.
+
+local_beta = np.array([3, 2]) # Beta function at the tracking location.
+local_alpha = np.array([0, 0]) # Alpha function at the tracking location.
+local_dispersion = np.array([0, 0, 0, 0]) # Dispersion function and its derivative at the tracking location.
+optics = Optics(local_beta=local_beta, local_alpha=local_alpha,
+                  local_dispersion=local_dispersion)
+ring = Synchrotron(h=h, optics=optics, particle=particle, L=L, E0=E0, ac=ac,
+                   U0=U0, tau=tau, emit=emit, tune=tune,
+                   sigma_delta=sigma_delta, sigma_0=sigma_0, chro=chro)
 
 # --- 2. Setup CavityResonator (Illustrative) ---
 cavity = CavityResonator(
     ring=ring,
     m=ring.h,
-    Rs=10e6,
-    Q=20000,
-    QL=10000,
+    Rs=5e6,
+    Q=35e3,
+    QL=5e3,
     detune=0,
-    Vc=1.5e6,
+    Vc=1e6,
     theta=0,
     n_bin = 100
 )
+cavity.theta=np.arccos(ring.U0/cavity.Vc) # Set the phase based on U0 and Vc.
 I0_initial_estimate = 10e-3
+cavity.set_optimal_detune(I0_initial_estimate)
 cavity.set_generator(I0_initial_estimate)
 
 # --- 3. Setup Beam (Illustrative) ---
+I0 = 1e-3 # Initial current in [A].
 n_macroparticles = 10000
 n_bunches = 1
 bunch_intensity = 1e10
+fill_ptrn = np.zeros(ring.h)
+fill_ptrn[0:ring.h] = I0 / h
+beam = Beam(ring)
+beam.init_beam(fill_ptrn, mp_per_bunch=1)
 
-beam = Beam(ring, n_macroparticles, n_bunches)
 for i in range(n_bunches):
     bucket_index = i * int(ring.h / n_bunches)
     beam[bucket_index] = Bunch(ring, n_macroparticles)
@@ -72,8 +86,8 @@ beam.update_distance_between_bunches()
 # --- 4. Instantiate ProportionalIntegralIQLoopMode0Damper ---
 pi_iq_gain = [0.5, 1e4]
 sample_num = 8
-every_buckets = 7
-delay_buckets = 50
+every_buckets = 1
+delay_buckets = 1
 
 enable_damper_flag = True
 damper_pi_gain = [0.1, 100]

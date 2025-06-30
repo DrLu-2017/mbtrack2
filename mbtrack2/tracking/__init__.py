@@ -42,7 +42,7 @@ from mbtrack2.tracking.particles import (
 from mbtrack2.tracking.rf import (
     CavityResonator,
     DirectFeedback,
-    ProportionalIntegralIQLoopMode0Damper,
+    ProportionalIntegralIQLoop,
     ProportionalIntegralLoop,
     ProportionalLoop,
     RFCavity,

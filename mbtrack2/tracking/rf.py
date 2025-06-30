@@ -2119,40 +2119,15 @@ class DirectFeedback(ProportionalIntegralLoop):
 
         self.Ig2Vg()
 
-    def DFB_Vg(self, vc=-1):
-        """Return the generator voltage main and DFB components in [V]."""
-        if vc == -1:
-            vc = np.mean(self.cav_res.cavity_phasor_record)
-        vg_drf = self.DFB_gain * vc * np.exp(1j * self.phase_shift)
-        vg_main = np.mean(self.cav_res.generator_phasor_record) - vg_drf
-        return vg_main, vg_drf
-
-    def DFB_fs(self, vg_main=-1, vg_drf=-1):
-        """Return the modified synchrotron frequency in [Hz]."""
-        vc = np.mean(self.cav_res.cavity_phasor_record)
-        if vg_drf == -1:
-            vg_drf = self.DFB_gain * vc * np.exp(1j * self.phase_shift)
-        if vg_main == -1:
-            vg_main = np.mean(self.cav_res.generator_phasor_record) - vg_drf
-        vg_sum = np.abs(vg_main) * np.sin(
-            np.angle(vg_main)) + np.abs(vg_drf) * np.sin(np.angle(vg_drf))
-        omega_s = 0
-        if (vg_sum) > 0.0:
-            omega_s = np.sqrt(self.ring.ac * self.ring.omega1 * (vg_sum) /
-                              self.ring.E0 / self.ring.T0)
-        return omega_s / 2 / np.pi
-
-
-class ProportionalIntegralIQLoopMode0Damper: # Renamed from ProportionalIntegralIQLoop
+class ProportionalIntegralIQLoop(ProportionalIntegralLoop):
     """
-    Proportional Integral (PI) loop with I/Q control and optional Mode 0 Damper
-    to control a CavityResonator amplitude and phase via generator current (ig).
+    Proportional Integral (PI) loop with I/Q control to control a CavityResonator
+    amplitude and phase via generator current (ig).
 
-    This class now acts as an orchestrator, using ProportionalIntegralIQFeatures
-    and Mode0DamperFeatures (defined in this file) to perform the detailed calculations.
-
-    Feedback reference targets (setpoints) are derived from cav_res.Vc and
-    cav_res.theta to define target I and Q components.
+    This class extends ProportionalIntegralLoop but handles cavity signals in I/Q
+    (In-phase/Quadrature) components instead of amplitude and phase. This approach
+    is common in modern RF control systems as it can be more stable and easier to
+    implement in digital hardware.
 
     The loop must be added to the CavityResonator object using:
         cav_res.feedback.append(loop)
@@ -2162,231 +2137,120 @@ class ProportionalIntegralIQLoopMode0Damper: # Renamed from ProportionalIntegral
     ring : Synchrotron object
     cav_res : CavityResonator object
         CavityResonator in which the loop will be added.
-    gain : list or tuple of two floats
-        Proportional gain (Pgain) and integral gain (Igain) of the PI IQ feedback
-        system, e.g., `[Pgain, Igain]`.
+    gain : float list
+        Proportional gain (Pgain) and integral gain (Igain) of the feedback
+        system in the form of a list [Pgain, Igain].
+        Note: The gains here apply to both I and Q components equally.
     sample_num : int
-        Number of bunches over which the mean cavity voltage is computed for PI IQ.
+        Number of bunch over which the mean cavity voltage is computed.
         Units are in bucket numbers.
     every : int
-        Sampling and clock period of the feedback controller.
-        Time interval between two cavity voltage monitoring and feedback actions.
-        Units are in bucket numbers. This applies to both PI IQ and Damper.
+        Sampling and clock period of the feedback controller
+        Time interval between two cavity voltage monitoring and feedback.
+        Units are in bucket numbers.
     delay : int
-        Loop delay of the PI IQ feedback system in bucket numbers.
-        This also sets the delay for the Mode 0 damper if enabled.
+        Loop delay of the PI feedback system.
+        Units are in bucket numbers.
     IIR_cutoff : float, optional
-        Cutoff frequency in [Hz] for the IIR filter applied to the magnitude
-        of the mean cavity voltage (for PI IQ). If 0, no filtering. Default is 0.
+        Cutoff frequency of the IIR filter in [Hz].
+        If 0, cutoff frequency is infinity.
+        Default is 0.
     FF : bool, optional
-        Enable Feedforward constant for the PI IQ loop. True is recommended. Default is True.
-    enable_damper : bool, optional
-        Enable the Mode 0 damper. Default is False.
-    damper_gain : list or tuple of two floats, optional
-        Proportional (P_damper) and Integral (I_damper) gains for the Mode 0 damper.
-        Default is `[0, 0]`.
-    damper_filter_func : callable, optional
-        A function to filter the raw Mode 0 signal. Takes one arg (raw signal),
-        returns filtered signal. Default is `None` (identity function).
-    damper_mean_idx : int, optional
-        Index in `bunch.mean[]` to extract phase information for Mode 0 signal. Default is 4.
-    damper_phase_shift_limit : float, optional
-        Maximum phase shift (in radians) applied by the damper. Default is np.pi/12.
+        Boolean switch to use feedforward constant.
+        True is recommended.
+        Default is True.
     """
 
-    def __init__(
-        self,
-        ring,
-        cav_res,
-        gain,
-        sample_num,
-        every,
-        delay,
-        IIR_cutoff=0,
-        FF=True,
-        enable_damper=False,
-        damper_gain=(0, 0),
-        damper_filter_func=None,
-        damper_mean_idx=4,
-        damper_phase_shift_limit=np.pi / 12,
-    ):
-        self.ring = ring
-        self.cav_res = cav_res
-        self._last_beam_for_damper = None
+    def __init__(self, *args, **kwargs):
+        super(ProportionalIntegralIQLoop, self).__init__(*args, **kwargs)
+        
+        # Initialize I/Q record buffers
+        self.I_reference = self.cav_res.Vc * np.cos(self.cav_res.theta)
+        self.Q_reference = self.cav_res.Vc * np.sin(self.cav_res.theta)
+        self.I_integral = 0.0
+        self.Q_integral = 0.0
+        self.I_diff_record = np.zeros(len(self.diff_record))
+        self.Q_diff_record = np.zeros(len(self.diff_record))
 
-        self.ig_modulation_signal = np.zeros(self.ring.h, dtype=complex)
-        # Initial ig_phasor based on current cav_res state. _Vg2Ig is defined below.
-        self.ig_phasor = np.ones(self.ring.h, dtype=complex) * self._Vg2Ig(
-            self.cav_res.generator_phasor
-        )
-        self.ig_phasor_record = np.copy(self.ig_phasor)
+    def _complex_to_IQ(self, complex_val):
+        """Convert complex number to I/Q components."""
+        return np.real(complex_val), np.imag(complex_val)
 
-        if not (delay > 0 and every > 0):
-            raise ValueError("Delay and every must be positive.")
-        self.delay_buckets = int(delay)
-        self.every_buckets = int(every)
-        self.sample_num_piiq = int(sample_num)
-
-        self.history_record_size = int(np.ceil(self.delay_buckets / self.every_buckets))
-        if self.history_record_size < 1:
-            raise ValueError("Delay/every results in non-positive history_record_size.")
-
-        self.sample_list = range(0, self.ring.h, self.every_buckets)
-
-        cav_adapter = CavityResonatorAdapterImpl(self.cav_res, self.ring, self._Vg2Ig)
-
-        iir_coeff = self._calculate_iir_coeff(IIR_cutoff, self.ring.T1 * self.every_buckets)
-        initial_iir_output = np.abs(cav_adapter.get_vc_theta_target()[0])
-        iir_filter = SimpleIIRFilter(iir_coeff, initial_output_value=initial_iir_output)
-
-        self.pi_iq_handler = ProportionalIntegralIQFeatures(
-            ring=self.ring,
-            cav_res_interface=cav_adapter,
-            gain_pi=gain,
-            sample_num=self.sample_num_piiq,
-            every=self.every_buckets,
-            delay_steps=self.history_record_size,
-            IIR_filter=iir_filter,
-            use_FF=FF
-        )
-        self.pi_iq_handler.vc_previous = np.ones(
-            self.sample_num_piiq, dtype=complex
-        ) * self.cav_res.cavity_phasor
-
-        self.enable_damper = enable_damper
-        if self.enable_damper:
-            beam_adapter = BeamAdapterImpl(lambda: self._last_beam_for_damper)
-            self.damper_handler = Mode0DamperFeatures(
-                ring=self.ring,
-                beam_interface=beam_adapter,
-                gain_damper=damper_gain,
-                delay_steps=self.history_record_size,
-                filter_func=damper_filter_func,
-                mean_idx_for_mode0=damper_mean_idx,
-                phase_shift_limit=damper_phase_shift_limit
-            )
-        else:
-            self.damper_handler = None
-
-        self.Ig2Vg_mat = np.zeros((self.ring.h, self.ring.h), dtype=complex)
-        self.Ig2Vg_vec = np.zeros(self.ring.h, dtype=complex)
-        self.init_Ig2Vg_matrix()
-
-    def _calculate_iir_coeff(self, cutoff_freq_hz, sampling_period_s):
-        if cutoff_freq_hz == 0 or sampling_period_s == 0:
-            return 1.0
-        omega = 2.0 * np.pi * cutoff_freq_hz
-        alpha_cos_term = np.cos(omega * sampling_period_s) - 1
-        tmp = alpha_cos_term * alpha_cos_term - 2 * alpha_cos_term
-        if tmp > 0:
-            coeff = alpha_cos_term + np.sqrt(tmp)
-        else:
-            coeff = np.clip(sampling_period_s * omega, 0, 1.0)
-        return coeff
+    def _IQ_to_complex(self, I, Q):
+        """Convert I/Q components to complex number."""
+        return I + 1j * Q
 
     def track(self, apply_changes=True):
-        self._last_beam_for_damper = getattr(self.cav_res, "_current_beam_in_track", None)
+        """
+        Tracking method for the Cavity PI control feedback using I/Q components.
 
-        current_cav_phasor_record = self.cav_res.cavity_phasor_record
-        ig_updates_this_step = self.pi_iq_handler.process_turn(
-            current_cav_phasor_record,
-            self.sample_list
-        )
+        Parameters
+        ----------
+        apply_changes : bool, optional
+            Whether to apply the computed changes to the cavity.
+            Default is True.
+        """
+        vc_list = np.concatenate([
+            self.vc_previous, self.cav_res.cavity_phasor_record
+        ])
+        self.ig_phasor.fill(self.ig_phasor[-1])
 
-        if self.ig_phasor.size > 0 :
-            current_ig_fill_value = self.ig_phasor[-1]
-            self.ig_phasor.fill(current_ig_fill_value)
-
-        for bucket_idx, ig_val in ig_updates_this_step.items():
-            self.ig_phasor[bucket_idx:] = ig_val
-
-        latest_error_piiq = self.pi_iq_handler.get_last_calculated_error()
-        vc_tail_for_piiq = current_cav_phasor_record[-self.sample_num_piiq:]
-        self.pi_iq_handler.update_history(latest_error_piiq, vc_tail_for_piiq)
-
-        if self.enable_damper and self.damper_handler:
-            if self._last_beam_for_damper is None:
-                # print("Warning: Damper enabled but no beam object found on cav_res._current_beam_in_track")
-                pass
+        for index in self.sample_list:
+            # Convert mean cavity voltage to I/Q components
+            mean_vc = np.mean(vc_list[index:self.sample_num + index])
+            mean_vc_filtered = self.IIR(mean_vc)
+            I_measured, Q_measured = self._complex_to_IQ(mean_vc_filtered)
+            
+            # Calculate I/Q errors
+            I_error = self.I_reference - I_measured
+            Q_error = self.Q_reference - Q_measured
+            
+            # Update integral terms
+            self.I_integral += I_error / self.ring.f1
+            self.Q_integral += Q_error / self.ring.f1
+            
+            # Calculate PI control outputs for I and Q
+            I_output = self.gain[0] * I_error + self.gain[1] * self.I_integral
+            Q_output = self.gain[0] * Q_error + self.gain[1] * self.Q_integral
+            
+            # Convert back to complex form and update ig_phasor
+            feedback_complex = self._IQ_to_complex(I_output, Q_output)
+            if self.FF:
+                self.ig_phasor[index:] = self.Vg2Ig(feedback_complex) + self.FFconst
             else:
-                damper_phase_correction = self.damper_handler.get_phase_correction()
-                self.ig_phasor *= np.exp(1j * damper_phase_correction)
+                self.ig_phasor[index:] = self.Vg2Ig(feedback_complex)
 
-        if self.sample_list:
-             last_processed_index_in_sample_list = max(self.sample_list) if self.sample_list else 0
-        else:
-            last_processed_index_in_sample_list = self.ring.h - self.every_buckets
-
-        self.sample_list = range(
-            last_processed_index_in_sample_list + self.every_buckets - self.ring.h,
-            self.ring.h,
-            self.every_buckets
-        )
-
-        self.ig_phasor += self.ig_modulation_signal
-        self.ig_phasor_record = np.copy(self.ig_phasor)
+        # Update lists for next turn
+        self.sample_list = range(index + self.every - self.ring.h, self.ring.h,
+                               self.every)
+        self.vc_previous = self.cav_res.cavity_phasor_record[-self.sample_num:]
+        
+        self.ig_phasor = self.ig_phasor + self.ig_modulation_signal
+        self.ig_phasor_record = self.ig_phasor
 
         if apply_changes:
             self.Ig2Vg()
 
-    def init_Ig2Vg_matrix(self):
-        k = np.arange(0, self.ring.h)
-        self.Ig2Vg_vec = np.exp(-1 / self.cav_res.filling_time *
-                                (1 - 1j * np.tan(self.cav_res.psi)) *
-                                self.ring.T1 * (k + 1))
-        tempV = np.exp(-1 / self.cav_res.filling_time * self.ring.T1 * k *
-                       (1 - 1j * np.tan(self.cav_res.psi)))
-        for idx in np.arange(self.ring.h):
-            self.Ig2Vg_mat[idx:, idx] = tempV[:self.ring.h - idx]
-
-        if hasattr(self.cav_res, 'init_Ig2Vg_matrix'): # Should always be true for CavityResonator
-             self.cav_res.init_Ig2Vg_matrix()
-
-    def _Ig2Vg_matrix_calc(self):
-        generator_phasor_record = (
-            self.Ig2Vg_vec * self.cav_res.generator_phasor_record[-1] +
-            self.Ig2Vg_mat.dot(self.ig_phasor_record) * self.cav_res.loss_factor * self.ring.T1
-        )
-        return generator_phasor_record
-
-    def Ig2Vg(self):
-        new_generator_phasor_record = self._Ig2Vg_matrix_calc()
-        self.cav_res.generator_phasor_record = new_generator_phasor_record
-        self.cav_res.Vg = np.mean(np.abs(new_generator_phasor_record))
-        self.cav_res.theta_g = np.mean(np.angle(new_generator_phasor_record))
-
-    def _Vg2Ig(self, Vg_phasor_target):
-        return Vg_phasor_target * (1 - 1j * np.tan(self.cav_res.psi)) / self.cav_res.RL
-
-    def update_target_conditions(self):
-        self.pi_iq_handler.update_target()
-
-    def reset_loops_state(self):
-        self.pi_iq_handler.reset_integral_term()
-        self.pi_iq_handler.diff_record.fill(0j)
-        self.pi_iq_handler.vc_previous = np.ones(
-            self.sample_num_piiq, dtype=complex
-        ) * self.cav_res.cavity_phasor
-
-        if self.enable_damper and self.damper_handler:
-            self.damper_handler.reset_integral_term()
-            self.damper_handler.reset_buffer()
-
-    @property
-    def IIRcutoff(self):
-        if self.pi_iq_handler and self.pi_iq_handler.IIR_filter:
-            coeff = self.pi_iq_handler.IIR_filter.get_coefficient()
-            if coeff == 1.0: return float('inf')
-
-            T_sampling = self.ring.T1 * self.every_buckets
-            if T_sampling == 0: return float('inf')
-            if coeff > 0 and coeff < 1:
-                try:
-                    # More accurate formula derived from the bilinear transform definition for a 1st order LPF
-                    # T_sampling * omega_c = 2 * arctan(coeff / (2-coeff)) -> not quite for this IIR form.
-                    # For y[n] = a*x[n] + (1-a)*y[n-1], cutoff is approx a / (2*pi*T) for small a
-                    return coeff / (2.0 * np.pi * T_sampling)
-                except (ValueError, ArithmeticError):
-                    return float('nan')
-            return 0.0
-        return float('nan')
+    def update_references(self, Vc=None, theta=None):
+        """
+        Update the I/Q reference values when cavity voltage or phase setpoints change.
+        
+        Parameters
+        ----------
+        Vc : float, optional
+            New cavity voltage amplitude setpoint.
+        theta : float, optional
+            New cavity voltage phase setpoint.
+        """
+        if Vc is not None:
+            self.cav_res.Vc = Vc
+        if theta is not None:
+            self.cav_res.theta = theta
+            
+        # Update I/Q references
+        self.I_reference = self.cav_res.Vc * np.cos(self.cav_res.theta)
+        self.Q_reference = self.cav_res.Vc * np.sin(self.cav_res.theta)
+        
+        # Reset integral terms when references change to avoid wind-up
+        self.I_integral = 0.0
+        self.Q_integral = 0.0
