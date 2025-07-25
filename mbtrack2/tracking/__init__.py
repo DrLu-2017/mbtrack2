@@ -47,6 +47,7 @@ from mbtrack2.tracking.rf import (
     ProportionalLoop,
     RFCavity,
     TunerLoop,
+    Mode0DamperLoop
 )
 from mbtrack2.tracking.spacecharge import TransverseSpaceCharge
 from mbtrack2.tracking.synchrotron import Synchrotron

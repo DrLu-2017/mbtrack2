@@ -4,6 +4,7 @@ This module handles radio-frequency (RF) cavitiy elements.
 """
 
 from functools import partial
+from collections import deque
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -40,295 +41,6 @@ class SimpleIIRFilter:
     def set_coefficient(self, coeff):
         self.coeff = coeff
 
-class ProportionalIntegralIQFeaturesInterface: # Renamed from CavityResonatorAdapter for clarity
-    """
-    Abstract interface defining methods ProportionalIntegralIQFeatures expects
-    from the cavity/main loop.
-    """
-    def get_vc_theta_target(self):
-        """Should return (target_Vc, target_theta)"""
-        raise NotImplementedError
-
-    def Vg2Ig(self, Vg_phasor):
-        """Should convert Vg_phasor to Ig_phasor for FF calculation"""
-        raise NotImplementedError
-
-    def get_cavity_phasor(self):
-        """Should return the current cavity phasor (e.g., for initialization)"""
-        raise NotImplementedError
-
-    def get_ring_f1(self):
-        """Should return the revolution frequency ring.f1"""
-        raise NotImplementedError
-
-class CavityResonatorAdapterImpl(ProportionalIntegralIQFeaturesInterface):
-    """
-    Adapter class to provide ProportionalIntegralIQFeatures with necessary
-    access to CavityResonator properties and methods.
-    """
-    def __init__(self, cav_res_obj, ring_obj, Vg2Ig_func_ref):
-        self.cav_res = cav_res_obj
-        self.ring = ring_obj
-        self._Vg2Ig_func = Vg2Ig_func_ref # Reference to the main loop's Vg2Ig
-
-    def get_vc_theta_target(self):
-        return self.cav_res.Vc, self.cav_res.theta
-
-    def Vg2Ig(self, Vg_phasor):
-        return self._Vg2Ig_func(Vg_phasor)
-
-    def get_cavity_phasor(self):
-        return self.cav_res.cavity_phasor
-
-    def get_ring_f1(self):
-        return self.ring.f1
-
-class Mode0DamperBeamInterface: # Renamed from BeamAdapter for clarity
-    """
-    Abstract interface defining methods Mode0DamperFeatures expects
-    for beam data access.
-    """
-    def get_non_empty_bunches(self):
-        """Should return a list or iterator of non-empty Bunch objects."""
-        raise NotImplementedError
-
-class BeamAdapterImpl(Mode0DamperBeamInterface):
-    """
-    Adapter class to provide Mode0DamperFeatures with necessary
-    access to Beam object data.
-    It takes a callable that returns the current beam object.
-    """
-    def __init__(self, current_beam_provider_callable):
-        self._get_current_beam = current_beam_provider_callable
-
-    def get_non_empty_bunches(self):
-        beam = self._get_current_beam()
-        if beam and hasattr(beam, 'not_empty'):
-            return list(beam.not_empty)
-        elif beam and hasattr(beam, '__iter__'):
-            # Fallback if not_empty is not present but beam is iterable
-            return [bunch for bunch in beam if hasattr(bunch, 'is_empty') and not bunch.is_empty]
-        return []
-
-# --- End Helper classes ---
-
-# --- PI IQ Control Features ---
-class ProportionalIntegralIQFeatures:
-    """
-    Encapsulates Proportional-Integral (PI) control logic for I/Q components
-    of an RF cavity.
-
-    This class is intended to be used by a higher-level controller managing
-    an RF cavity (e.g., CavityResonator via a loop object).
-    """
-    def __init__(
-        self,
-        ring,
-        cav_res_interface: ProportionalIntegralIQFeaturesInterface,
-        gain_pi, # [Pgain, Igain]
-        sample_num,
-        every, # Sampling period for PI controller updates (in buckets)
-        delay_steps, # PI loop delay in terms of 'every' units (number of records in diff_record)
-        IIR_filter: SimpleIIRFilter,
-        use_FF=True,
-    ):
-        self.ring = ring
-        self.cav_res_interface = cav_res_interface
-        self.Pgain = gain_pi[0]
-        self.Igain = gain_pi[1]
-        self.sample_num = int(sample_num)
-        self.every = int(every)
-        self.delay_steps = int(delay_steps)
-        self.IIR_filter = IIR_filter
-        self.use_FF = use_FF
-
-        self._update_target_phasor()
-
-        self.vc_previous = np.ones(
-            self.sample_num, dtype=complex
-        ) * self.cav_res_interface.get_cavity_phasor()
-
-        self.diff_record = np.zeros(self.delay_steps, dtype=complex)
-        self.integral_term = 0 + 0j
-
-        self.FFconst = 0 + 0j
-        if self.use_FF:
-            self._calculate_ff_constant()
-
-    def _update_target_phasor(self):
-        """Updates the target I and Q phasor based on cav_res attributes."""
-        vc, theta = self.cav_res_interface.get_vc_theta_target()
-        self.target_I = vc * np.cos(theta)
-        self.target_Q = vc * np.sin(theta)
-        self.target_phasor = self.target_I + 1j * self.target_Q
-        if self.use_FF:
-            self._calculate_ff_constant()
-
-    def _calculate_ff_constant(self):
-        """Calculates the feedforward constant (base generator current)."""
-        if self.use_FF:
-            self.FFconst = self.cav_res_interface.Vg2Ig(self.target_phasor)
-        else:
-            self.FFconst = 0 + 0j
-
-    def reset_integral_term(self):
-        """Resets the integral term of the PI controller."""
-        self.integral_term = 0 + 0j
-
-    def update_target(self):
-        """Call this if the cavity's Vc or theta targets change."""
-        self._update_target_phasor()
-
-    def process_turn(self, current_cavity_phasor_record, bucket_indices_to_update):
-        """
-        Processes one turn of PI IQ control for specified bucket indices.
-        Returns a dictionary of {bucket_idx: ig_control_phasor}.
-        """
-        output_ig_phasors = {}
-        vc_list_for_averaging = np.concatenate(
-            [self.vc_previous, current_cavity_phasor_record]
-        )
-
-        current_error_for_step = 0j # Placeholder for the error of the current step
-
-        for bucket_idx in bucket_indices_to_update:
-            start_avg_idx = self.sample_num + bucket_idx
-            mean_vc_complex = np.mean(
-                vc_list_for_averaging[start_avg_idx : start_avg_idx + self.sample_num]
-            )
-
-            mean_vc_mag_filtered = self.IIR_filter.apply(np.abs(mean_vc_complex))
-            mean_vc_phase = np.angle(mean_vc_complex)
-            vc_for_error_calc = mean_vc_mag_filtered * np.exp(1j * mean_vc_phase)
-
-            current_error_for_step = self.target_phasor - vc_for_error_calc
-
-            delayed_error = self.diff_record[-1]
-            self.integral_term += delayed_error / self.cav_res_interface.get_ring_f1()
-
-            pi_correction_complex = self.Pgain * delayed_error + self.Igain * self.integral_term
-            ig_control_phasor = self.FFconst + pi_correction_complex
-            output_ig_phasors[bucket_idx] = ig_control_phasor
-
-            # Note: self.diff_record is managed by the orchestrating loop using update_history.
-            # The 'current_error_for_step' from the last processed bucket_idx will be used.
-
-        # Store the error from the last processed bucket_idx in this call
-        # This assumes bucket_indices_to_update are processed in a way that the last one's
-        # error is representative for this "tick" of the feedback clock.
-        self.last_calculated_error_this_step = current_error_for_step
-
-        return output_ig_phasors
-
-    def get_last_calculated_error(self):
-        """Returns the most recent error calculated by the last call to process_turn."""
-        return getattr(self, "last_calculated_error_this_step", 0j)
-
-    def update_history(self, new_error_for_diff_record, current_cavity_phasor_record_tail):
-        """
-        Updates the error history (diff_record) and vc_previous.
-        To be called by the main loop once per its "every" cycle.
-        """
-        self.diff_record = np.roll(self.diff_record, 1)
-        self.diff_record[0] = new_error_for_diff_record
-        self.vc_previous = current_cavity_phasor_record_tail
-
-    def get_ff_const(self):
-        return self.FFconst
-
-    def get_integral_term(self):
-        return self.integral_term
-
-    def set_integral_term(self, integral_term): # For potential external reset/override
-        self.integral_term = integral_term
-
-# --- End PI IQ Control Features ---
-
-# --- Mode 0 Damper Features ---
-class Mode0DamperFeatures:
-    """
-    Encapsulates Mode 0 damper functionality for an RF system.
-
-    This class calculates a phase correction based on the Mode 0 oscillation
-    of the beam, which can then be applied to the RF generator's current phasor.
-    It includes its own PI controller for the damper loop.
-    """
-
-    def __init__(
-        self,
-        ring,
-        beam_interface: Mode0DamperBeamInterface,
-        gain_damper, # [P_damper, I_damper]
-        delay_steps, # Damper loop delay in terms of processing steps
-        filter_func=None,
-        mean_idx_for_mode0=4,
-        phase_shift_limit=np.pi / 12,
-    ):
-        self.ring = ring
-        self.beam_interface = beam_interface
-        self.Pgain_damper = gain_damper[0]
-        self.Igain_damper = gain_damper[1]
-        self.delay_steps = int(delay_steps)
-        self.filter_func = filter_func if filter_func else lambda x: x
-        self.mean_idx_for_mode0 = mean_idx_for_mode0
-        self.phase_shift_limit = phase_shift_limit
-
-        self.mode0_signal_buffer = [0.0] * self.delay_steps
-        self.integral_term_damper = 0.0
-
-    def _calculate_raw_mode0_signal(self):
-        """
-        Calculates the raw Mode 0 signal from beam bunch data.
-        """
-        bunches = self.beam_interface.get_non_empty_bunches()
-        if not bunches:
-            return 0.0
-
-        try:
-            bunch_phase_values_raw = [b.mean[self.mean_idx_for_mode0] for b in bunches]
-        except IndexError:
-            return 0.0 # Or log a warning
-
-        # Assuming values are suitable for direct averaging or already deviations.
-        # If these are wrapped phases, np.unwrap might be needed here or in filter_func.
-        # e.g., unwrapped_values = np.unwrap(bunch_phase_values_raw)
-        # mode0_signal = np.mean(unwrapped_values)
-        mode0_signal = np.mean(bunch_phase_values_raw)
-
-        return mode0_signal
-
-    def get_phase_correction(self):
-        """
-        Computes the phase correction amount based on the Mode 0 signal
-        and the damper's PI controller.
-        """
-        current_raw_mode0 = self._calculate_raw_mode0_signal()
-        current_filtered_mode0 = self.filter_func(current_raw_mode0)
-
-        delayed_mode0_signal = self.mode0_signal_buffer[0]
-        self.mode0_signal_buffer = self.mode0_signal_buffer[1:] + [current_filtered_mode0]
-
-        self.integral_term_damper += delayed_mode0_signal * self.Igain_damper / self.ring.f1
-
-        phase_shift_correction = (self.Pgain_damper * delayed_mode0_signal +
-                                  self.integral_term_damper)
-
-        phase_shift_correction = np.clip(phase_shift_correction,
-                                         -self.phase_shift_limit,
-                                         self.phase_shift_limit)
-        return phase_shift_correction
-
-    def reset_integral_term(self):
-        """Resets the integral term of the damper's PI controller."""
-        self.integral_term_damper = 0.0
-
-    def reset_buffer(self):
-        """Resets the mode0 signal buffer."""
-        self.mode0_signal_buffer = [0.0] * self.delay_steps
-
-# --- End Mode 0 Damper Features ---
-
-
 class RFCavity(Element):
     """
     Perfect RF cavity class for main and harmonic RF cavities.
@@ -350,6 +62,7 @@ class RFCavity(Element):
         self.m = m
         self.Vc = Vc
         self.theta = theta
+        self.feedback = []  # Add feedback list
 
     @Element.parallel
     def track(self, bunch):
@@ -1696,7 +1409,6 @@ class ProportionalIntegralLoop:
     PF; E0=2.5GeV, C=187m, frf=500MHz
         QL=11800, fs0=23kHz
         ==> gain=[0.5,1e4], sample_num=8, every=7(13ns), delay=500(1us)
-                     is one reasonable parameter set.
         The practical clock period is 13ns.
             ==> Igain_PF = Igain_mbtrack * Trf / 13ns = Igain_mbtrack * 0.153
 
@@ -1884,7 +1596,6 @@ class ProportionalIntegralLoop:
         return (1.0 / 2.0 / np.pi / T * np.arccos(
             (2 - 2 * self.IIRcoef - self.IIRcoef * self.IIRcoef) / 2 /
             (1 - self.IIRcoef)))
-
 
 class DirectFeedback(ProportionalIntegralLoop):
     """
@@ -2254,3 +1965,293 @@ class ProportionalIntegralIQLoop(ProportionalIntegralLoop):
         # Reset integral terms when references change to avoid wind-up
         self.I_integral = 0.0
         self.Q_integral = 0.0
+
+class Mode0DamperLoop(ProportionalIntegralLoop):
+    """
+    Mode-0 damper feedback loop using PI control to damp collective longitudinal oscillations.
+    
+    Inherits from ProportionalIntegralLoop and implements specialized signal processing
+    for Mode-0 damping including phase detection, 90-degree phase shift, and cavity modulation.
+    
+    Parameters
+    ----------
+    ring : Synchrotron object
+    cav_res : CavityResonator object
+    gain : float list
+        [Pgain, Igain] for the feedback system.
+        For Mode-0 damping, typically only Pgain is used (Igain=0).
+    sample_num : int
+        Number of bunches over which to average the beam signal.
+    every : int 
+        Update period in buckets.
+    delay : int
+        System delay in buckets.
+    phase_shift : float, optional
+        Phase shift for damping (default 90 degrees).
+    IIR_cutoff : float, optional
+        Cutoff frequency for the IIR filter in Hz.
+    synch_freq_factor : float, optional
+        Factor to scale the calculated synchrotron frequency.
+    """
+    class CavityWrapper:
+        """
+        Wrapper to provide resonator-like interface for RFCavity objects.
+        """
+        def __init__(self, cavity, ring):
+            self._cavity = cavity
+            self._ring = ring
+            self._generator_phasor = cavity.Vc * np.exp(1j * cavity.theta)
+            self._beam_phasor = 0 + 0j
+            self._h = ring.h
+            
+            # Initialize phasor records
+            self.generator_phasor_record = np.ones(self._h, dtype=complex) * self._generator_phasor
+            self.beam_phasor_record = np.zeros(self._h, dtype=complex)
+            self.feedback = []
+            
+            # Essential resonator parameters with reasonable defaults
+            self._psi = 0.0  # No detuning
+            self._Rs = 1e6   # Nominal shunt impedance
+            self._Q = 1000   # Nominal Q
+            self._QL = 100   # Nominal loaded Q 
+            self._beta = self._Q / self._QL - 1
+            
+        @property 
+        def filling_time(self):
+            """Effective filling time"""
+            return 1.0 / (2 * np.pi * self._ring.f1)
+            
+        @property
+        def RL(self):
+            """Effective loaded impedance"""
+            return self._Rs / 2.0
+            
+        @property
+        def generator_phasor(self):
+            return self._generator_phasor
+            
+        @property
+        def beam_phasor(self):
+            return self._beam_phasor
+            
+        @property
+        def psi(self):
+            """Tuning angle"""
+            return self._psi
+            
+        @property
+        def Q(self):
+            """Quality factor"""
+            return self._Q
+            
+        @property
+        def QL(self):
+            """Loaded Q"""
+            return self._QL
+            
+        @property
+        def beta(self):
+            """Coupling coefficient"""
+            return self._beta
+            
+        @property
+        def Rs(self):
+            """Shunt impedance"""
+            return self._Rs
+            
+        @property
+        def loss_factor(self):
+            """Effective loss factor"""
+            return 1.0  # Unity for simple RF cavity
+            
+        @property
+        def cavity_phasor(self):
+            """Total cavity phasor in [V]"""
+            return self._generator_phasor + self._beam_phasor
+            
+        @property 
+        def theta_g(self):
+            """Generator phase [rad]"""
+            return np.angle(self._generator_phasor)
+            
+        @theta_g.setter
+        def theta_g(self, value):
+            self._generator_phasor = self.Vg * np.exp(1j * value)
+            
+        @property
+        def Vg(self):
+            """Generator voltage [V]"""
+            return np.abs(self._generator_phasor)
+            
+        @Vg.setter 
+        def Vg(self, value):
+            self._generator_phasor = value * np.exp(1j * self.theta_g)
+        
+        def __getattr__(self, name):
+            """Pass through to underlying cavity"""
+            try:
+                return getattr(self._cavity, name)
+            except AttributeError:
+                raise AttributeError(
+                    f"Neither CavityWrapper nor underlying cavity has attribute '{name}'"
+                )
+                
+    def __init__(self, ring, cav_res, gain, sample_num, every, delay,
+                 phase_shift=90.0, IIR_cutoff=0, synch_freq_factor=1.0, **kwargs):
+                 
+        # Wrap RFCavity if needed
+        if isinstance(cav_res, RFCavity):
+            cav_res = self.CavityWrapper(cav_res, ring)
+            
+        # Initialize parent with wrapped cavity
+        super().__init__(ring, cav_res, gain, sample_num, every, delay,
+                        IIR_cutoff=IIR_cutoff, FF=False, **kwargs)
+                        
+        # Mode-0 specific parameters  
+        self.phase_shift_rad = np.deg2rad(phase_shift)
+        self.synch_freq_factor = synch_freq_factor
+        
+        # Calculate synchrotron frequency for phase adjustment
+        self.omega_s = ring.synchrotron_tune(cav_res.Vc) * ring.f1 * 2 * np.pi
+        self.omega_s *= synch_freq_factor
+        
+        # Mode-0 signal processing buffers
+        self.beam_phase_history = np.zeros(sample_num)
+        self.phase_error_buffer = deque(maxlen=delay)
+        self.previous_error = 0.0
+        
+    def compute_beam_phase(self, beam):
+        """
+        Compute average beam phase from all bunches.
+        
+        Parameters
+        ----------
+        beam : Beam object
+            Current beam being tracked.
+            
+        Returns
+        -------
+        float
+            Average beam phase in radians.
+        """
+        # Average longitudinal position across all bunches
+        if not hasattr(beam, 'bunch_mean') or len(beam.bunch_mean) < 5:
+            return 0.0
+            
+        mean_tau = np.mean(beam.bunch_mean[4, :])  # Assuming index 4 is tau coordinate
+        
+        # Convert to RF phase
+        phase = 2 * np.pi * self.ring.h * self.ring.f1 * mean_tau
+        return phase
+        
+    def process_phase_error(self, phase_error):
+        """
+        Process phase error with 90-degree phase shift for damping.
+        
+        Parameters
+        ----------
+        phase_error : float
+            Raw phase error in radians.
+            
+        Returns
+        -------
+        float
+            Processed correction signal.
+        """
+        # Implement 90-degree phase shift through differentiation
+        derivative = (phase_error - self.previous_error) * self.ring.f1
+        self.previous_error = phase_error
+        
+        # Apply gain and phase optimization
+        correction = derivative * self.gain[0]
+        
+        # Optional: Additional filtering or processing could be added here
+        
+        return correction
+        
+    def track(self):
+        """
+        Override track method to implement Mode-0 damping.
+        """
+        if not hasattr(self.cav_res, '_current_beam_in_track'):
+            return
+            
+        beam = self.cav_res._current_beam_in_track
+        
+        # 1. Mode-0 Signal Acquisition
+        beam_phase = self.compute_beam_phase(beam)
+        phase_error = beam_phase - self.cav_res.theta  # Reference is cavity phase
+        
+        # 2. Signal Processing
+        correction_signal = self.process_phase_error(phase_error)
+        
+        # 3. Generate correction phasor with proper phase
+        correction_phasor = correction_signal * np.exp(1j * self.phase_shift_rad)
+        
+        # 4. Apply correction through cavity modulation
+        # Use existing infrastructure from ProportionalIntegralLoop
+        self.ig_modulation_signal.fill(self.Vg2Ig(correction_phasor))
+        
+        # Run parent class tracking with modulation
+        super().track(apply_changes=True)
+     # Debugging: Store data for plotting
+        if not hasattr(self, 'debug_data'):
+            self.debug_data = {'beam_phase': [], 'phase_error': [], 'correction': []}
+        self.debug_data['beam_phase'].append(beam_phase)
+        self.debug_data['phase_error'].append(phase_error)
+        self.debug_data['correction'].append(correction_signal)
+        
+    def plot_debug_data(self):
+        """Plot debug data for beam phase, phase error, and correction signal."""
+        if not hasattr(self, 'debug_data') or not self.debug_data['beam_phase']:
+            print("No debug data available. Run tracking first.")
+            return
+        
+        import matplotlib.pyplot as plt
+        
+        turns = range(len(self.debug_data['beam_phase']))
+        
+        fig, axs = plt.subplots(3, 1, figsize=(10, 8))
+        
+        axs[0].plot(turns, self.debug_data['beam_phase'], label='Beam Phase')
+        axs[0].set_ylabel('Phase [rad]')
+        axs[0].set_title('Beam Phase Evolution')
+        axs[0].legend()
+        
+        axs[1].plot(turns, self.debug_data['phase_error'], label='Phase Error', color='red')
+        axs[1].set_ylabel('Phase Error [rad]')
+        axs[1].set_title('Phase Error Evolution')
+        axs[1].legend()
+        
+        axs[2].plot(turns, self.debug_data['correction'], label='Correction Signal', color='green')
+        axs[2].set_ylabel('Correction Signal')
+        axs[2].set_xlabel('Turn')
+        axs[2].set_title('Correction Signal Evolution')
+        axs[2].legend()
+        
+        plt.tight_layout()
+        plt.show()    
+    def reset(self):
+        """Reset damper state"""
+        super().reset()
+        self.beam_phase_history.fill(0)
+        self.phase_error_buffer.clear()
+        self.previous_error = 0.0
+        
+    @property
+    def damping_time(self):
+        """
+        Calculate theoretical damping time constant.
+        
+        Returns
+        -------
+        float
+            Damping time in turns.
+        """
+        if self.gain[0] > 0:
+            return 2.0 / (self.gain[0] * self.omega_s)
+        return float('inf')
+
+
+
+
