@@ -1483,7 +1483,7 @@ class ProportionalIntegralLoop:
 
         for index in self.sample_list:
             # 2) updating Ig using last item of the list
-            diff = self.diff_record[-1] - self.FFconst
+            diff = self.diff_record[-1] - self.cav_res.Vc
             self.I_record += diff / self.ring.f1
             fb_value = self.gain[0] * diff + self.gain[1] * self.I_record
             self.ig_phasor[index:] = self.Vg2Ig(fb_value) + self.FFconst
@@ -1704,8 +1704,8 @@ class DirectFeedback(ProportionalIntegralLoop):
         else:
             cavity_phasor = np.mean(self.cav_res.cavity_phasor_record)
         self.DFB_VcRecord = np.ones(record_size, dtype=complex) * cavity_phasor
-        self.DFB_vc_previous = (np.ones(self.DFB_sample_num, dtype=complex) *
-                                cavity_phasor)
+        self.DFB_vc_previous = np.ones(self.DFB_sample_num,
+                                       dtype=complex) * cavity_phasor
 
         self.DFB_sample_list = range(0, self.ring.h, self.DFB_every)
 
@@ -1735,8 +1735,8 @@ class DirectFeedback(ProportionalIntegralLoop):
 
         Fig.4 of ref [1].
         """
-        return np.angle(np.mean(self.cav_res.cavity_phasor_record)) - np.angle(
-            np.mean(self.ig_phasor_record))
+        return (np.angle(np.mean(self.cav_res.cavity_phasor_record)) -
+                np.angle(np.mean(self.ig_phasor_record)))
 
     @property
     def DFB_alpha(self):
@@ -1785,8 +1785,8 @@ class DirectFeedback(ProportionalIntegralLoop):
         self.DFB_phase_shift = DFB_phase_shift
 
         if np.sum(np.abs(self.cav_res.beam_phasor)) == 0:
-            vc = (np.ones(self.ring.h) * self.cav_res.Vc *
-                  np.exp(1j * self.cav_res.theta))
+            vc = np.ones(self.ring.h) * self.cav_res.Vc * np.exp(
+                1j * self.cav_res.theta)
         else:
             vc = self.cav_res.cavity_phasor_record
         vg_drf = self.DFB_gain * vc * np.exp(1j * self.phase_shift)
@@ -1811,8 +1811,8 @@ class DirectFeedback(ProportionalIntegralLoop):
         self.DFB_ig_phasor = np.roll(self.DFB_ig_phasor, 1)
         for index in self.DFB_sample_list:
             # 2) updating Ig using last item of the list
-            vg_drf = (self.DFB_gain * self.DFB_VcRecord[-1] *
-                      np.exp(1j * self.phase_shift))
+            vg_drf = self.DFB_gain * self.DFB_VcRecord[-1] * np.exp(
+                1j * self.phase_shift)
             self.DFB_ig_phasor[index:] = self.Vg2Ig(vg_drf)
             # Shift the record
             self.DFB_VcRecord = np.roll(self.DFB_VcRecord, 1)
@@ -2015,7 +2015,14 @@ class Mode0DamperLoop(ProportionalIntegralLoop):
             self._Q = 1000   # Nominal Q
             self._QL = 100   # Nominal loaded Q 
             self._beta = self._Q / self._QL - 1
-            
+             # Add storage for Lissajous plot data
+            self.debug_data = {
+                'beam_phase': [], 
+                'phase_error': [], 
+                'correction': [],
+                'filtered_signal': []  # Add storage for filtered signal
+            }
+
         @property 
         def filling_time(self):
             """Effective filling time"""
@@ -2097,7 +2104,8 @@ class Mode0DamperLoop(ProportionalIntegralLoop):
                 )
                 
     def __init__(self, ring, cav_res, gain, sample_num, every, delay,
-                 phase_shift=90.0, IIR_cutoff=0, synch_freq_factor=1.0, **kwargs):
+                 phase_shift=90.0, IIR_cutoff=0, synch_freq_factor=1.0, 
+                 filter_bandwidth=0.2, **kwargs):
                  
         # Wrap RFCavity if needed
         if isinstance(cav_res, RFCavity):
@@ -2120,6 +2128,14 @@ class Mode0DamperLoop(ProportionalIntegralLoop):
         self.phase_error_buffer = deque(maxlen=delay)
         self.previous_error = 0.0
         
+        # Initialize debug data dictionary
+        self.debug_data = {
+            'beam_phase': [],
+            'phase_error': [],
+            'correction': [],
+            'filtered_signal': []
+        }
+
     def compute_beam_phase(self, beam):
         """
         Compute average beam phase from all bunches.
@@ -2144,114 +2160,243 @@ class Mode0DamperLoop(ProportionalIntegralLoop):
         phase = 2 * np.pi * self.ring.h * self.ring.f1 * mean_tau
         return phase
         
-    def process_phase_error(self, phase_error):
+    def bandpass_filter(self, phase_error):
         """
-        Process phase error with 90-degree phase shift for damping.
+        Apply bandpass filter centered on synchrotron frequency.
         
         Parameters
         ----------
         phase_error : float
-            Raw phase error in radians.
+            Raw phase error signal
             
         Returns
         -------
         float
-            Processed correction signal.
+            Filtered signal
         """
-        # Implement 90-degree phase shift through differentiation
-        derivative = (phase_error - self.previous_error) * self.ring.f1
-        self.previous_error = phase_error
+        # Update filter buffer
+        self.filtered_phase.append(phase_error)
         
-        # Apply gain and phase optimization
+        # Bandpass filter coefficients for synchrotron frequency
+        f1 = self.fs * (1 - self.filter_bandwidth/2)
+        f2 = self.fs * (1 + self.filter_bandwidth/2)
+        dt = 1.0/self.ring.f1
+        
+        # 2nd order bandpass filter
+        filtered = (
+            self.filtered_phase[-1] 
+            - 2*np.cos(2*np.pi*self.fs*dt)*self.filtered_phase[-2]
+            + self.filtered_phase[-3]
+        )
+        
+        return filtered
+
+    def process_phase_error(self, phase_error):
+        """Process phase error with bandpass filter and 90-degree phase shift."""
+        # First apply bandpass filter
+        filtered = self.bandpass_filter(phase_error)
+        
+        # Then implement 90-degree phase shift through differentiation
+        derivative = (filtered - self.previous_error) * self.ring.f1
+        self.previous_error = filtered
+        
+        # Apply gain and return correction
         correction = derivative * self.gain[0]
         
-        # Optional: Additional filtering or processing could be added here
-        
+        # Store filtered signal for plotting
+        if hasattr(self, 'debug_data'):
+            self.debug_data['filtered_signal'].append(filtered)
+            
         return correction
+
+    def plot_debug_data(self):
+        """Plot debug data including Lissajous figure and FFT analysis."""
+        if not self.debug_data['phase_error']:
+            print("No debug data available. Run tracking first.")
+            return
+            
+        # Convert lists to numpy arrays
+        phase_errors = np.array(self.debug_data['phase_error'])
+        filtered_signals = np.array(self.debug_data['filtered_signal'])
+        beam_phases = np.array(self.debug_data['beam_phase'])
+        corrections = np.array(self.debug_data['correction'])
         
+        # Verify data alignment
+        min_len = min(len(phase_errors), len(filtered_signals))
+        phase_errors = phase_errors[:min_len]
+        filtered_signals = filtered_signals[:min_len]
+        beam_phases = beam_phases[:min_len]
+        corrections = corrections[:min_len]
+        turns = np.arange(min_len)
+        
+        # Create figure with subplots
+        fig = plt.figure(figsize=(15, 12))
+        
+        # Time domain plots
+        ax1 = plt.subplot(231)
+        ax2 = plt.subplot(232)
+        ax3 = plt.subplot(233)
+        ax4 = plt.subplot(234)  # For Lissajous
+        ax5 = plt.subplot(235)  # For FFT
+        
+        # Plot time domain data
+        ax1.plot(turns, beam_phases, 'b-', label='Beam Phase')
+        ax1.set_ylabel('Phase [rad]')
+        ax1.set_title('Beam Phase Evolution')
+        ax1.legend()
+        
+        ax2.plot(turns, phase_errors, 'r-', label='Phase Error')
+        ax2.set_ylabel('Phase Error [rad]')
+        ax2.set_title('Phase Error Evolution')
+        ax2.legend()
+        
+        ax3.plot(turns, corrections, 'g-', label='Correction')
+        ax3.set_ylabel('Correction Signal')
+        ax3.set_xlabel('Turn')
+        ax3.set_title('Correction Signal Evolution')
+        ax3.legend()
+        
+        # Lissajous figure
+        ax4.plot(phase_errors, filtered_signals, 'b.', markersize=1, alpha=0.5)
+        ax4.set_xlabel('Phase Error [rad]')
+        ax4.set_ylabel('Filtered Signal')
+        ax4.set_title('Lissajous Figure')
+        ax4.grid(True)
+        ax4.set_aspect('equal')
+        
+        # FFT Analysis
+        if len(phase_errors) > 1:
+            fft_freqs = np.fft.rfftfreq(len(phase_errors), d=1.0/self.ring.f1)
+            fft_vals = np.abs(np.fft.rfft(phase_errors))
+            
+            ax5.semilogy(fft_freqs, fft_vals, 'b-')
+            fs = self.omega_s / (2*np.pi)
+            ax5.axvline(x=fs, color='r', linestyle='--', label=f'fs={fs:.1f} Hz')
+            ax5.set_xlabel('Frequency [Hz]')
+            ax5.set_ylabel('Magnitude')
+            ax5.set_title('FFT of Phase Error')
+            ax5.grid(True)
+            ax5.legend()
+        
+        plt.tight_layout()
+        plt.show()
+        
+        # Print frequency analysis
+        if len(phase_errors) > 1:
+            peak_indices = np.argsort(fft_vals)[-3:]
+            print("\nDominant frequency components:")
+            for idx in reversed(peak_indices):
+                print(f"f = {fft_freqs[idx]:.1f} Hz, magnitude = {fft_vals[idx]:.2e}")
+            print(f"Synchrotron frequency: {fs:.1f} Hz")
+
     def track(self):
-        """
-        Override track method to implement Mode-0 damping.
-        """
+        """Override track method to implement Mode-0 damping."""
         if not hasattr(self.cav_res, '_current_beam_in_track'):
             return
             
         beam = self.cav_res._current_beam_in_track
         
-        # 1. Mode-0 Signal Acquisition
+        # 1. Mode-0 Signal Acquisition 
         beam_phase = self.compute_beam_phase(beam)
-        phase_error = beam_phase - self.cav_res.theta  # Reference is cavity phase
+        phase_error = beam_phase - self.cav_res.theta
         
-        # 2. Signal Processing
-        correction_signal = self.process_phase_error(phase_error)
+        # 2. Signal Processing - Calculate derivative for 90° phase shift
+        derivative = (phase_error - self.previous_error) * self.ring.f1
+        self.previous_error = phase_error
+        correction_signal = derivative * self.gain[0]
+        
+        # Store data exactly once per call
+        self.debug_data['beam_phase'].append(beam_phase)
+        self.debug_data['phase_error'].append(phase_error)
+        self.debug_data['filtered_signal'].append(derivative)
+        self.debug_data['correction'].append(correction_signal)
         
         # 3. Generate correction phasor with proper phase
         correction_phasor = correction_signal * np.exp(1j * self.phase_shift_rad)
         
         # 4. Apply correction through cavity modulation
-        # Use existing infrastructure from ProportionalIntegralLoop
         self.ig_modulation_signal.fill(self.Vg2Ig(correction_phasor))
         
         # Run parent class tracking with modulation
         super().track(apply_changes=True)
-     # Debugging: Store data for plotting
-        if not hasattr(self, 'debug_data'):
-            self.debug_data = {'beam_phase': [], 'phase_error': [], 'correction': []}
-        self.debug_data['beam_phase'].append(beam_phase)
-        self.debug_data['phase_error'].append(phase_error)
-        self.debug_data['correction'].append(correction_signal)
-        
+
     def plot_debug_data(self):
-        """Plot debug data for beam phase, phase error, and correction signal."""
-        if not hasattr(self, 'debug_data') or not self.debug_data['beam_phase']:
+        """Plot debug data including Lissajous figure and FFT analysis."""
+        if not self.debug_data['phase_error']:
             print("No debug data available. Run tracking first.")
             return
+            
+        # Convert lists to numpy arrays
+        phase_errors = np.array(self.debug_data['phase_error'])
+        filtered_signals = np.array(self.debug_data['filtered_signal'])
+        beam_phases = np.array(self.debug_data['beam_phase'])
+        corrections = np.array(self.debug_data['correction'])
         
-        import matplotlib.pyplot as plt
+        # Verify data alignment
+        min_len = min(len(phase_errors), len(filtered_signals))
+        phase_errors = phase_errors[:min_len]
+        filtered_signals = filtered_signals[:min_len]
+        beam_phases = beam_phases[:min_len]
+        corrections = corrections[:min_len]
+        turns = np.arange(min_len)
         
-        turns = range(len(self.debug_data['beam_phase']))
+        # Create figure with subplots
+        fig = plt.figure(figsize=(15, 12))
         
-        fig, axs = plt.subplots(3, 1, figsize=(10, 8))
+        # Time domain plots
+        ax1 = plt.subplot(231)
+        ax2 = plt.subplot(232)
+        ax3 = plt.subplot(233)
+        ax4 = plt.subplot(234)  # For Lissajous
+        ax5 = plt.subplot(235)  # For FFT
         
-        axs[0].plot(turns, self.debug_data['beam_phase'], label='Beam Phase')
-        axs[0].set_ylabel('Phase [rad]')
-        axs[0].set_title('Beam Phase Evolution')
-        axs[0].legend()
+        # Plot time domain data
+        ax1.plot(turns, beam_phases, 'b-', label='Beam Phase')
+        ax1.set_ylabel('Phase [rad]')
+        ax1.set_title('Beam Phase Evolution')
+        ax1.legend()
         
-        axs[1].plot(turns, self.debug_data['phase_error'], label='Phase Error', color='red')
-        axs[1].set_ylabel('Phase Error [rad]')
-        axs[1].set_title('Phase Error Evolution')
-        axs[1].legend()
+        ax2.plot(turns, phase_errors, 'r-', label='Phase Error')
+        ax2.set_ylabel('Phase Error [rad]')
+        ax2.set_title('Phase Error Evolution')
+        ax2.legend()
         
-        axs[2].plot(turns, self.debug_data['correction'], label='Correction Signal', color='green')
-        axs[2].set_ylabel('Correction Signal')
-        axs[2].set_xlabel('Turn')
-        axs[2].set_title('Correction Signal Evolution')
-        axs[2].legend()
+        ax3.plot(turns, corrections, 'g-', label='Correction')
+        ax3.set_ylabel('Correction Signal')
+        ax3.set_xlabel('Turn')
+        ax3.set_title('Correction Signal Evolution')
+        ax3.legend()
+        
+        # Lissajous figure
+        ax4.plot(phase_errors, filtered_signals, 'b.', markersize=1, alpha=0.5)
+        ax4.set_xlabel('Phase Error [rad]')
+        ax4.set_ylabel('Filtered Signal')
+        ax4.set_title('Lissajous Figure')
+        ax4.grid(True)
+        ax4.set_aspect('equal')
+        
+        # FFT Analysis
+        if len(phase_errors) > 1:
+            fft_freqs = np.fft.rfftfreq(len(phase_errors), d=1.0/self.ring.f1)
+            fft_vals = np.abs(np.fft.rfft(phase_errors))
+            
+            ax5.semilogy(fft_freqs, fft_vals, 'b-')
+            fs = self.omega_s / (2*np.pi)
+            ax5.axvline(x=fs, color='r', linestyle='--', label=f'fs={fs:.1f} Hz')
+            ax5.set_xlabel('Frequency [Hz]')
+            ax5.set_ylabel('Magnitude')
+            ax5.set_title('FFT of Phase Error')
+            ax5.grid(True)
+            ax5.legend()
         
         plt.tight_layout()
-        plt.show()    
-    def reset(self):
-        """Reset damper state"""
-        super().reset()
-        self.beam_phase_history.fill(0)
-        self.phase_error_buffer.clear()
-        self.previous_error = 0.0
+        plt.show()
         
-    @property
-    def damping_time(self):
-        """
-        Calculate theoretical damping time constant.
-        
-        Returns
-        -------
-        float
-            Damping time in turns.
-        """
-        if self.gain[0] > 0:
-            return 2.0 / (self.gain[0] * self.omega_s)
-        return float('inf')
-
-
-
+        # Print frequency analysis
+        if len(phase_errors) > 1:
+            peak_indices = np.argsort(fft_vals)[-3:]
+            print("\nDominant frequency components:")
+            for idx in reversed(peak_indices):
+                print(f"f = {fft_freqs[idx]:.1f} Hz, magnitude = {fft_vals[idx]:.2e}")
+            print(f"Synchrotron frequency: {fs:.1f} Hz")
 
